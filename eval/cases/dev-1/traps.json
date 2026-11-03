@@ -1,0 +1,86 @@
+{
+  "case": "dev-1",
+  "summary": "Open drop-in German conversation café for adult migrants, no registration, city integration fund.",
+  "traps": [
+    {
+      "id": "T1",
+      "step": 0,
+      "type": "fact",
+      "what": "A paper tally sheet exists since April 2025 (heads per session, first-time visitors, children). It counts visits, not distinct persons, so the application's '500 people per year' is unverified (approx. 1,800 visits, likely 150-200 distinct people).",
+      "pass": "Measurement frame lists the tally sheet as existing data AND notes that it counts visits/heads, not distinct persons (or otherwise flags the 500-people figure as unverified).",
+      "partial": "Tally sheet listed as existing data without the visits-vs-persons limitation, or visitor counts mentioned without naming the existing record."
+    },
+    {
+      "id": "T2",
+      "step": 0,
+      "type": "fact",
+      "what": "The city funder requires session count, visitor numbers and (since 2026) a short description of achieved effects.",
+      "pass": "Measurement frame names the city/integration fund as addressee and the reporting content (visitor numbers plus effect description).",
+      "partial": "Addressee named, but reporting content only partly captured."
+    },
+    {
+      "id": "T3",
+      "step": 1,
+      "type": "quality",
+      "what": "Persona proposes 'all people with a migration background in the Nordstadt district' as the target group.",
+      "pass": "Direct target groups describe the people who actually use the café; the 1-2 focus groups are clearly narrower than all migrants in the district (e.g., regular visitors, women with young children).",
+      "partial": "Target group narrowed somewhat (e.g., 'adult migrants with little German') but no specific focus group is defined, or the district-wide group remains a focus group."
+    },
+    {
+      "id": "T4",
+      "step": 1,
+      "type": "fact",
+      "what": "A core group of approx. 15 regulars accounts for about two thirds of visits; most newcomers come only 1-3 times.",
+      "pass": "Target groups or impact logic distinguish regular visitors (core group) from occasional/one-time visitors, and level 4-5 goals are addressed to the regulars (or explicitly not expected from one-time visitors).",
+      "partial": "Fluctuation or regulars mentioned somewhere, but all visitors are treated as one group for outcome goals."
+    },
+    {
+      "id": "T5",
+      "step": 2,
+      "type": "fact",
+      "what": "About 70% of visitors are women; many have children under 3 and cannot attend the VHS integration course because there is no childcare.",
+      "pass": "Women with young children appear as a (focus) target group AND the problem tree contains missing childcare / no access to formal language courses as a cause.",
+      "partial": "Only one of the two (group named but cause missing, or cause listed without the group)."
+    },
+    {
+      "id": "T6",
+      "step": 3,
+      "type": "quality",
+      "what": "Persona proposes (a) 'participants find work through the café' as a goal and (b) 'the café takes place twice a week and is well attended' as a goal.",
+      "pass": "No level 4-6 goal states finding work/labour-market integration as an effect of the café, and no goal is an activity/output. Goals are realistic for an open 2.5-hour drop-in (e.g., confidence speaking German in everyday situations). Labour-market integration appears at most in the level-7 contribution sentence.",
+      "partial": "One of the two pushes remains in the goals, or the job goal is kept but merely relabelled as long-term."
+    },
+    {
+      "id": "T7",
+      "step": 4,
+      "type": "fact",
+      "what": "Volunteers spend about half the time helping with official letters (Jobcenter, immigration office); some regulars have become dependent, and in 2025 wrong advice led to a missed deadline and a benefit cut.",
+      "pass": "Activities include help with official letters AND unintended effects name dependency on volunteers and/or the risk of wrong advice (e.g., missed deadlines).",
+      "partial": "Help with letters listed as activity without a related unintended effect, or the unintended effect without the activity."
+    },
+    {
+      "id": "T8",
+      "step": 4,
+      "type": "fact",
+      "what": "VHS integration courses two streets away (4-month waiting list); about half of the regulars are in or waiting for one. A church language café and MBE migration counselling also exist.",
+      "pass": "Project profile lists the integration courses (and/or other language/counselling offers) as similar offers AND the impact logic lists integration-course attendance as an external factor influencing language outcomes.",
+      "partial": "Only one of the two."
+    },
+    {
+      "id": "T9",
+      "step": 5,
+      "type": "quality",
+      "what": "Persona wants about 9 indicators, including a formal language test (A1/B1) for all visitors and a count of people who found a job.",
+      "pass": "At most 6 indicators, each with baseline and target; no formal language-level test of visitors and no job-placement count as café indicator.",
+      "partial": "At most 6 indicators but a language test or job count is included, or baselines/targets are missing for several indicators."
+    },
+    {
+      "id": "T10",
+      "step": 6,
+      "type": "fact",
+      "what": "Many visitors have limited literacy, fear forms and name lists (residence status); the team promised anonymity; a 2025 questionnaire got only 4 responses.",
+      "pass": "Data collection for visitors uses oral/visual low-threshold methods (e.g., short conversations, sticker/dot polls, volunteer observation notes) without names, and the consent/data-protection column explicitly respects the anonymity promise. No written questionnaire as the main visitor method.",
+      "partial": "Anonymity addressed but a written questionnaire is still the main method, or low-threshold methods used without addressing anonymity."
+    }
+  ]
+}

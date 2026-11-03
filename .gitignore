@@ -1,0 +1,27 @@
+.DS_Store
+
+# Secrets and local config
+.env*
+.real-names.txt
+
+# Private planning material (tech design D3): only these two docs are public
+docs/*
+!docs/tech-design.md
+!docs/design.md
+memory-bank/
+.claude/
+
+# Eval: runs and the real case stay local
+eval/runs/
+eval/cases/lukas-1/
+
+# Runs with real project documents
+real-data/
+
+# App build and test output
+node_modules/
+app/dist/
+app/test-results/
+app/playwright-report/
+app/blob-report/
+app/playwright/.cache/

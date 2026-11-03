@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  workflow_call:
+    inputs:
+      pages-artifact:
+        description: Upload app/dist for the Pages deploy
+        type: boolean
+        default: false
+    secrets:
+      REAL_NAMES:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Build output checks (CSP, guide bundle)
+        run: npm run test:dist
+
+      - name: Install Google Chrome for Playwright
+        run: npx playwright install --with-deps chrome
+
+      - name: E2E tests in Chrome
+        run: npm run e2e
+
+      - name: Secret and real-name scan
+        run: npm run scan
+        env:
+          REAL_NAMES: ${{ secrets.REAL_NAMES }}
+
+      - if: ${{ inputs.pages-artifact }}
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: app/dist

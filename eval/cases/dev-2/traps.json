@@ -1,0 +1,86 @@
+{
+  "case": "dev-2",
+  "summary": "Fixed cohort of 24 third-graders plus their parents in a school-based cooking/movement prevention programme funded by a health insurer with mandatory reporting figures.",
+  "traps": [
+    {
+      "id": "T1",
+      "step": 0,
+      "type": "fact",
+      "what": "The health insurer requires per cohort: number of children and parents reached (by gender), attendance rate per child, number of sessions, and a standardised pre/post children's quiz (10 items). Weight/BMI is not required.",
+      "pass": "Measurement frame (or the mandatory-figures list in step 5) lists the insurer's mandatory figures: at least children/parents reached, attendance and the standard pre/post quiz.",
+      "partial": "Some mandatory figures named, others missing."
+    },
+    {
+      "id": "T2",
+      "step": 6,
+      "type": "fact",
+      "what": "Existing data: OGS attendance lists and a per-child 'Probierpass' (sticker per newly tasted fruit/vegetable) since session 1. The insurer's pre-quiz has not been done yet although the programme started on 16 Sept 2026.",
+      "pass": "Existing data (attendance list and Probierpass) appear in the measurement frame or data plan, AND the data collection plan schedules the pre-quiz/baseline as soon as possible (autumn 2026), acknowledging the late baseline.",
+      "partial": "Only one of the two (existing data named, or baseline timing addressed)."
+    },
+    {
+      "id": "T3",
+      "step": 1,
+      "type": "quality",
+      "what": "Persona proposes 'all children and families in the Lindenhof district' as target group.",
+      "pass": "Two distinct focus groups: the 24 cohort children (3rd grade, 8-9 years) and their parents/caregivers (24 families); not all children/families in the district.",
+      "partial": "Narrowed to the cohort but children and parents not defined as two separate focus groups, or district-wide group still listed as focus group."
+    },
+    {
+      "id": "T4",
+      "step": 2,
+      "type": "quality",
+      "what": "Persona claims parents' lack of knowledge is THE main cause, evidence 'Erfahrung halt' (lunch boxes).",
+      "pass": "In the parents' problem tree, the knowledge-deficit cause is marked with an honest evidence basis (own experience/observation or unsure), not as data or research, and it is not the only cause.",
+      "partial": "Evidence basis honest but knowledge deficit remains the sole cause, or other causes added but evidence for knowledge deficit marked as solid."
+    },
+    {
+      "id": "T5",
+      "step": 2,
+      "type": "fact",
+      "what": "At the first parents' session mothers said the main barriers are money (most families on Bürgergeld/Wohngeld, fresh vegetables expensive) and time (shift work, single parents), not knowledge.",
+      "pass": "Parents' problem tree includes cost of healthy food and lack of time as causes, with evidence basis indicating parents' own statements (own experience/own data).",
+      "partial": "Only one of the two (cost or time) appears."
+    },
+    {
+      "id": "T6",
+      "step": 3,
+      "type": "quality",
+      "what": "Persona proposes 'children have less overweight at the end' as a goal and wants to weigh children at start and end.",
+      "pass": "No goal about reducing weight/BMI of the children; goals for children on levels 4-5 (e.g., willingness to try vegetables, choosing water over sugary drinks, preparing a simple snack). No weighing/BMI in the indicators or data plan. Weight/health may appear only in the level-7 contribution sentence.",
+      "partial": "Weight kept as a long-term level-6 goal but not measured, or measured without being a goal."
+    },
+    {
+      "id": "T7",
+      "step": 4,
+      "type": "fact",
+      "what": "Children were selected by teachers based on 'unhealthy lunch boxes' and visible overweight; three families declined; two mothers complained their child was being labelled.",
+      "pass": "Unintended effects include stigmatisation/labelling of the selected children or families, linked to the selection process (selection mentioned in profile, target groups or impact logic).",
+      "partial": "Stigmatisation named generically without reference to how children were selected, or selection mentioned without the stigma risk."
+    },
+    {
+      "id": "T8",
+      "step": 4,
+      "type": "fact",
+      "what": "Only 7 of 24 families came to the first parents' session; 9 families speak little German; invitation was German-only via the school app.",
+      "pass": "The parents' pathway contains an assumption that parents attend/engage, marked critical with weak evidence (low first turnout), AND language barriers are addressed in activities, assumptions or the data plan (e.g., multilingual invitations or methods).",
+      "partial": "Parent-attendance assumption listed but not marked critical/weak, or language barrier mentioned without the attendance assumption."
+    },
+    {
+      "id": "T9",
+      "step": 4,
+      "type": "fact",
+      "what": "External influences: poor OGS lunch catering (contract renegotiated spring 2027) and the 'Ernährungsführerschein' taught in only one of the two classes in spring 2027.",
+      "pass": "External factors include both the school lunch/catering and the parallel nutrition programme in one class (affecting attribution of knowledge outcomes).",
+      "partial": "Only one of the two."
+    },
+    {
+      "id": "T10",
+      "step": 5,
+      "type": "quality",
+      "what": "Persona wants about 12 indicators, including weight, school grades and all mandatory figures as own indicators.",
+      "pass": "At most 6 own indicators, each with baseline and target, covering both focus groups (at least one for children and one for parents); mandatory funder figures handled as reporting obligations rather than inflating the indicator set; no weight or school-grade indicator.",
+      "partial": "At most 6 indicators but only one focus group covered, or baselines/targets missing, or a weight/grade indicator included."
+    }
+  ]
+}

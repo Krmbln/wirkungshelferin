@@ -1,0 +1,1 @@
+Antrag (Auszug): Das Projekt „Nachbarschaftscafé“ des Vereins Miteinander e.V. bietet älteren Menschen im Quartier einmal pro Woche einen Ort der Begegnung. Ziel ist es, Einsamkeit im Alter nachhaltig zu bekämpfen und Teilhabe zu fördern.
