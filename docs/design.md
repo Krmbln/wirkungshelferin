@@ -45,14 +45,15 @@ Light mode only in v1 (Lukas works on a Mac in daylight; tokens make dark mode p
 - The accent is the **only** decorative colour. Success, warning and blocking colours appear **only** where they carry a status, always together with an icon and a word (never colour alone).
 - Status colours are used as text/icon colour and as a 1 px border or a very light tint (8–10 % of the colour), never as large fills. **Text on a tint is always `--text`**; the status colour goes on the icon and the border.
 - Contrast (checked): `--text-muted` 5.9:1, `--accent` 6.3:1, `--block` 6.5:1 on white; `--ok`/`--warn` darkened to stay ≥ 4.5:1 on white and `--bg`; white on `--accent` 6.3:1. Avoid `--warn` on `--surface-subtle`.
-- **Buttons and their states:**
+- **Buttons and their states** (height 32 px; disabled and busy use `aria-disabled`, so they stay focusable and the reason is linked via `aria-describedby`):
 
 | Type | Rest | Hover | Pressed | Disabled |
 |---|---|---|---|---|
 | Primary | `--accent` fill, white text | 8 % darker | 14 % darker | `--surface-subtle` fill, 1 px `--line-strong` border, `--text-muted` text, `not-allowed` cursor, **reason written next to it** |
 | Busy (any button) | label changes (e.g. "prüft …"), button disabled so a double click can't start a second run | | | |
-| Secondary | white, 1 px `--line-strong`, `--text` | `--surface-subtle` fill | `--line` fill | `--text-muted` text and border |
-| Text | `--accent` text | underline | — | `--text-muted` |
+| Secondary | white, 1 px `--line-strong`, `--text` | `--surface-subtle` fill | `--line` fill | `--text-muted` text, 1 px `--line` border (lighter than at rest, so it reads as "off"; step 2) |
+| Text | `--accent` text | underline | keeps the underline | `--text-muted` |
+| Icon-only (send, close) | 32 × 32 px, `aria-label` required; as text button: `--text-muted` icon | `--surface-subtle` fill, `--text` icon | `--line` fill | `--text-muted` |
 
 ---
 
@@ -196,7 +197,7 @@ One primary button that changes with the state:
 - **Settings:** simple form page: API key (masked, "ändern" / "entfernen"), model ID, effort, "Vorherige Version wiederherstellen" (only if a pre-migration copy exists), backup save/load.
 
 ### 6.4 Blocking screens
-- **Not Chrome:** centred, one heading "Bitte öffne die Wirkungshelferin in Chrome", three numbered steps, the link to copy. No app chrome around it.
+- **Not Chrome:** centred, one heading "Bitte öffne die Wirkungshelferin in Chrome", a one-line lead ("Die Wirkungshelferin funktioniert nur in Google Chrome. So geht’s:"), three numbered steps, the link to copy. No app chrome around it. If copying fails, the link gets selected and a muted line says "Kopieren ging nicht – der Link ist markiert, drück Cmd+C."
 - **Second tab:** same layout: "Die Wirkungshelferin ist schon in einem anderen Tab offen." + "Diesen Tab schließen".
 
 ---
@@ -212,6 +213,11 @@ One primary button that changes with the state:
 8. **Motion:** only fades and highlights, 150–250 ms; all disabled under `prefers-reduced-motion`.
 
 ---
+
+### 7.1 Tooltip and dialog specs (added in step 2)
+- **Tooltip:** dark bubble (`--text` background, white 13 px text, 6 px radius, max 280 px wide), 8 px below the trigger. Opens on hover and Enter, closes on Esc, blur and mouse leave; the pointer can move onto the bubble without closing it. Triggers in the right half of the window open leftwards. When the trigger already has the same text as its accessible name (status icons), the bubble is hidden from screen readers and adds no tab stop; the focusable parent row (sidebar, check row) shows it on focus.
+- **Dialog:** native modal `<dialog>`, max 480 px, 10 px radius, the one shadow, dimmed backdrop. Title + ✕ on top, actions bottom right with the safe choice ("Abbrechen") first and focused.
+- **Change-type chips:** 6 px radius (`--radius`), min width 92 px.
 
 ## 8. Iconography
 - Few icons, simple line style (1.5 px stroke), drawn as a small set of inline SVGs (no icon package — tech design §3.1). Needed: status (○ ◐ ✓ ⚠ ⛔), send, stop, plus, close, copy, settings, backup, chevron.

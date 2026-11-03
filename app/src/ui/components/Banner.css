@@ -1,0 +1,32 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+
+.banner--warn {
+  border-color: var(--warn);
+  background: var(--warn-tint);
+}
+
+.banner--block {
+  border-color: var(--block);
+  background: var(--block-tint);
+}
+
+.banner__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}

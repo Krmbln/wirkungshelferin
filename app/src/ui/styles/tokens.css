@@ -1,0 +1,52 @@
+/* Design tokens (docs/design.md §3–5). Light mode only in v1. */
+:root {
+  /* Colour */
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-subtle: #f2f2f0;
+  --line: #e3e3e0;
+  --line-strong: #858b87;
+  --text: #1f2321;
+  --text-muted: #5f6662;
+  --accent: #1f6b66;
+  --accent-soft: #e4f0ee;
+  --ok: #276b43;
+  --warn: #8a5700;
+  --block: #b3261e;
+
+  /* Derived: button states and status tints (design §3 rules) */
+  --accent-hover: color-mix(in srgb, var(--accent), black 8%);
+  --accent-pressed: color-mix(in srgb, var(--accent), black 14%);
+  --ok-tint: color-mix(in srgb, var(--ok) 8%, var(--surface));
+  --warn-tint: color-mix(in srgb, var(--warn) 8%, var(--surface));
+  --block-tint: color-mix(in srgb, var(--block) 8%, var(--surface));
+
+  /* Typography */
+  --font: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-title: 600 24px/32px var(--font);
+  --text-heading: 600 18px/26px var(--font);
+  --text-body: 400 16px/24px var(--font);
+  --text-label: 600 15px/20px var(--font);
+  --text-small: 400 13px/18px var(--font);
+
+  /* Spacing (4 px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Shape */
+  --radius: 6px;
+  --radius-panel: 10px;
+  --shadow-dialog: 0 8px 28px rgb(31 35 33 / 0.14);
+
+  /* Motion (design §7.8) */
+  --motion-fast: 150ms;
+  --motion-slow: 250ms;
+
+  /* Controls */
+  --target-min: 32px;
+}

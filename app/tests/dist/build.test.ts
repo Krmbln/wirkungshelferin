@@ -74,3 +74,27 @@ describe('guide in the built bundle', () => {
     expect(js).toContain(fragment)
   })
 })
+
+describe('design system in the built bundle', () => {
+  const assets = new URL('assets/', dist)
+
+  it('ships both Source Sans 3 weights as self-hosted woff2', () => {
+    const fonts = readdirSync(assets).filter((f) => f.endsWith('.woff2'))
+    expect(fonts.some((f) => f.startsWith('SourceSans3-Regular'))).toBe(true)
+    expect(fonts.some((f) => f.startsWith('SourceSans3-Semibold'))).toBe(true)
+  })
+
+  it('loads fonts from its own origin only', () => {
+    const css = readdirSync(assets)
+      .filter((f) => f.endsWith('.css'))
+      .map((f) => readFileSync(new URL(f, assets), 'utf8'))
+      .join('\n')
+    expect(css).toContain('Source Sans 3')
+    expect(css).not.toMatch(/url\(["']?(https?:)?\/\//)
+  })
+
+  it('leaves the dev-only state gallery out', () => {
+    expect(js).not.toContain('Zustandsgalerie')
+    expect(readdirSync(assets).some((f) => /gallery/i.test(f))).toBe(false)
+  })
+})

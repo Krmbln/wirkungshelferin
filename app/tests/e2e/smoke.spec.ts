@@ -32,6 +32,9 @@ test('loads in Google Chrome without CSP violations', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Wirkungshelferin' })).toBeVisible()
   await expect(page.getByText('Leitfaden geladen: 9 Dateien')).toBeVisible()
   await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveCount(1)
+  // The self-hosted font loads under the CSP.
+  await page.evaluate(() => document.fonts.ready)
+  expect(await page.evaluate(() => document.fonts.check('400 16px "Source Sans 3"'))).toBe(true)
   expect(problems).toEqual([])
 })
 

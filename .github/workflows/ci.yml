@@ -48,6 +48,9 @@ jobs:
       - name: E2E tests in Chrome
         run: npm run e2e
 
+      - name: State gallery in Chrome (dev server)
+        run: npm run gallery
+
       - name: Secret and real-name scan
         run: npm run scan
         env:

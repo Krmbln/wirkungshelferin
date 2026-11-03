@@ -1,0 +1,19 @@
+.status-icon {
+  flex: none;
+}
+
+.status-icon--muted {
+  color: var(--text-muted);
+}
+
+.status-icon--ok {
+  color: var(--ok);
+}
+
+.status-icon--warn {
+  color: var(--warn);
+}
+
+.status-icon--block {
+  color: var(--block);
+}

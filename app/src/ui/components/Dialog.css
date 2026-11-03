@@ -1,0 +1,46 @@
+/* The one place with a shadow (design §5.1). */
+.dialog {
+  width: min(480px, calc(100vw - 2 * var(--space-6)));
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-dialog);
+}
+
+.dialog[open] {
+  animation: dialog-in var(--motion-slow) ease-out;
+}
+
+.dialog::backdrop {
+  background: rgb(31 35 33 / 0.32);
+}
+
+.dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dialog__close {
+  margin: -4px -8px 0 0;
+}
+
+.dialog__body {
+  margin-top: var(--space-3);
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+  }
+}

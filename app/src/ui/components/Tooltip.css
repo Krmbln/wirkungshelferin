@@ -1,0 +1,55 @@
+.tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip__trigger {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 2px;
+}
+
+/* Method term with a glossary tooltip (design §6.2 intro panel). */
+.term {
+  text-decoration: underline dotted var(--text-muted);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
+.tooltip__bubble {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 10;
+  width: max-content;
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: var(--text);
+  color: #fff;
+  font: var(--text-small);
+  white-space: normal;
+  animation: tooltip-in var(--motion-fast) ease-out;
+}
+
+/* Bridges the gap to the trigger, so the pointer can move onto the bubble. */
+.tooltip__bubble::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-2)) 0 100%;
+}
+
+.tooltip--end .tooltip__bubble {
+  left: auto;
+  right: 0;
+}
+
+.tooltip__bubble[hidden] {
+  display: none;
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+  }
+}

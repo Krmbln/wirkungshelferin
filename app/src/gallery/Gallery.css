@@ -1,0 +1,99 @@
+.gallery {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-8);
+}
+
+.gallery__head p {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+}
+
+.gsection {
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+.gsection__states {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-6) var(--space-8);
+  margin-top: var(--space-4);
+}
+
+.gstate {
+  margin: 0;
+  padding: var(--space-2);
+}
+
+.gstate__body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+}
+
+.gstate figcaption {
+  margin-top: var(--space-2);
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.gwide {
+  display: grid;
+  gap: var(--space-6);
+  width: 100%;
+}
+
+.gwide .gstate__body > * {
+  flex: 1;
+}
+
+.gswatch {
+  width: 72px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.gswatch--bg { background: var(--bg); }
+.gswatch--surface { background: var(--surface); }
+.gswatch--surface-subtle { background: var(--surface-subtle); }
+.gswatch--line { background: var(--line); }
+.gswatch--line-strong { background: var(--line-strong); }
+.gswatch--text { background: var(--text); }
+.gswatch--text-muted { background: var(--text-muted); }
+.gswatch--accent { background: var(--accent); }
+.gswatch--accent-soft { background: var(--accent-soft); }
+.gswatch--ok { background: var(--ok); }
+.gswatch--warn { background: var(--warn); }
+.gswatch--block { background: var(--block); }
+
+.gtype {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 70ch;
+}
+
+.gtype__title { font: var(--text-title); }
+.gtype__heading { font: var(--text-heading); }
+.gtype__label { font: var(--text-label); }
+.gtype__small { font: var(--text-small); color: var(--text-muted); }
+
+.gstatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.gframe {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg);
+}
+
+.gframe .gate {
+  padding-top: var(--space-12);
+}

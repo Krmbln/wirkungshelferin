@@ -1,0 +1,134 @@
+/* Buttons (design §3 "Buttons and their states", §7.1).
+   [data-force-state] lets the state gallery show hover and pressed without a pointer. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: 5px var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font: var(--text-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast),
+    border-color var(--motion-fast);
+}
+
+.btn__icon {
+  display: inline-flex;
+}
+
+.btn[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.btn[aria-busy='true'] {
+  cursor: progress;
+}
+
+/* Primary */
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn--primary:not([aria-disabled]):hover,
+.btn--primary[data-force-state='hover'] {
+  background: var(--accent-hover);
+}
+
+.btn--primary:not([aria-disabled]):active,
+.btn--primary[data-force-state='pressed'] {
+  background: var(--accent-pressed);
+}
+
+/* Secondary */
+.btn--secondary {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.btn--secondary:not([aria-disabled]):hover,
+.btn--secondary[data-force-state='hover'] {
+  background: var(--surface-subtle);
+}
+
+.btn--secondary:not([aria-disabled]):active,
+.btn--secondary[data-force-state='pressed'] {
+  background: var(--line);
+}
+
+/* Text */
+.btn--text {
+  padding-inline: var(--space-1);
+  background: none;
+  color: var(--accent);
+}
+
+.btn--text:not([aria-disabled]):hover,
+.btn--text[data-force-state='hover'],
+.btn--text[data-force-state='pressed'] {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Icon-only button (send, close): a 32 × 32 target, needs an aria-label. */
+.btn--icon {
+  width: var(--target-min);
+  padding: 0;
+}
+
+.btn--text.btn--icon {
+  color: var(--text-muted);
+}
+
+.btn--text.btn--icon:not([aria-disabled]):hover,
+.btn--text.btn--icon[data-force-state='hover'] {
+  background: var(--surface-subtle);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.btn--text.btn--icon:not([aria-disabled]):active,
+.btn--text.btn--icon[data-force-state='pressed'] {
+  background: var(--line);
+  text-decoration: none;
+}
+
+/* Disabled (design §3): muted, never accent. Busy keeps the variant look. */
+.btn--primary[aria-disabled='true']:not([aria-busy]) {
+  background: var(--surface-subtle);
+  border-color: var(--line-strong);
+  color: var(--text-muted);
+}
+
+/* Lighter border than at rest, so disabled reads as "off" next to an active button. */
+.btn--secondary[aria-disabled='true']:not([aria-busy]) {
+  border-color: var(--line);
+  color: var(--text-muted);
+}
+
+.btn--text[aria-disabled='true']:not([aria-busy]) {
+  color: var(--text-muted);
+}
+
+.btn--secondary[aria-busy='true'],
+.btn--text[aria-busy='true'] {
+  color: var(--text-muted);
+}
+
+.btn-with-reason {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.btn-reason {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
