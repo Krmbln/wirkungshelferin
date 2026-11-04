@@ -1,20 +1,18 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import { dummyKey } from '../dummyKey'
-import { readStored, startProject, watchProblems } from './helpers'
+import { sseAnswer } from '../fakeClaude'
+import { completeSetup, fakeClaude, readStored, startProject, watchProblems } from './helpers'
 
 // Step 6 (PRD F7 "done when"): clearing browser data + loading the latest backup restores
 // the exact state, except the API key, which is entered again.
 test('backup → clear site data → "Backup laden" restores everything except the key', async ({ page, context }) => {
   const problems = await watchProblems(page)
-  await startProject(page)
-
-  // A key stored in the settings.
-  await page.getByRole('navigation').getByRole('button', { name: 'Einstellungen' }).click()
-  await page.getByLabel('API-Schlüssel').fill(dummyKey)
-  await page.getByRole('button', { name: 'Speichern', exact: true }).click()
-  await expect(page.getByText('••••••••c3AA')).toBeVisible()
+  // The real first start, so the key is stored as setup stores it.
+  await completeSetup(page, dummyKey)
   expect(await readStored(page, 'settings')).toMatchObject({ apiKey: dummyKey })
+  await page.getByRole('navigation').getByRole('button', { name: 'Einstellungen' }).click()
+  await expect(page.getByText('••••••••c3AA')).toBeVisible()
 
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Backup speichern' }).click()
@@ -45,19 +43,27 @@ test('backup → clear site data → "Backup laden" restores everything except t
   )
   expect(await fresh.evaluate(async () => (await indexedDB.databases()).map((d) => d.name))).not.toContain('wirkungshelferin')
   const freshProblems = await watchProblems(fresh)
+  await fakeClaude(fresh, () => ({ status: 200, body: sseAnswer(), contentType: 'text/event-stream' }))
   await fresh.goto('./')
   const chooser = fresh.waitForEvent('filechooser')
   await fresh.getByRole('button', { name: 'Backup laden' }).click()
   await (await chooser).setFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer: Buffer.from(text) })
+
+  // Everything except the key: a new Chrome has no settings, so setup asks for the key, and
+  // only for the key (privacy note and backup are in the file).
+  await expect(fresh.getByRole('heading', { level: 1, name: 'Verbindung zu Claude' })).toBeVisible()
+  expect(await readStored(fresh, 'project')).toEqual(JSON.parse(text))
+  await expect(fresh.getByLabel('API-Schlüssel')).toHaveValue('')
+  await expect(fresh.getByRole('list', { name: 'Einrichtung' })).toHaveCount(0)
+  expect(await readStored(fresh, 'settings')).toBeUndefined()
+  await fresh.getByLabel('API-Schlüssel').fill(dummyKey)
+  await fresh.getByRole('button', { name: 'Verbindung testen' }).click()
+  await expect(fresh.getByText(/Verbindung erfolgreich/)).toBeVisible()
+  await fresh.getByRole('button', { name: 'Fertig' }).click()
   await expect(fresh.getByRole('heading', { level: 1, name: 'Übersicht' })).toBeVisible()
   await expect(fresh.getByRole('navigation')).toContainText('Backup: heute')
-  expect(await readStored(fresh, 'project')).toEqual(JSON.parse(text))
-
-  // Everything except the key: settings are back to the defaults, the key field is empty.
   await fresh.getByRole('navigation').getByRole('button', { name: 'Einstellungen' }).click()
-  await expect(fresh.getByLabel('API-Schlüssel')).toHaveValue('')
   await expect(fresh.getByLabel('Modell')).toHaveValue('claude-opus-5-5')
-  expect(await readStored(fresh, 'settings')).toBeUndefined()
 
   await fresh.reload()
   await expect(fresh.getByRole('heading', { level: 1, name: 'Übersicht' })).toBeVisible()

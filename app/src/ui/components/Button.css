@@ -21,6 +21,18 @@
   display: inline-flex;
 }
 
+.btn__labels {
+  display: inline-grid;
+}
+
+.btn__labels > * {
+  grid-area: 1 / 1;
+}
+
+.btn__label--off {
+  visibility: hidden;
+}
+
 .btn[aria-disabled='true'] {
   cursor: not-allowed;
 }

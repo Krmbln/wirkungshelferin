@@ -71,7 +71,19 @@ export function Button({
       onClick={handleClick}
     >
       {icon && <span className="btn__icon">{icon}</span>}
-      {isBusy && busyLabel ? busyLabel : children}
+      {busyLabel ? (
+        // Both labels share one grid cell; the inactive one keeps its width (no jump while busy).
+        <span className="btn__labels">
+          <span className={isBusy ? 'btn__label--off' : undefined} aria-hidden={isBusy || undefined}>
+            {children}
+          </span>
+          <span className={isBusy ? undefined : 'btn__label--off'} aria-hidden={!isBusy || undefined}>
+            {busyLabel}
+          </span>
+        </span>
+      ) : (
+        children
+      )}
     </button>
   )
 

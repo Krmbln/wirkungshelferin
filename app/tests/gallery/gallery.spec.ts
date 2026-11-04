@@ -102,10 +102,13 @@ test('keyboard focus shows the 2 px accent ring', async ({ page }) => {
 test('busy button: a double click starts one run', async ({ page }) => {
   await openGallery(page)
   const button = state(page, 'button-busy-live').getByRole('button')
+  const width = (await button.boundingBox())!.width
   await button.dblclick()
-  await expect(button).toHaveText('prüft …')
+  await expect(button).toHaveAccessibleName('prüft …')
   await expect(button).toHaveAttribute('aria-busy', 'true')
-  await expect(button).toHaveText('Prüfen und bestätigen', { timeout: 4000 })
+  // The wider label keeps its space: the button doesn't resize while busy.
+  expect((await button.boundingBox())!.width).toBe(width)
+  await expect(button).toHaveAccessibleName('Prüfen und bestätigen', { timeout: 4000 })
 })
 
 test('term tooltip opens on Enter and closes on Esc', async ({ page }) => {
@@ -160,7 +163,18 @@ const screenNames = [
   'save-failed-step',
 ]
 // Without the app frame (no navigation).
-const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'load-invalid', 'load-newer', 'load-storage']
+const setupScreens = [
+  'setup-welcome',
+  'setup-key',
+  'setup-key-ok',
+  'setup-key-error',
+  'setup-key-offline',
+  'setup-privacy',
+  'setup-backup',
+  'setup-backup-done',
+  'setup-key-only',
+]
+const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'load-invalid', 'load-newer', 'load-storage', ...setupScreens]
 
 async function openScreen(page: Page, name: string) {
   await page.goto(`./?gallery&screen=${name}`)
@@ -318,3 +332,23 @@ test('settings: inputs are 32 px high like the buttons beside them', async ({ pa
   expect(Math.abs(input!.y - button!.y)).toBeLessThan(1)
 })
 
+
+test('setup: testing the key (busy, then success) and the settings test', async ({ page }) => {
+  const errors = watchErrors(page)
+  await openScreen(page, 'setup-key')
+  await page.getByLabel('API-Schlüssel').fill('gallery-dummy-key-not-real-7f3a')
+  // The key is drawn as dots, not as a password field.
+  await expect(page.getByLabel('API-Schlüssel')).toHaveCSS('-webkit-text-security', 'disc')
+  await page.getByRole('button', { name: 'Verbindung testen' }).click()
+  await expect(page.getByRole('button', { name: 'Teste …' })).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-setup-key-testing.png', animations: 'disabled' })
+  await expect(page.getByText(/Verbindung erfolgreich/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Weiter', exact: true })).not.toHaveAttribute('aria-disabled')
+  await page.screenshot({ path: 'screenshots/gallery/screen-setup-key-tested.png', animations: 'disabled' })
+
+  await openScreen(page, 'settings-filled')
+  await page.getByRole('button', { name: 'Verbindung testen' }).click()
+  await expect(page.getByText('Verbindung erfolgreich.')).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-settings-connection-ok.png', animations: 'disabled' })
+  expect(errors).toEqual([])
+})

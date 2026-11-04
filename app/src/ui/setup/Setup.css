@@ -1,0 +1,114 @@
+/* Setup (design §6.3): the shared centred column; a short checklist above the heading. */
+.setup__checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.setup__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.setup__check--progress {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.setup__check-icon,
+.setup__result-icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.setup__intro {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-8) 0 0;
+  padding-left: var(--space-6);
+}
+
+.setup__intro li {
+  padding-left: var(--space-1);
+}
+
+.setup__intro li::marker {
+  font: var(--text-label);
+}
+
+.setup__intro-title {
+  display: block;
+  font: var(--text-label);
+}
+
+.setup__intro-text {
+  display: block;
+  color: var(--text-muted);
+}
+
+.setup__form {
+  margin-top: var(--space-8);
+}
+
+.setup__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.setup__row .field__control {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup__result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.setup__result:empty {
+  margin-top: 0;
+}
+
+.setup__rules {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 0;
+  padding-left: var(--space-6);
+}
+
+.setup__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+.setup__muted {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.setup__note {
+  margin-top: var(--space-6);
+}
+
+.setup__problem {
+  margin-top: var(--space-4);
+}
+
+.setup__next {
+  margin-top: var(--space-8);
+}
+
+.setup__next + .banner {
+  margin-top: var(--space-4);
+}

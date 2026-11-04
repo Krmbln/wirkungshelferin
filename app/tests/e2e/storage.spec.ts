@@ -73,9 +73,12 @@ test('"Backup laden" on the empty state restores a saved project', async ({ page
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(project)),
   })
-  await expect(home(other)).toBeVisible()
+  // A new Chrome runs setup first (step 7); the project is already restored underneath.
+  const setup = other.getByRole('heading', { level: 1, name: 'Bevor es losgeht' })
+  await expect(setup).toBeVisible()
+  expect(await readStored(other, 'project')).toEqual(project)
   await other.reload()
-  await expect(home(other)).toBeVisible()
+  await expect(setup).toBeVisible()
   await fresh.close()
 })
 

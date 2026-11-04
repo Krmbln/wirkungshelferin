@@ -1,4 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react'
+import type { ConnectionResult } from '../../ai/client'
+import { problemText } from '../../ai/errors'
 import { daysAgo, type BackupState } from '../../domain/backup'
 import type { Project } from '../../domain/schemas/project'
 import { DEFAULT_MODEL, efforts, keyProblem, maskKey, type Effort, type Settings as SettingsValue } from '../../storage/settings'
@@ -7,6 +9,7 @@ import { Banner } from '../components/Banner'
 import { Button } from '../components/Button'
 import { Dialog } from '../components/Dialog'
 import { Field, FieldError } from '../components/Field'
+import { KeyInput } from '../components/KeyInput'
 import { StatusIcon } from '../components/StatusIcon'
 import './Settings.css'
 
@@ -21,6 +24,8 @@ export type SettingsProps = {
   /** Version of the newest pre-migration copy; the restore section shows only then. */
   previousVersion?: number
   onRestorePrevious?: () => Promise<void>
+  /** Tests the given settings against the API (step 7). */
+  testConnection: (settings: SettingsValue) => Promise<ConnectionResult>
 }
 
 const SAVE_FAILED = 'Speichern hat nicht geklappt. Versuch es noch einmal.'
@@ -43,6 +48,7 @@ export function Settings(props: SettingsProps) {
         <ApiKey {...props} />
         <Model {...props} />
         <EffortSelect {...props} />
+        <ConnectionTest {...props} />
       </section>
       <BackupSection {...props} />
       {props.previousVersion !== undefined && props.onRestorePrevious && (
@@ -150,12 +156,9 @@ function ApiKey({ settings, onSettingsChange }: SettingsProps) {
       >
         {(control) => (
           <div className="settings__row">
-            <input
+            <KeyInput
               {...control}
               ref={input}
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
               value={draft}
               onChange={(e) => {
                 setDraft(e.target.value)
@@ -266,6 +269,48 @@ function EffortSelect({ settings, onSettingsChange }: SettingsProps) {
         </select>
       )}
     </Field>
+  )
+}
+
+// Tests what is saved now: key, model and effort together, like a chat turn would send them.
+function ConnectionTest({ settings, testConnection }: SettingsProps) {
+  const [result, setResult] = useState<ConnectionResult | null>(null)
+  // A result belongs to the settings it tested.
+  const [tested, setTested] = useState(settings)
+  if (result && tested !== settings) {
+    setResult(null)
+    setTested(settings)
+  }
+
+  return (
+    <div className="settings__test">
+      <div className="settings__actions">
+        <Button
+          variant="secondary"
+          busyLabel="Teste …"
+          disabledReason={settings.apiKey ? undefined : 'Speichere zuerst einen API-Schlüssel.'}
+          onClick={async () => {
+            setResult(null)
+            setTested(settings)
+            setResult(await testConnection(settings))
+          }}
+        >
+          Verbindung testen
+        </Button>
+      </div>
+      {/* Success and failure in the same place, under the button. */}
+      <p className="settings__status" role="status">
+        {result?.ok && (
+          <>
+            <span className="settings__status-icon" aria-hidden="true">
+              <StatusIcon status="ok" tooltip={false} size={18} />
+            </span>
+            Verbindung erfolgreich.
+          </>
+        )}
+      </p>
+      {result && !result.ok && <FieldError>{problemText(result.problem, settings.model)}</FieldError>}
+    </div>
   )
 }
 

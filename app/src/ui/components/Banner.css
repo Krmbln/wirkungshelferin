@@ -9,6 +9,15 @@
   color: var(--text);
 }
 
+.banner:not(:has(.banner__actions)) {
+  align-items: flex-start;
+}
+
+/* 20 px icon on a 24 px first line. */
+.banner:not(:has(.banner__actions)) > .status-icon {
+  margin-top: 2px;
+}
+
 .banner--warn {
   border-color: var(--warn);
   background: var(--warn-tint);

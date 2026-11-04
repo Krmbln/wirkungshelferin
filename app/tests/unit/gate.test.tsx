@@ -3,7 +3,8 @@ import { render, screen } from '@testing-library/react'
 import { isGoogleChrome, type NavigatorWithUAData } from '../../src/ui/gate/isGoogleChrome'
 import { Root } from '../../src/ui/Root'
 import { makeProject } from '../../src/domain/fixtures'
-import { keys, memoryStore } from '../../src/storage/store'
+import { keys } from '../../src/storage/store'
+import { readyStore } from '../stores'
 
 const brands = (...names: string[]) => names.map((brand) => ({ brand, version: '142' }))
 
@@ -31,7 +32,7 @@ describe('isGoogleChrome', () => {
 
 describe('Root', () => {
   it('shows the gate with the app link outside Chrome, without reading storage', () => {
-    const store = memoryStore()
+    const store = readyStore()
     const get = vi.spyOn(store, 'get')
     render(<Root nav={browsers.safari} appUrl={APP_URL} store={store} />)
     expect(get).not.toHaveBeenCalled()
@@ -42,7 +43,7 @@ describe('Root', () => {
   })
 
   it('shows the app in Chrome', async () => {
-    const store = memoryStore({ [keys.project]: makeProject() })
+    const store = readyStore({ [keys.project]: makeProject() })
     render(<Root nav={browsers.chrome} appUrl={APP_URL} store={store} />)
     expect(await screen.findByRole('heading', { level: 1, name: 'Übersicht' })).toBeTruthy()
     expect(screen.queryByText(/Bitte öffne/)).toBeNull()

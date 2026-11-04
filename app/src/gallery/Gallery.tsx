@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Banner } from '../ui/components/Banner'
 import { Button, type ButtonVariant } from '../ui/components/Button'
 import { Chip, type ChipKind } from '../ui/components/Chip'
@@ -16,6 +16,12 @@ import { EmptyState } from '../ui/screens/EmptyState'
 import { LoadError } from '../ui/screens/LoadError'
 import { SecondTab } from '../ui/screens/SecondTab'
 import { Skeleton } from '../ui/screens/Skeleton'
+import { Setup } from '../ui/setup/Setup'
+import type { SetupStep } from '../ui/setup/plan'
+import { scriptedAiClient } from '../ai/mock'
+import type { ConnectionResult } from '../ai/client'
+import { newProject } from '../domain/document'
+import { defaultSettings } from '../storage/settings'
 import { statusesOf } from '../ui/steps'
 import './Gallery.css'
 
@@ -135,6 +141,70 @@ export const screens: Record<string, { caption: string; render: () => ReactNode 
   },
   'load-newer': { caption: 'Daten von neuerer Version', render: () => <LoadError problem="newer" reload={noop} /> },
   'load-storage': { caption: 'Speicher nicht erreichbar', render: () => <LoadError problem="storage" reload={noop} /> },
+  'setup-welcome': { caption: 'Einrichtung: Willkommen', render: () => <GallerySetup /> },
+  'setup-key': { caption: 'Einrichtung: API-Schlüssel', render: () => <GallerySetup step="key" /> },
+  'setup-key-ok': {
+    caption: 'Einrichtung: Verbindung erfolgreich',
+    render: () => <GallerySetup step="key" keyResult={{ ok: true }} />,
+  },
+  'setup-key-error': {
+    caption: 'Einrichtung: Schlüssel abgelehnt',
+    render: () => <GallerySetup step="key" keyResult={{ ok: false, problem: 'key' }} />,
+  },
+  'setup-key-offline': {
+    caption: 'Einrichtung: keine Internetverbindung',
+    render: () => <GallerySetup step="key" keyResult={{ ok: false, problem: 'offline' }} />,
+  },
+  'setup-privacy': { caption: 'Einrichtung: Datenschutz', render: () => <GallerySetup step="privacy" /> },
+  'setup-backup': {
+    caption: 'Einrichtung: erstes Backup, Chrome sagt dauerhaften Speicher nicht zu',
+    render: () => <GallerySetup step="backup" persisted={false} />,
+  },
+  'setup-backup-done': {
+    caption: 'Einrichtung: Backup gespeichert, Speicher dauerhaft',
+    render: () => <GallerySetup step="backup" persisted backedUp />,
+  },
+  'setup-key-only': {
+    caption: 'Einrichtung nach „Backup laden“ in einem neuen Chrome: nur der Schlüssel',
+    render: () => <GallerySetup project={backedUp} />,
+  },
+}
+
+const fresh0 = newProject(galleryNow.toISOString())
+
+// Like the Session: the screens change the project and settings for real; the API is scripted.
+function GallerySetup({
+  step,
+  keyResult,
+  persisted,
+  backedUp: saved = false,
+  project: start = fresh0,
+}: {
+  step?: SetupStep
+  keyResult?: ConnectionResult
+  persisted?: boolean
+  backedUp?: boolean
+  project?: typeof fresh0
+}) {
+  const [project, setProject] = useState(start)
+  const [settings, setSettings] = useState(defaultSettings)
+  const [ai] = useState(() => scriptedAiClient([{ ok: true }], { delay: 600 }))
+  // Saved after the start, like in the app: the plan (fixed at mount) still has the backup screen.
+  useEffect(() => {
+    if (saved) setProject((p) => ({ ...p, lastBackupAt: galleryNow.toISOString() }))
+  }, [saved])
+  return (
+    <Setup
+      project={project}
+      settings={settings}
+      persisted={persisted}
+      onSettingsChange={async (next) => setSettings(next)}
+      testConnection={ai.testConnection}
+      onPrivacySeen={() => setProject({ ...project, privacyNoteSeen: true })}
+      onSaveBackup={() => setProject({ ...project, lastBackupAt: galleryNow.toISOString() })}
+      initial={{ step, keyResult }}
+    />
+  )
 }
 
 // Like the Session: saving a backup records the time, so the reminder really goes.

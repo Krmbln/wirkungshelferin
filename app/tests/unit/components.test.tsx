@@ -69,10 +69,11 @@ describe('Button', () => {
       fireEvent.click(button)
     })
     expect(onClick).toHaveBeenCalledTimes(1)
-    expect(button.textContent).toBe('prüft …')
+    // Both labels stay in the button (it keeps its width); the name is the active one.
+    expect(screen.getByRole('button', { name: 'prüft …' })).toBe(button)
 
     await act(async () => finish())
-    expect(button.textContent).toBe('Prüfen')
+    expect(screen.getByRole('button', { name: 'Prüfen' })).toBe(button)
     fireEvent.click(button)
     expect(onClick).toHaveBeenCalledTimes(2)
   })

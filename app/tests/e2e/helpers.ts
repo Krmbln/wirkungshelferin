@@ -1,10 +1,56 @@
-import type { Page } from '@playwright/test'
+import type { Page, Request } from '@playwright/test'
+import { sseAnswer } from '../fakeClaude'
 
 // Every test starts with an empty browser profile, so the app opens on the empty state.
+// Setup (step 7) is marked as done first, so the project opens on home; setup.spec.ts
+// covers setup itself.
 export async function startProject(page: Page): Promise<void> {
   await page.goto('./')
+  await page.getByRole('button', { name: 'Neu starten' }).waitFor()
+  await writeStored(page, 'settings', { model: 'claude-opus-5-5', effort: 'medium', setupDone: true })
+  await page.reload()
   await page.getByRole('button', { name: 'Neu starten' }).click()
   await page.getByRole('heading', { level: 1, name: 'Übersicht' }).waitFor()
+}
+
+/** The real first start: Neu starten → setup with the given key (API faked) → home. */
+export async function completeSetup(page: Page, key: string): Promise<void> {
+  await fakeClaude(page, () => ({ status: 200, body: sseAnswer(), contentType: 'text/event-stream' }))
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Neu starten' }).click()
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click()
+  await page.getByLabel('API-Schlüssel').fill(key)
+  await page.getByRole('button', { name: 'Verbindung testen' }).click()
+  await page.getByText(/Verbindung erfolgreich/).waitFor()
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click()
+  await page.getByRole('heading', { level: 1, name: 'Datenschutz' }).waitFor()
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click()
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Backup speichern' }).click()
+  await download
+  await page.getByRole('button', { name: 'Fertig' }).click()
+  await page.getByRole('heading', { level: 1, name: 'Übersicht' }).waitFor()
+}
+
+type Answer = { status: number; body: string; contentType: string }
+
+/** Answers every request to api.anthropic.com from the test; returns the requests made. */
+export async function fakeClaude(page: Page, respond: () => Answer): Promise<Request[]> {
+  const requests: Request[] = []
+  await page.route('https://api.anthropic.com/**', async (route) => {
+    const request = route.request()
+    const cors = {
+      'access-control-allow-origin': '*',
+      'access-control-allow-methods': 'POST, OPTIONS',
+      // "*" doesn't cover Authorization, so the preflight gets the names back.
+      'access-control-allow-headers': (await request.headerValue('access-control-request-headers')) ?? '*',
+    }
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
+    requests.push(request)
+    const { status, body, contentType } = respond()
+    await route.fulfill({ status, body, headers: { ...cors, 'content-type': contentType } })
+  })
+  return requests
 }
 
 // Collects CSP violations and console errors from the moment the page starts.
@@ -40,4 +86,25 @@ export async function readStored(page: Page, key: string): Promise<unknown> {
     db.close()
     return value
   }, key)
+}
+
+// Writes one key into the app's IndexedDB (the app must have opened it once).
+export async function writeStored(page: Page, key: string, value: unknown): Promise<void> {
+  await page.evaluate(
+    async ([key, value]) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const r = indexedDB.open('wirkungshelferin')
+        r.onsuccess = () => resolve(r.result)
+        r.onerror = () => reject(r.error)
+      })
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('data', 'readwrite')
+        tx.objectStore('data').put(value, key as string)
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => reject(tx.error)
+      })
+      db.close()
+    },
+    [key, value] as const,
+  )
 }

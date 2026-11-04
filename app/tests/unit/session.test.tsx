@@ -4,10 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { makeProject, makeProjectWithStatuses } from '../../src/domain/fixtures'
 import { projectSchema } from '../../src/domain/schemas/project'
-import { keys, memoryStore } from '../../src/storage/store'
+import { keys } from '../../src/storage/store'
+import { readyStore } from '../stores'
 import { PageHeader, SAVED_VISIBLE_MS } from '../../src/ui/frame/PageHeader'
 import { SecondTab } from '../../src/ui/screens/SecondTab'
 import { Session } from '../../src/ui/Session'
+import { dummyKey } from '../dummyKey'
 
 const h1 = () => screen.getByRole('heading', { level: 1 })
 const banner = () => screen.queryByText('Speichern hat nicht geklappt – speichere jetzt ein Backup.')
@@ -32,7 +34,7 @@ const secondTabHeading = 'Die Wirkungshelferin ist schon in einem anderen Tab of
 
 /** A store whose writes fail while `failing` is true. */
 function flakyStore(initial: Record<string, unknown> = {}) {
-  const store = memoryStore(initial)
+  const store = readyStore(initial)
   const ctl = { failing: true }
   const set = store.set
   store.set = (key, value) => (ctl.failing ? Promise.reject(new Error('QuotaExceededError')) : set(key, value))
@@ -45,7 +47,7 @@ afterEach(() => {
 
 describe('Session: start', () => {
   it('shows the skeleton while loading, then the empty state with two equal options', async () => {
-    render(<Session store={memoryStore()} />)
+    render(<Session store={readyStore()} />)
     expect(screen.getByRole('status').textContent).toBe('Wird geladen …')
     expect(await screen.findByRole('heading', { level: 1, name: 'Willkommen bei der Wirkungshelferin' })).toBeTruthy()
     const options = [screen.getByRole('button', { name: 'Neu starten' }), screen.getByRole('button', { name: 'Backup laden' })]
@@ -55,7 +57,7 @@ describe('Session: start', () => {
 
   it('"Neu starten" saves a valid project right away and opens home', async () => {
     const user = userEvent.setup()
-    const store = memoryStore()
+    const store = readyStore()
     render(<Session store={store} />)
     await user.click(await screen.findByRole('button', { name: 'Neu starten' }))
     expect(h1().textContent).toBe('Übersicht')
@@ -64,7 +66,7 @@ describe('Session: start', () => {
   })
 
   it('a stored project opens home with its statuses', async () => {
-    const store = memoryStore({ [keys.project]: makeProjectWithStatuses({ 0: 'confirmed', 1: 'in_progress' }) })
+    const store = readyStore({ [keys.project]: makeProjectWithStatuses({ 0: 'confirmed', 1: 'in_progress' }) })
     render(<Session store={store} />)
     await screen.findByRole('heading', { level: 1, name: 'Übersicht' })
     const nav = screen.getByRole('navigation', { name: 'Navigation' })
@@ -75,7 +77,7 @@ describe('Session: start', () => {
   })
 
   it('a second tab is refused and never reads the stored data', async () => {
-    const store = memoryStore({ [keys.project]: makeProject() })
+    const store = readyStore({ [keys.project]: makeProject() })
     const get = vi.spyOn(store, 'get')
     render(<Session store={store} locks={takenLocks} />)
     expect(await screen.findByRole('heading', { name: secondTabHeading })).toBeTruthy()
@@ -83,7 +85,7 @@ describe('Session: start', () => {
   })
 
   it('a second tab opens the app by itself when Lukas comes back after closing the other tab', async () => {
-    const store = memoryStore({ [keys.project]: makeProject() })
+    const store = readyStore({ [keys.project]: makeProject() })
     const tab = otherTab()
     render(<Session store={store} locks={tab.locks} />)
     await screen.findByRole('heading', { name: secondTabHeading })
@@ -96,7 +98,7 @@ describe('Session: start', () => {
   })
 
   it('the other tab releases the lock a moment after this one is shown (closing a tab): it still opens', async () => {
-    const store = memoryStore({ [keys.project]: makeProject() })
+    const store = readyStore({ [keys.project]: makeProject() })
     const tab = otherTab()
     render(<Session store={store} locks={tab.locks} />)
     await screen.findByRole('heading', { name: secondTabHeading })
@@ -107,7 +109,7 @@ describe('Session: start', () => {
   })
 
   it('clicking into the already shown tab asks again too', async () => {
-    const store = memoryStore({ [keys.project]: makeProject() })
+    const store = readyStore({ [keys.project]: makeProject() })
     const tab = otherTab()
     render(<Session store={store} locks={tab.locks} />)
     await screen.findByRole('heading', { name: secondTabHeading })
@@ -117,7 +119,7 @@ describe('Session: start', () => {
   })
 
   it('under StrictMode (effects run twice) it reaches home and reads the store once', async () => {
-    const store = memoryStore({ [keys.project]: makeProject() })
+    const store = readyStore({ [keys.project]: makeProject() })
     const get = vi.spyOn(store, 'get')
     const browser = otherTab()
     browser.closeOther()
@@ -133,7 +135,7 @@ describe('Session: start', () => {
 
   it('once the app is open, coming back to the tab does not load again', async () => {
     const user = userEvent.setup()
-    const store = memoryStore()
+    const store = readyStore()
     render(<Session store={store} />)
     await user.click(await screen.findByRole('button', { name: 'Neu starten' }))
     act(() => void window.dispatchEvent(new Event('focus')))
@@ -142,7 +144,7 @@ describe('Session: start', () => {
   })
 
   it('storage that cannot be read asks for a reload and writes nothing', async () => {
-    const store = memoryStore()
+    const store = readyStore()
     store.get = () => Promise.reject(new Error('blocked'))
     const set = vi.spyOn(store, 'set')
     render(<Session store={store} />)
@@ -153,7 +155,7 @@ describe('Session: start', () => {
 
   it('an unreadable document shows a plain message and stays untouched', async () => {
     const broken = { ...makeProject(), steps: 'kaputt' }
-    const store = memoryStore({ [keys.project]: broken })
+    const store = readyStore({ [keys.project]: broken })
     const set = vi.spyOn(store, 'set')
     render(<Session store={store} />)
     expect(await screen.findByRole('heading', { name: 'Deine Daten lassen sich nicht öffnen' })).toBeTruthy()
@@ -163,7 +165,7 @@ describe('Session: start', () => {
   })
 
   it('a document from a newer version asks for a reload', async () => {
-    render(<Session store={memoryStore({ [keys.project]: { ...makeProject(), schemaVersion: 2 } })} />)
+    render(<Session store={readyStore({ [keys.project]: { ...makeProject(), schemaVersion: 2 } })} />)
     expect(await screen.findByRole('heading', { name: 'Deine Daten stammen von einer neueren Version' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Seite neu laden' })).toBeTruthy()
   })
@@ -176,7 +178,7 @@ describe('Session: backup from the empty state', () => {
   }
 
   it('a valid backup becomes the project and is saved', async () => {
-    const store = memoryStore()
+    const store = readyStore()
     const backup = makeProjectWithStatuses({ 0: 'confirmed' })
     render(<Session store={store} />)
     await screen.findByRole('button', { name: 'Backup laden' })
@@ -186,7 +188,7 @@ describe('Session: backup from the empty state', () => {
   })
 
   it('an unusable file says so where it happened and changes nothing', async () => {
-    const store = memoryStore()
+    const store = readyStore()
     render(<Session store={store} />)
     await screen.findByRole('button', { name: 'Backup laden' })
     await choose('{"kein":"backup"}')
@@ -252,7 +254,7 @@ describe('Session: go on with a backup when the data is unreadable', () => {
   }
 
   it('replaces the data only after the confirm dialog', async () => {
-    const store = memoryStore({ [keys.project]: broken })
+    const store = readyStore({ [keys.project]: broken })
     const backup = makeProjectWithStatuses({ 0: 'confirmed' })
     render(<Session store={store} />)
     const user = await pickBackup(JSON.stringify(backup))
@@ -263,8 +265,22 @@ describe('Session: go on with a backup when the data is unreadable', () => {
     expect(store.data.get(keys.project)).toEqual(backup)
   })
 
+  // Found in step 7: settings were loaded only after a readable project, so continuing from
+  // here ran with the defaults (no key, setup again) and the next change overwrote the key.
+  it('continuing with a backup keeps the stored settings (key, setup done)', async () => {
+    const settings = { apiKey: dummyKey, model: 'claude-sonnet-5-5', effort: 'high', setupDone: true }
+    const store = readyStore({ [keys.project]: broken, [keys.settings]: settings })
+    render(<Session store={store} />)
+    const user = await pickBackup(JSON.stringify(makeProject()))
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Backup laden' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Übersicht' })).toBeTruthy()
+    await user.click(within(screen.getByRole('navigation')).getByRole('button', { name: 'Einstellungen' }))
+    expect(screen.getByText('••••••••c3AA')).toBeTruthy()
+    expect((screen.getByLabelText('Modell') as HTMLInputElement).value).toBe('claude-sonnet-5-5')
+  })
+
   it('"Abbrechen" changes nothing', async () => {
-    const store = memoryStore({ [keys.project]: broken })
+    const store = readyStore({ [keys.project]: broken })
     render(<Session store={store} />)
     const user = await pickBackup(JSON.stringify(makeProject()))
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Abbrechen' }))
@@ -273,7 +289,7 @@ describe('Session: go on with a backup when the data is unreadable', () => {
   })
 
   it('an unusable file says so and changes nothing', async () => {
-    const store = memoryStore({ [keys.project]: broken })
+    const store = readyStore({ [keys.project]: broken })
     render(<Session store={store} />)
     await pickBackup('kein json')
     expect(await screen.findByText(/kein Backup der Wirkungshelferin/)).toBeTruthy()
@@ -312,7 +328,7 @@ describe('Saving: flush when the tab is hidden', () => {
   // The flush that does save is covered above (failed save → hidden tab → saved).
   it('hiding the tab with nothing pending writes nothing', async () => {
     const user = userEvent.setup()
-    const store = memoryStore()
+    const store = readyStore()
     render(<Session store={store} />)
     await user.click(await screen.findByRole('button', { name: 'Neu starten' }))
     await screen.findByText('Gespeichert')

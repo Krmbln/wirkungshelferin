@@ -204,11 +204,17 @@ The SDK's typed errors are mapped to plain German messages with what to do:
 | Case | Detected by | Message direction |
 |---|---|---|
 | Invalid key | 401 `AuthenticationError` | "Schlüssel ungültig – in den Einstellungen prüfen" |
-| No credit | 400 billing error type | "Guthaben aufgebraucht – Karim Bescheid geben" |
+| No credit | 402 `billing_error` (fallback: 400 with "credit balance" text) | "Guthaben aufgebraucht – Karim Bescheid geben" |
 | Rate limit / overloaded | 429 / 529 | "Kurz warten, dann erneut" (SDK retries twice first) |
 | Offline | connection error / `navigator.onLine` | "Keine Internetverbindung" |
 | Stream breaks | stream error event | Partial text kept, "Erneut versuchen" button; input preserved |
 | Refusal | `stop_reason: "refusal"` | Plain note + retry |
+
+*As built in step 7:*
+- `src/ai/`: `AiClient` interface (`testConnection(settings)` for now; chat calls join in steps 8–9), `sdkAiClient()` on `@anthropic-ai/sdk` 1.1.0 (pinned; 1.x sends the key as a bearer token, not as `x-api-key`), `scriptedAiClient()` for tests and the gallery. A new SDK client per call, built from the current settings; SDK logging off, `maxRetries` 2.
+- `requestParams(settings, …)` is the one place the shared options live: `betas: ["server-side-fallback-2026-07-01"]` + `fallbacks: "default"`, `output_config.effort`, system prompt with `cache_control` TTL `1h`, streamed. The connection test uses it with a tiny prompt and `max_tokens` 256 (a `max_tokens` stop still counts as success), 30 s timeout.
+- Error mapper (`classifyError` → `key | credit | model | busy | offline | unreachable | refusal | other`): 401/403 → key, 402/`billing_error` → credit, 404 → model (the model ID is editable), 429/529 or `rate_limit_error`/`overloaded_error` without status (SSE error event) → busy, `APIConnectionError` → offline if `navigator.onLine` is false, else unreachable. Offline is detected before sending, so no retries run. The console gets status, type and request id only.
+- Setup (once per Chrome, `settings.setupDone`): plan = welcome + privacy if `!privacyNoteSeen`, key always, backup if no `lastBackupAt`. Settings now load on every start path, including the load-error screen.
 
 ### 6.8 Cost estimate (Opus 5.5: $4 / $20 per MTok; cache reads $0.20; cache writes 1.25× (5 min) or 2× (1 h))
 - **Warm turn** (cache hit): read system + history ~45k → ~$0.01; write new tokens ~2k → ~$0.01; output incl. thinking ~1.5k → ~$0.03. **≈ $0.05.**

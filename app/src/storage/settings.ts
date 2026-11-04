@@ -14,6 +14,8 @@ export const settingsSchema = z.strictObject({
   apiKey: z.string().min(1).optional(),
   model: z.string().trim().min(1),
   effort: z.enum(efforts),
+  /** Setup ran in this Chrome (step 7). Per browser, like the key, so a backup never carries it. */
+  setupDone: z.boolean().optional(),
 })
 
 export type Settings = z.infer<typeof settingsSchema>

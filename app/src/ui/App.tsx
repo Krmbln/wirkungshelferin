@@ -28,12 +28,14 @@ type Props = {
   onReplaceProject?: SettingsProps['onReplaceProject']
   previousVersion?: number
   onRestorePrevious?: () => Promise<void>
+  testConnection?: SettingsProps['testConnection']
   /** Gallery and tests pin the clock; the app follows the real one. */
   now?: Date
 }
 
 const noop = () => {}
 const resolved = async () => {}
+const connected = async () => ({ ok: true }) as const
 
 // No router (tech design §2): app state decides the view.
 export function App({
@@ -47,6 +49,7 @@ export function App({
   onReplaceProject = resolved,
   previousVersion,
   onRestorePrevious,
+  testConnection = connected,
   now: fixedNow,
 }: Props) {
   const [view, setView] = useState<View>(initialView)
@@ -123,6 +126,7 @@ export function App({
             onReplaceProject={onReplaceProject}
             previousVersion={previousVersion}
             onRestorePrevious={onRestorePrevious}
+            testConnection={testConnection}
           />
         )}
       </main>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { sdkAiClient, type AiClient } from '../ai/client'
 import { withBackupTime } from '../domain/backup'
 import { newProject } from '../domain/document'
 import type { Project } from '../domain/schemas/project'
@@ -13,6 +14,7 @@ import { EmptyState } from './screens/EmptyState'
 import { LoadError } from './screens/LoadError'
 import { SecondTab } from './screens/SecondTab'
 import { Skeleton } from './screens/Skeleton'
+import { Setup } from './setup/Setup'
 
 type Phase =
   | { kind: 'starting' }
@@ -26,14 +28,19 @@ type Props = {
   /** Tests pass a fake; the app uses Chrome's. */
   locks?: LockManager
   reload?: () => void
+  /** Tests pass the scripted mock; the app talks to the API. */
+  ai?: AiClient
 }
+
+let defaultAi: AiClient | undefined
 
 /** When a refused tab asks again after Lukas comes back to it. */
 export const RETRY_AFTER_RETURN_MS = [0, 250, 500, 1000, 2000, 3000]
 
 // Owns the stored project: tab lock → load pipeline → app, plus autosave (tech design §8).
-export function Session({ store, locks = navigator.locks, reload = () => window.location.reload() }: Props) {
+export function Session({ store, locks = navigator.locks, reload = () => window.location.reload(), ai = (defaultAi ??= sdkAiClient()) }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: 'starting' })
+  const [persisted, setPersisted] = useState<boolean>()
   const [settings, setSettings] = useState<Settings>(defaultSettings)
   const [previousVersion, setPreviousVersion] = useState<number>()
   const [savedAt, setSavedAt] = useState<number>()
@@ -70,19 +77,20 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
         // From here on this tab owns the data; coming back to it must not load again.
         entered = true
         stopListening()
-        void requestPersistence().catch(() => undefined)
+        // Shown on the setup's backup screen (PRD F1).
+        void requestPersistence().then(
+          (granted) => live && setPersisted(granted),
+          () => undefined,
+        )
         const result = await loadProjectOnce(store)
         if (!live) return
-        if (result.kind === 'error') {
-          setPhase(result)
-          return
-        }
-        // Settings live under their own key and never block the start.
+        // Settings live under their own key and never block the start. Loaded on the error
+        // path too: continuing with a backup from there must not reset key and setup.
         const [stored, previous] = await Promise.all([loadSettings(store), findPreviousVersion(store)])
         if (!live) return
         setSettings(stored)
         setPreviousVersion(previous)
-        setPhase({ kind: 'ready', project: result.kind === 'ready' ? result.project : null })
+        setPhase(result.kind === 'error' ? result : { kind: 'ready', project: result.kind === 'ready' ? result.project : null })
       } finally {
         entering = false
       }
@@ -198,6 +206,20 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
     )
   }
   const project = phase.project
+  // Once per Chrome (PO decision 2026-11-04); the key never travels with a backup.
+  if (!settings.setupDone) {
+    return (
+      <Setup
+        project={project}
+        settings={settings}
+        persisted={persisted}
+        onSettingsChange={changeSettings}
+        testConnection={ai.testConnection}
+        onPrivacySeen={() => update({ ...project, privacyNoteSeen: true })}
+        onSaveBackup={() => saveBackup(project)}
+      />
+    )
+  }
   return (
     <App
       project={project}
@@ -209,6 +231,7 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
       onReplaceProject={start}
       previousVersion={previousVersion}
       onRestorePrevious={restorePrevious}
+      testConnection={ai.testConnection}
     />
   )
 }
