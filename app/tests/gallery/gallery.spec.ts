@@ -144,21 +144,69 @@ test('reduced motion stops the pulse', async ({ page }) => {
   await expect.poll(animation).toBe('none')
 })
 
-const screenNames = ['home', 'home-mixed', 'step', 'step-mixed', 'settings']
+const screenNames = ['home', 'home-mixed', 'step', 'step-mixed', 'settings', 'saved', 'save-failed', 'save-failed-step']
+// Without the app frame (no navigation).
+const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'load-invalid', 'load-newer', 'load-storage']
 
 async function openScreen(page: Page, name: string) {
   await page.goto(`./?gallery&screen=${name}`)
-  await page.getByRole('navigation', { name: 'Navigation' }).waitFor()
+  await page.locator(bareScreens.includes(name) ? '#root > *' : 'nav').first().waitFor()
   await page.evaluate(() => document.fonts.ready)
 }
 
 test('full-window screens render without errors', async ({ page }) => {
   const errors = watchErrors(page)
-  for (const name of screenNames) {
+  for (const name of [...screenNames, ...bareScreens]) {
     await openScreen(page, name)
     await page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
   }
   expect(errors).toEqual([])
+})
+
+test('save failure: ⛔ banner above the header, "Gespeichert" muted in the header', async ({ page }) => {
+  await openScreen(page, 'save-failed')
+  const alert = page.getByRole('alert')
+  await expect(alert).toContainText('Speichern hat nicht geklappt')
+  const [banner, header] = await Promise.all([alert.boundingBox(), page.locator('.page-header').boundingBox()])
+  expect(banner && header && banner.y + banner.height <= header.y).toBe(true)
+
+  await openScreen(page, 'saved')
+  const saved = page.locator('[data-slot="saved"]')
+  await expect(saved).toHaveText('Gespeichert')
+  const colours = await page.evaluate(() => ({
+    saved: getComputedStyle(document.querySelector('[data-slot="saved"]')!).color,
+    muted: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(),
+  }))
+  expect(colours.saved).toBe(await page.evaluate((c) => {
+    const el = document.createElement('span')
+    el.style.color = c
+    document.body.append(el)
+    const v = getComputedStyle(el).color
+    el.remove()
+    return v
+  }, colours.muted))
+})
+
+test('after-action lines: backup downloaded during a save failure, unreadable data saved', async ({ page }) => {
+  await openScreen(page, 'save-failed')
+  await page.getByRole('button', { name: 'Backup speichern' }).click()
+  await expect(page.getByRole('alert')).toContainText('Backup ist in deinen Downloads.')
+  await page.screenshot({ path: 'screenshots/gallery/screen-save-failed-downloaded.png', animations: 'disabled' })
+
+  await openScreen(page, 'load-invalid')
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Daten als Datei sichern' }).click()
+  expect((await download).suggestedFilename()).toMatch(/^wirkungshelferin-daten-\d{4}-\d{2}-\d{2}\.json$/)
+  await expect(page.getByRole('button', { name: 'Mit einem Backup weitermachen' })).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-load-invalid-saved.png', animations: 'disabled' })
+})
+
+test('empty state: two equal options side by side', async ({ page }) => {
+  await openScreen(page, 'empty')
+  const options = page.locator('.empty__option')
+  await expect(options).toHaveCount(2)
+  const [a, b] = await Promise.all([options.nth(0).boundingBox(), options.nth(1).boundingBox()])
+  expect(a && b && Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1 && Math.abs(a.y - b.y) < 1).toBe(true)
 })
 
 test('current step: accent-soft row with accent text', async ({ page }) => {

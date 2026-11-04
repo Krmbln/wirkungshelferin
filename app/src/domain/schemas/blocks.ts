@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from './zod'
 import { evidenceLabels, type StepId } from '../types'
 
 // The seven blocks (tech design §7.1, fields from PRD F5).

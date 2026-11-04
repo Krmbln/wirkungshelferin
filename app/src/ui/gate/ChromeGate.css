@@ -1,14 +1,3 @@
-.gate {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 18vh var(--space-6) var(--space-12);
-}
-
-.gate__lead {
-  margin-top: var(--space-3);
-  color: var(--text-muted);
-}
-
 .gate__steps {
   margin-top: var(--space-8);
   padding: 0;
@@ -56,9 +45,4 @@
   font: var(--text-body);
   overflow-wrap: anywhere;
   user-select: all;
-}
-
-.gate__hint {
-  font: var(--text-small);
-  color: var(--text-muted);
 }

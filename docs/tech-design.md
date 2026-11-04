@@ -306,6 +306,14 @@ Deterministic rules also cover what code can check reliably as ⚠ (e.g. "Verwei
 - **One tab only:** the app takes a Web Lock (`navigator.locks`, `ifAvailable`). If another tab holds it, this tab shows "Die Wirkungshelferin ist schon in einem anderen Tab offen" and doesn't load data, so two tabs can't overwrite each other.
 - **Reminders:** after each confirm ("Backup speichern?"); on home if `lastBackupAt` is older than 7 days (PRD F7).
 - **Empty state:** "Neu starten" and "Backup laden" as equal options (PRD F2).
+- **As built in step 5** (Code Reviewer + UI/UX review incorporated):
+  - Storage: `idb-keyval` with its own database `wirkungshelferin` / store `data`; keys `project`, `settings`, `project.pre-v{n}`.
+  - Autosave: 500 ms debounce, one write at a time (an older document never lands after a newer one). When the tab is hidden or closed it writes at once without waiting for a running write; IndexedDB keeps write transactions on one store in order. A failed save keeps the document and retries every 10 s, plus on the next change.
+  - "Neu starten" and a loaded backup are saved at once, not after the debounce.
+  - Load pipeline runs once per page (StrictMode in dev runs effects twice). If the migrated document can't be written, the result is a storage error and the old document stays; the pre-migration copy is written first.
+  - Tab lock: a refused tab does **not** queue for the lock (a queued request would take the lock whenever the working tab reloads). It asks again when it becomes visible, focused or clicked — several times over ~3 s, because Chrome shows the neighbour tab before the closing tab has released the lock — then opens by itself. If `locks.request` itself rejects (only in non-secure or detached documents, never on the https Pages origin) the tab is let in rather than shown a wrong message.
+  - Zod runs with `jitless: true` (set in `domain/schemas/zod.ts` before any schema exists): its fast path uses `new Function`, which the CSP blocks and Chrome reports as a violation.
+  - The load-error screen for an unreadable document offers "Daten als Datei sichern", then "Mit einem Backup weitermachen" (file → confirm dialog → replace). The backup download from the save-failure banner was pulled forward from step 6.
 
 ---
 

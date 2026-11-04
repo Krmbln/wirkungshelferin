@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { isGoogleChrome, type NavigatorWithUAData } from '../../src/ui/gate/isGoogleChrome'
 import { Root } from '../../src/ui/Root'
+import { makeProject } from '../../src/domain/fixtures'
+import { keys, memoryStore } from '../../src/storage/store'
 
 const brands = (...names: string[]) => names.map((brand) => ({ brand, version: '142' }))
 
@@ -28,17 +30,21 @@ describe('isGoogleChrome', () => {
 })
 
 describe('Root', () => {
-  it('shows the gate with the app link outside Chrome', () => {
-    render(<Root nav={browsers.safari} appUrl={APP_URL} />)
+  it('shows the gate with the app link outside Chrome, without reading storage', () => {
+    const store = memoryStore()
+    const get = vi.spyOn(store, 'get')
+    render(<Root nav={browsers.safari} appUrl={APP_URL} store={store} />)
+    expect(get).not.toHaveBeenCalled()
     expect(screen.getByRole('heading', { name: 'Bitte öffne die Wirkungshelferin in Chrome' })).toBeTruthy()
     expect(screen.getByText(APP_URL)).toBeTruthy()
     expect(screen.getAllByRole('listitem')).toHaveLength(3)
     expect(screen.queryByRole('navigation')).toBeNull()
   })
 
-  it('shows the app in Chrome', () => {
-    render(<Root nav={browsers.chrome} appUrl={APP_URL} />)
-    expect(screen.getByRole('heading', { level: 1, name: 'Übersicht' })).toBeTruthy()
+  it('shows the app in Chrome', async () => {
+    const store = memoryStore({ [keys.project]: makeProject() })
+    render(<Root nav={browsers.chrome} appUrl={APP_URL} store={store} />)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Übersicht' })).toBeTruthy()
     expect(screen.queryByText(/Bitte öffne/)).toBeNull()
   })
 })

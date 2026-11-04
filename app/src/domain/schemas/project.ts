@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from './zod'
 import { stepIds, stepStatuses, type StepId } from '../types'
 import { blockSchemas, collections, type Block } from './blocks'
 

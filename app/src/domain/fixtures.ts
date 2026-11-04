@@ -106,3 +106,9 @@ export function makeProposal(changes: ChangeInit[], meta: { id?: string; summary
     changes: changes.map((c, i) => ({ ...c, id: c.id ?? `${id}c${i + 1}`, state: c.state ?? 'open' })),
   }
 }
+
+/** Steps with the given statuses, blocks empty. For frame tests and the gallery. */
+export function makeProjectWithStatuses(statuses: Partial<Record<StepId, StepStatus>>): Project {
+  const steps = Object.fromEntries(Object.entries(statuses).map(([s, status]) => [s, { status }]))
+  return makeProject({ steps })
+}

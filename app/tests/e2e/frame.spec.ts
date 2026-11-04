@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { startProject } from './helpers'
 
 const stepRow = (n: number) => `nav [aria-label^="${n} "]`
 
 test('Tab follows reading order in Chrome: sidebar, then the page', async ({ page }) => {
-  await page.goto('./')
-  await page.getByRole('heading', { level: 1, name: 'Übersicht' }).waitFor()
+  await startProject(page)
 
   const names: string[] = []
   for (let i = 0; i < 11; i++) {
@@ -39,8 +39,7 @@ test('a focused sidebar row shows its status tooltip beside the row; Enter opens
       (window as unknown as { __csp: string[] }).__csp.push(e.violatedDirective),
     )
   })
-  await page.goto('./')
-  await page.getByRole('heading', { level: 1, name: 'Übersicht' }).waitFor()
+  await startProject(page)
   await page.keyboard.press('Tab')
   await page.keyboard.press('Tab')
   const bubble = page.locator(stepRow(0)).locator('.tooltip__bubble')
@@ -60,7 +59,7 @@ test('a focused sidebar row shows its status tooltip beside the row; Enter opens
 test('two columns hold down to 960 px; below that the hint appears', async ({ page }) => {
   const hint = page.getByText('Zieh das Fenster etwas breiter')
   await page.setViewportSize({ width: 960, height: 800 })
-  await page.goto('./')
+  await startProject(page)
   await page.getByRole('button', { name: 'Weiter' }).click()
   await expect(hint).toBeHidden()
 
@@ -74,7 +73,7 @@ test('two columns hold down to 960 px; below that the hint appears', async ({ pa
 })
 
 test('chat and block scroll independently; the page itself does not scroll', async ({ page }) => {
-  await page.goto('./')
+  await startProject(page)
   await page.getByRole('button', { name: 'Weiter' }).click()
   const scroll = await page.evaluate(() => ({
     page: document.documentElement.scrollHeight <= window.innerHeight,

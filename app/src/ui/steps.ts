@@ -1,4 +1,5 @@
-import type { StepId } from '../domain/types'
+import type { Project } from '../domain/schemas/project'
+import { stepIds, type StepId, type StepStatus as DomainStatus } from '../domain/types'
 import { guideFiles, type GuideFileName } from '../guide'
 import type { Status } from './components/StatusIcon'
 
@@ -43,8 +44,17 @@ export const stepsByPart = parts.map((part) => ({ part, steps: steps.filter((s) 
 
 export type StepStatuses = Record<StepId, StepStatus>
 
-/** Placeholder until the stored project exists (step 5): nothing started yet. */
-export const initialStatuses: StepStatuses = { 0: 'todo', 1: 'todo', 2: 'todo', 3: 'todo', 4: 'todo', 5: 'todo', 6: 'todo' }
+/** Stored status → the icon vocabulary the UI shows. */
+export const uiStatus: Record<DomainStatus, StepStatus> = {
+  not_started: 'todo',
+  in_progress: 'progress',
+  confirmed: 'done',
+  maybe_outdated: 'stale',
+}
+
+export function statusesOf(project: Project): StepStatuses {
+  return Object.fromEntries(stepIds.map((s) => [s, uiStatus[project.steps[s].status]])) as StepStatuses
+}
 
 /** The first step that isn't confirmed; null when all are. Refined in step 22. */
 export function recommendedStep(statuses: StepStatuses): StepId | null {

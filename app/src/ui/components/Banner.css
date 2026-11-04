@@ -24,6 +24,12 @@
   min-width: 0;
 }
 
+.banner__note {
+  display: block;
+  margin-top: var(--space-1);
+  font: var(--text-small);
+}
+
 .banner__actions {
   display: flex;
   flex: none;

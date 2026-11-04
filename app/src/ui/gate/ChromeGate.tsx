@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
+import { Screen } from '../screens/Screen'
 import './ChromeGate.css'
 
-// Blocking screen (design §6.4): centred, no app chrome around it.
+// Blocking screen (design §6.4).
 export function ChromeGate({ appUrl }: { appUrl: string }) {
   const [copied, setCopied] = useState(false)
   const [copyFailed, setCopyFailed] = useState(false)
@@ -29,9 +30,9 @@ export function ChromeGate({ appUrl }: { appUrl: string }) {
   }
 
   return (
-    <main className="gate">
+    <Screen>
       <h1>Bitte öffne die Wirkungshelferin in Chrome</h1>
-      <p className="gate__lead">Die Wirkungshelferin funktioniert nur in Google Chrome. So geht’s:</p>
+      <p className="screen__lead">Die Wirkungshelferin funktioniert nur in Google Chrome. So geht’s:</p>
       <ol className="gate__steps">
         <li>
           <div className="gate__step">
@@ -42,7 +43,7 @@ export function ChromeGate({ appUrl }: { appUrl: string }) {
                 {copied ? 'Kopiert' : 'Link kopieren'}
               </Button>
             </span>
-            {copyFailed && <span className="gate__hint">Kopieren ging nicht – der Link ist markiert, drück Cmd+C.</span>}
+            {copyFailed && <span className="screen__hint">Kopieren ging nicht – der Link ist markiert, drück Cmd+C.</span>}
           </div>
         </li>
         <li>
@@ -57,6 +58,6 @@ export function ChromeGate({ appUrl }: { appUrl: string }) {
           <span>Füge den Link in die Adresszeile ein und drücke Enter.</span>
         </li>
       </ol>
-    </main>
+    </Screen>
   )
 }

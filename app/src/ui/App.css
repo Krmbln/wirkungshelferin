@@ -13,6 +13,14 @@
   overflow-y: auto;
 }
 
+/* Save failure: persistent, above everything else in the main area (design §7.4). */
+.app__alert {
+  flex: none;
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
 /* The workspace scrolls inside its columns, not as a whole. */
 .app__main--step {
   overflow: hidden;

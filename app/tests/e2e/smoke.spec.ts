@@ -1,26 +1,9 @@
-import { expect, test, type Page } from '@playwright/test'
-
-// Collects CSP violations and console errors from the moment the page starts.
-async function watchProblems(page: Page): Promise<string[]> {
-  const problems: string[] = []
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') problems.push(`console: ${msg.text()}`)
-  })
-  page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`))
-  await page.exposeFunction('__reportCsp', (v: string) => problems.push(`csp: ${v}`))
-  await page.addInitScript(() => {
-    document.addEventListener('securitypolicyviolation', (e) =>
-      (window as unknown as { __reportCsp: (v: string) => void }).__reportCsp(
-        `${e.violatedDirective} ${e.blockedURI}`,
-      ),
-    )
-  })
-  return problems
-}
+import { expect, test } from '@playwright/test'
+import { startProject, watchProblems } from './helpers'
 
 test('loads in Google Chrome without CSP violations', async ({ page }) => {
   const problems = await watchProblems(page)
-  await page.goto('./')
+  await startProject(page)
 
   const brands = await page.evaluate(() =>
     (navigator as unknown as { userAgentData?: { brands: { brand: string }[] } }).userAgentData?.brands.map(

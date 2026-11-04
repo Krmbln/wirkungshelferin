@@ -10,7 +10,13 @@ import { Tooltip } from '../ui/components/Tooltip'
 import { App } from '../ui/App'
 import { Sidebar } from '../ui/frame/Sidebar'
 import { ChromeGate } from '../ui/gate/ChromeGate'
-import { initialStatuses, type StepStatuses, type View } from '../ui/steps'
+import { makeProject, makeProjectWithStatuses } from '../domain/fixtures'
+import { backupProblemText } from '../storage/backup'
+import { EmptyState } from '../ui/screens/EmptyState'
+import { LoadError } from '../ui/screens/LoadError'
+import { SecondTab } from '../ui/screens/SecondTab'
+import { Skeleton } from '../ui/screens/Skeleton'
+import { statusesOf } from '../ui/steps'
 import './Gallery.css'
 
 // Dev-only state gallery (implementation plan, standing rule 2). Every [data-state]
@@ -58,20 +64,50 @@ const variants: { variant: ButtonVariant; label: string; name: string }[] = [
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Every status once, as after re-confirming step 1 (made-up state, no data).
-const mixedStatuses: StepStatuses = { 0: 'done', 1: 'done', 2: 'stale', 3: 'progress', 4: 'todo', 5: 'todo', 6: 'todo' }
+const fresh = makeProject()
+const mixed = makeProjectWithStatuses({ 0: 'confirmed', 1: 'confirmed', 2: 'maybe_outdated', 3: 'in_progress' })
+
+const noop = () => {}
+// The app's own text, so reviewed screenshots can't drift from it.
+const backupError = backupProblemText.invalid
 
 // Full-window screens at ?gallery&screen=<name>, screenshotted at the real viewport size.
-export const screens: Record<string, { caption: string; view: View; statuses: StepStatuses }> = {
-  home: { caption: 'Übersicht, noch nichts begonnen', view: { kind: 'home' }, statuses: initialStatuses },
-  'home-mixed': { caption: 'Übersicht, alle Status', view: { kind: 'home' }, statuses: mixedStatuses },
-  step: { caption: 'Arbeitsbereich Schritt 0', view: { kind: 'step', step: 0 }, statuses: initialStatuses },
-  'step-mixed': { caption: 'Arbeitsbereich Schritt 3, alle Status', view: { kind: 'step', step: 3 }, statuses: mixedStatuses },
-  settings: { caption: 'Einstellungen (leer)', view: { kind: 'settings' }, statuses: initialStatuses },
+export const screens: Record<string, { caption: string; render: () => ReactNode }> = {
+  home: { caption: 'Übersicht, noch nichts begonnen', render: () => <App project={fresh} /> },
+  'home-mixed': { caption: 'Übersicht, alle Status', render: () => <App project={mixed} /> },
+  step: { caption: 'Arbeitsbereich Schritt 0', render: () => <App project={fresh} initialView={{ kind: 'step', step: 0 }} /> },
+  'step-mixed': {
+    caption: 'Arbeitsbereich Schritt 3, alle Status',
+    render: () => <App project={mixed} initialView={{ kind: 'step', step: 3 }} />,
+  },
+  settings: { caption: 'Einstellungen (leer)', render: () => <App project={fresh} initialView={{ kind: 'settings' }} /> },
+  saved: { caption: '„Gespeichert“ im Kopf (2 s)', render: () => <App project={mixed} savedAt={Date.now()} /> },
+  'save-failed': {
+    caption: 'Speichern fehlgeschlagen',
+    render: () => <App project={mixed} saveFailed onSaveBackup={noop} />,
+  },
+  'save-failed-step': {
+    caption: 'Speichern fehlgeschlagen, im Arbeitsbereich',
+    render: () => <App project={mixed} initialView={{ kind: 'step', step: 3 }} saveFailed onSaveBackup={noop} />,
+  },
+  skeleton: { caption: 'Laden (Skelett)', render: () => <Skeleton /> },
+  empty: { caption: 'Noch kein Projekt', render: () => <EmptyState onNew={noop} onLoadBackup={async () => null} /> },
+  'empty-error': {
+    caption: 'Noch kein Projekt, Backup unbrauchbar',
+    render: () => <EmptyState onNew={noop} onLoadBackup={async () => backupError} initialError={backupError} />,
+  },
+  'second-tab': { caption: 'Zweiter Tab', render: () => <SecondTab closeTab={async () => false} /> },
+  'load-invalid': {
+    caption: 'Daten lassen sich nicht öffnen',
+    render: () => <LoadError problem="invalid" raw={{}} onUseBackup={async () => {}} />,
+  },
+  'load-newer': { caption: 'Daten von neuerer Version', render: () => <LoadError problem="newer" reload={noop} /> },
+  'load-storage': { caption: 'Speicher nicht erreichbar', render: () => <LoadError problem="storage" reload={noop} /> },
 }
 
 export function Gallery({ appUrl }: { appUrl: string }) {
   const screen = new URLSearchParams(window.location.search).get('screen')
-  if (screen && screens[screen]) return <App initialView={screens[screen].view} statuses={screens[screen].statuses} />
+  if (screen && screens[screen]) return <>{screens[screen].render()}</>
   return <GalleryPage appUrl={appUrl} />
 }
 
@@ -262,7 +298,7 @@ function GalleryPage({ appUrl }: { appUrl: string }) {
       <Section title="App-Rahmen">
         <State name="sidebar-mixed" caption="Seitenleiste, Schritt 3 aktuell, alle Status">
           <div className="gframe gsidebar">
-            <Sidebar view={{ kind: 'step', step: 3 }} statuses={mixedStatuses} onNavigate={() => {}} />
+            <Sidebar view={{ kind: 'step', step: 3 }} statuses={statusesOf(mixed)} onNavigate={() => {}} />
           </div>
         </State>
         <State name="screen-links" caption="Ganze Bildschirme (volle Fenstergröße)">

@@ -1,0 +1,35 @@
+.screen {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 18vh var(--space-6) var(--space-12);
+}
+
+.screen--wide {
+  max-width: 680px;
+}
+
+.screen__lead {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+}
+
+.screen__actions {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+.screen__message {
+  margin-top: var(--space-4);
+}
+
+/* A text button lines up with the text above it; its padding stays as hover area. */
+.screen__actions .btn--text {
+  margin-inline: calc(-1 * var(--space-1));
+}
+
+.screen__hint {
+  font: var(--text-small);
+  color: var(--text-muted);
+}

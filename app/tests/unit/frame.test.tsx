@@ -1,11 +1,14 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { makeProject, makeProjectWithStatuses } from '../../src/domain/fixtures'
 import { App } from '../../src/ui/App'
 import { guideFiles } from '../../src/guide'
-import { guideTitle, recommendedStep, steps, type StepStatuses } from '../../src/ui/steps'
+import { guideTitle, recommendedStep, statusesOf, steps } from '../../src/ui/steps'
 
-const mixed: StepStatuses = { 0: 'done', 1: 'done', 2: 'stale', 3: 'progress', 4: 'todo', 5: 'todo', 6: 'todo' }
+const mixedProject = makeProjectWithStatuses({ 0: 'confirmed', 1: 'confirmed', 2: 'maybe_outdated', 3: 'in_progress' })
+const mixed = statusesOf(mixedProject)
+const fresh = makeProject()
 
 const nav = () => screen.getByRole('navigation', { name: 'Navigation' })
 const h1 = () => screen.getByRole('heading', { level: 1 })
@@ -39,7 +42,7 @@ describe('steps', () => {
 
 describe('navigation', () => {
   it('starts at home with exactly one primary button', () => {
-    const { container } = render(<App />)
+    const { container } = render(<App project={fresh} />)
     expect(h1().textContent).toBe('Übersicht')
     expect(current().map((b) => b.textContent)).toEqual(['Übersicht'])
     expect(container.querySelectorAll('.btn--primary')).toHaveLength(1)
@@ -49,7 +52,7 @@ describe('navigation', () => {
 
   it('goes home → step → step → settings → home', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    render(<App project={fresh} />)
 
     await user.click(screen.getByRole('button', { name: 'Weiter' }))
     expect(h1().textContent).toBe('Projektkontext & Messrahmen')
@@ -79,14 +82,14 @@ describe('navigation', () => {
 
   it('opens a step from its home row', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    render(<App project={fresh} />)
     await user.click(screen.getByRole('button', { name: /^5 · Messfokus & Indikatoren/ }))
     expect(h1().textContent).toBe('Messfokus & Indikatoren')
     expect(screen.getByText('Schritt 5 · Analyse')).toBeTruthy()
   })
 
   it('shows the narrow-window hint text (CSS shows it below 960 px)', () => {
-    render(<App />)
+    render(<App project={fresh} />)
     expect(screen.getByText(/Zieh das Fenster etwas breiter/)).toBeTruthy()
   })
 })
@@ -100,7 +103,7 @@ describe('status icons', () => {
   }
 
   it('maps every sidebar row to its status icon and accessible name', () => {
-    render(<App statuses={mixed} />)
+    render(<App project={mixedProject} />)
     for (const step of steps) {
       const row = stepRow(step.id)
       const label = labels[mixed[step.id]]
@@ -110,7 +113,7 @@ describe('status icons', () => {
   })
 
   it('home rows show the status as words and mark the recommended step', () => {
-    render(<App statuses={mixed} />)
+    render(<App project={mixedProject} />)
     const row = screen.getByRole('button', { name: /^2 · Problem & Ursachen/ })
     expect(row.textContent).toContain('vielleicht veraltet – prüfen')
     expect(row.textContent).toContain('Empfohlen als Nächstes')
@@ -123,7 +126,7 @@ describe('status icons', () => {
 describe('keyboard', () => {
   it('Tab follows reading order: sidebar, then the page', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    render(<App project={fresh} />)
     const names: string[] = []
     for (let i = 0; i < 11; i++) {
       await user.tab()
@@ -141,7 +144,7 @@ describe('keyboard', () => {
 
   it('a sidebar row shows its status tooltip on hover, beside the row', async () => {
     const user = userEvent.setup()
-    render(<App statuses={mixed} />)
+    render(<App project={mixedProject} />)
     const bubble = within(stepRow(5)).getByRole('tooltip', { hidden: true })
     await user.hover(stepRow(5))
     expect(bubble.hidden).toBe(false)
@@ -152,7 +155,7 @@ describe('keyboard', () => {
 
   it('a sidebar row shows its status tooltip on keyboard focus, not on click; Esc hides it', async () => {
     const user = userEvent.setup()
-    render(<App statuses={mixed} />)
+    render(<App project={mixedProject} />)
     const bubble = (n: number) => within(stepRow(n)).getByRole('tooltip', { hidden: true })
 
     await user.click(stepRow(2))
