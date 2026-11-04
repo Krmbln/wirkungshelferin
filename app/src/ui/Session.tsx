@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { withBackupTime } from '../domain/backup'
 import { newProject } from '../domain/document'
 import type { Project } from '../domain/schemas/project'
 import { createAutosave } from '../storage/autosave'
 import { backupProblemText, downloadBackup, readBackupFile } from '../storage/backup'
-import { loadProjectOnce, type LoadProblem } from '../storage/load'
+import { findPreviousVersion, loadProjectOnce, restorePreviousVersion, type LoadProblem } from '../storage/load'
+import { defaultSettings, loadSettings, saveSettings, type Settings } from '../storage/settings'
 import { requestPersistence, type Store } from '../storage/store'
 import { holdTabLock } from '../storage/tabLock'
 import { App } from './App'
@@ -23,14 +25,17 @@ type Props = {
   store: Store
   /** Tests pass a fake; the app uses Chrome's. */
   locks?: LockManager
+  reload?: () => void
 }
 
 /** When a refused tab asks again after Lukas comes back to it. */
 export const RETRY_AFTER_RETURN_MS = [0, 250, 500, 1000, 2000, 3000]
 
 // Owns the stored project: tab lock → load pipeline → app, plus autosave (tech design §8).
-export function Session({ store, locks = navigator.locks }: Props) {
+export function Session({ store, locks = navigator.locks, reload = () => window.location.reload() }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: 'starting' })
+  const [settings, setSettings] = useState<Settings>(defaultSettings)
+  const [previousVersion, setPreviousVersion] = useState<number>()
   const [savedAt, setSavedAt] = useState<number>()
   const [saveFailed, setSaveFailed] = useState(false)
 
@@ -68,8 +73,16 @@ export function Session({ store, locks = navigator.locks }: Props) {
         void requestPersistence().catch(() => undefined)
         const result = await loadProjectOnce(store)
         if (!live) return
-        if (result.kind === 'error') setPhase(result)
-        else setPhase({ kind: 'ready', project: result.kind === 'ready' ? result.project : null })
+        if (result.kind === 'error') {
+          setPhase(result)
+          return
+        }
+        // Settings live under their own key and never block the start.
+        const [stored, previous] = await Promise.all([loadSettings(store), findPreviousVersion(store)])
+        if (!live) return
+        setSettings(stored)
+        setPreviousVersion(previous)
+        setPhase({ kind: 'ready', project: result.kind === 'ready' ? result.project : null })
       } finally {
         entering = false
       }
@@ -134,6 +147,40 @@ export function Session({ store, locks = navigator.locks }: Props) {
     [update, autosave],
   )
 
+  // The file carries its own backup time, so after loading it the sidebar is right too.
+  const saveBackup = useCallback(
+    (project: Project) => {
+      const at = new Date()
+      const next = withBackupTime(project, at)
+      update(next)
+      downloadBackup(next, at)
+    },
+    [update],
+  )
+
+  const changeSettings = useCallback(
+    async (next: Settings) => {
+      await saveSettings(store, next)
+      setSettings(next)
+      setSavedAt(Date.now())
+    },
+    [store],
+  )
+
+  // Saves what is pending first (so a failed restore loses nothing), then stops autosave
+  // for good: the reload's unload flush must not write the current document back.
+  const restorePrevious = useCallback(async () => {
+    if (previousVersion === undefined) return
+    await autosave.flush()
+    autosave.stop()
+    try {
+      await restorePreviousVersion(store, previousVersion)
+    } catch (error) {
+      console.error('Restore failed', error)
+    }
+    reload()
+  }, [autosave, store, previousVersion, reload])
+
   if (phase.kind === 'starting') return <Skeleton />
   if (phase.kind === 'second-tab') return <SecondTab />
   if (phase.kind === 'error') return <LoadError problem={phase.problem} raw={phase.raw} onUseBackup={start} />
@@ -151,5 +198,17 @@ export function Session({ store, locks = navigator.locks }: Props) {
     )
   }
   const project = phase.project
-  return <App project={project} savedAt={savedAt} saveFailed={saveFailed} onSaveBackup={() => downloadBackup(project)} />
+  return (
+    <App
+      project={project}
+      savedAt={savedAt}
+      saveFailed={saveFailed}
+      onSaveBackup={() => saveBackup(project)}
+      settings={settings}
+      onSettingsChange={changeSettings}
+      onReplaceProject={start}
+      previousVersion={previousVersion}
+      onRestorePrevious={restorePrevious}
+    />
+  )
 }

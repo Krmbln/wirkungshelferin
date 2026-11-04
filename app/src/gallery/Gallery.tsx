@@ -68,27 +68,59 @@ const fresh = makeProject()
 const mixed = makeProjectWithStatuses({ 0: 'confirmed', 1: 'confirmed', 2: 'maybe_outdated', 3: 'in_progress' })
 
 const noop = () => {}
+const resolved = async () => {}
+
+// The gallery's clock is pinned, so backup ages (sidebar, reminder) stay the same in every shot.
+const galleryNow = new Date('2026-11-04T12:00:00')
+const daysBefore = (days: number) => new Date(galleryNow.getTime() - days * 86_400_000).toISOString()
+const backupDue = { ...mixed, lastBackupAt: daysBefore(9) }
+const neverBackedUp = makeProject({ at: daysBefore(10) })
+const backedUp = { ...mixed, lastBackupAt: daysBefore(3) }
+const filledSettings = { apiKey: 'gallery-dummy-key-not-real-7f3a', model: 'claude-opus-5-5', effort: 'high' as const }
 // The app's own text, so reviewed screenshots can't drift from it.
 const backupError = backupProblemText.invalid
 
 // Full-window screens at ?gallery&screen=<name>, screenshotted at the real viewport size.
 export const screens: Record<string, { caption: string; render: () => ReactNode }> = {
-  home: { caption: 'Übersicht, noch nichts begonnen', render: () => <App project={fresh} /> },
-  'home-mixed': { caption: 'Übersicht, alle Status', render: () => <App project={mixed} /> },
-  step: { caption: 'Arbeitsbereich Schritt 0', render: () => <App project={fresh} initialView={{ kind: 'step', step: 0 }} /> },
+  home: { caption: 'Übersicht, noch nichts begonnen', render: () => <App now={galleryNow} project={fresh} /> },
+  'home-mixed': { caption: 'Übersicht, alle Status', render: () => <App now={galleryNow} project={mixed} /> },
+  step: { caption: 'Arbeitsbereich Schritt 0', render: () => <App now={galleryNow} project={fresh} initialView={{ kind: 'step', step: 0 }} /> },
   'step-mixed': {
     caption: 'Arbeitsbereich Schritt 3, alle Status',
-    render: () => <App project={mixed} initialView={{ kind: 'step', step: 3 }} />,
+    render: () => <App now={galleryNow} project={mixed} initialView={{ kind: 'step', step: 3 }} />,
   },
-  settings: { caption: 'Einstellungen (leer)', render: () => <App project={fresh} initialView={{ kind: 'settings' }} /> },
-  saved: { caption: '„Gespeichert“ im Kopf (2 s)', render: () => <App project={mixed} savedAt={Date.now()} /> },
+  'home-backup-recent': { caption: 'Übersicht, Backup vor 3 Tagen', render: () => <App now={galleryNow} project={backedUp} /> },
+  'home-backup-due': { caption: 'Übersicht, Backup 9 Tage alt (Erinnerung)', render: () => <BackupDue /> },
+  'home-backup-never': {
+    caption: 'Übersicht, nach 10 Tagen noch kein Backup',
+    render: () => <App now={galleryNow} project={neverBackedUp} />,
+  },
+  settings: {
+    caption: 'Einstellungen, noch kein Schlüssel',
+    render: () => <App now={galleryNow} project={fresh} initialView={{ kind: 'settings' }} />,
+  },
+  'settings-filled': {
+    caption: 'Einstellungen, Schlüssel gespeichert, vorherige Version vorhanden',
+    render: () => (
+      <App
+        now={galleryNow}
+        project={{ ...mixed, lastBackupAt: daysBefore(1) }}
+        initialView={{ kind: 'settings' }}
+        settings={filledSettings}
+        onSettingsChange={resolved}
+        previousVersion={0}
+        onRestorePrevious={resolved}
+      />
+    ),
+  },
+  saved: { caption: '„Gespeichert“ im Kopf (2 s)', render: () => <App now={galleryNow} project={mixed} savedAt={Date.now()} /> },
   'save-failed': {
     caption: 'Speichern fehlgeschlagen',
-    render: () => <App project={mixed} saveFailed onSaveBackup={noop} />,
+    render: () => <App now={galleryNow} project={mixed} saveFailed onSaveBackup={noop} />,
   },
   'save-failed-step': {
     caption: 'Speichern fehlgeschlagen, im Arbeitsbereich',
-    render: () => <App project={mixed} initialView={{ kind: 'step', step: 3 }} saveFailed onSaveBackup={noop} />,
+    render: () => <App now={galleryNow} project={mixed} initialView={{ kind: 'step', step: 3 }} saveFailed onSaveBackup={noop} />,
   },
   skeleton: { caption: 'Laden (Skelett)', render: () => <Skeleton /> },
   empty: { caption: 'Noch kein Projekt', render: () => <EmptyState onNew={noop} onLoadBackup={async () => null} /> },
@@ -103,6 +135,12 @@ export const screens: Record<string, { caption: string; render: () => ReactNode 
   },
   'load-newer': { caption: 'Daten von neuerer Version', render: () => <LoadError problem="newer" reload={noop} /> },
   'load-storage': { caption: 'Speicher nicht erreichbar', render: () => <LoadError problem="storage" reload={noop} /> },
+}
+
+// Like the Session: saving a backup records the time, so the reminder really goes.
+function BackupDue() {
+  const [project, setProject] = useState(backupDue)
+  return <App now={galleryNow} project={project} onSaveBackup={() => setProject({ ...project, lastBackupAt: galleryNow.toISOString() })} />
 }
 
 export function Gallery({ appUrl }: { appUrl: string }) {
@@ -298,7 +336,17 @@ function GalleryPage({ appUrl }: { appUrl: string }) {
       <Section title="App-Rahmen">
         <State name="sidebar-mixed" caption="Seitenleiste, Schritt 3 aktuell, alle Status">
           <div className="gframe gsidebar">
-            <Sidebar view={{ kind: 'step', step: 3 }} statuses={statusesOf(mixed)} onNavigate={() => {}} />
+            <Sidebar
+              view={{ kind: 'step', step: 3 }}
+              statuses={statusesOf(mixed)}
+              backup={{ days: 3, due: false }}
+              onNavigate={() => {}}
+            />
+          </div>
+        </State>
+        <State name="sidebar-backup-due" caption="Seitenleiste, Backup 9 Tage alt">
+          <div className="gframe gsidebar">
+            <Sidebar view={{ kind: 'home' }} statuses={statusesOf(mixed)} backup={{ days: 9, due: true }} onNavigate={() => {}} />
           </div>
         </State>
         <State name="screen-links" caption="Ganze Bildschirme (volle Fenstergröße)">

@@ -79,9 +79,23 @@
 
 .sidebar__backup {
   display: flex;
-  align-items: center;
+  /* If the line ever wraps, the icon stays beside the first line. */
+  align-items: flex-start;
+  text-wrap: balance;
   gap: var(--space-2);
   padding: 0 var(--space-3);
   font: var(--text-small);
   color: var(--text-muted);
+}
+
+/* Overdue (> 7 days): ⚠ in --warn, the text moves from muted to --text (design §3). */
+.sidebar__backup--due {
+  color: var(--text);
+}
+
+.sidebar__backup svg,
+.sidebar__backup-icon {
+  display: inline-flex;
+  flex: none;
+  margin-top: 1px;
 }

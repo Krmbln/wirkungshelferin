@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { startProject, watchProblems } from './helpers'
+import { readStored, startProject, watchProblems } from './helpers'
 
 const home = (page: Page) => page.getByRole('heading', { level: 1, name: 'Übersicht' })
 const secondTab = (page: Page) =>
@@ -59,17 +59,7 @@ test('reloading the working tab keeps it, even with a refused tab in the backgro
 
 test('"Backup laden" on the empty state restores a saved project', async ({ page, context }) => {
   await startProject(page)
-  const project = await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const r = indexedDB.open('wirkungshelferin')
-      r.onsuccess = () => resolve(r.result)
-      r.onerror = () => reject(r.error)
-    })
-    return new Promise<unknown>((resolve) => {
-      const r = db.transaction('data').objectStore('data').get('project')
-      r.onsuccess = () => resolve(r.result)
-    })
-  })
+  const project = await readStored(page, 'project')
   await page.close()
 
   // A fresh profile: nothing stored.

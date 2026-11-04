@@ -24,3 +24,20 @@ export async function watchProblems(page: Page): Promise<string[]> {
   })
   return problems
 }
+
+// Reads one key from the app's IndexedDB, as the app stored it.
+export async function readStored(page: Page, key: string): Promise<unknown> {
+  return page.evaluate(async (key) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const r = indexedDB.open('wirkungshelferin')
+      r.onsuccess = () => resolve(r.result)
+      r.onerror = () => reject(r.error)
+    })
+    const value = await new Promise<unknown>((resolve) => {
+      const r = db.transaction('data').objectStore('data').get(key)
+      r.onsuccess = () => resolve(r.result)
+    })
+    db.close()
+    return value
+  }, key)
+}

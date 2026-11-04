@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
+import { backupState } from '../domain/backup'
 import type { Project } from '../domain/schemas/project'
+import { defaultSettings, type Settings as SettingsValue } from '../storage/settings'
 import { Banner } from './components/Banner'
 import { Button } from './components/Button'
 import { Home } from './frame/Home'
 import { PageHeader } from './frame/PageHeader'
-import { Settings } from './frame/Settings'
+import { Settings, type SettingsProps } from './frame/Settings'
 import { Sidebar } from './frame/Sidebar'
 import { StepWorkspace } from './frame/StepWorkspace'
 import { statusesOf, steps, type View } from './steps'
+import { useNow } from './useNow'
 import './App.css'
 
 type Props = {
@@ -18,12 +21,37 @@ type Props = {
   savedAt?: number
   /** The last save failed: the ⛔ banner stays until a save succeeds (design §7.4). */
   saveFailed?: boolean
+  /** Downloads a backup; the project records the time (sidebar, reminder). */
   onSaveBackup?: () => void
+  settings?: SettingsValue
+  onSettingsChange?: (settings: SettingsValue) => Promise<void>
+  onReplaceProject?: SettingsProps['onReplaceProject']
+  previousVersion?: number
+  onRestorePrevious?: () => Promise<void>
+  /** Gallery and tests pin the clock; the app follows the real one. */
+  now?: Date
 }
 
+const noop = () => {}
+const resolved = async () => {}
+
 // No router (tech design §2): app state decides the view.
-export function App({ project, initialView = { kind: 'home' }, savedAt, saveFailed = false, onSaveBackup }: Props) {
+export function App({
+  project,
+  initialView = { kind: 'home' },
+  savedAt,
+  saveFailed = false,
+  onSaveBackup = noop,
+  settings = defaultSettings,
+  onSettingsChange = resolved,
+  onReplaceProject = resolved,
+  previousVersion,
+  onRestorePrevious,
+  now: fixedNow,
+}: Props) {
   const [view, setView] = useState<View>(initialView)
+  const now = useNow(fixedNow)
+  const backup = backupState(project, now)
   const [backupDownloaded, setBackupDownloaded] = useState(false)
   const statuses = statusesOf(project)
   // The note belongs to this failure; a new one starts without it.
@@ -46,7 +74,7 @@ export function App({ project, initialView = { kind: 'home' }, savedAt, saveFail
 
   return (
     <div className="app">
-      <Sidebar view={view} statuses={statuses} onNavigate={setView} />
+      <Sidebar view={view} statuses={statuses} backup={backup} onNavigate={setView} />
       <main className={`app__main app__main--${view.kind}`}>
         {saveFailed && (
           <div className="app__alert">
@@ -56,7 +84,7 @@ export function App({ project, initialView = { kind: 'home' }, savedAt, saveFail
                 <Button
                   variant="secondary"
                   onClick={() => {
-                    onSaveBackup?.()
+                    onSaveBackup()
                     setBackupDownloaded(true)
                   }}
                 >
@@ -77,9 +105,26 @@ export function App({ project, initialView = { kind: 'home' }, savedAt, saveFail
           Zieh das Fenster etwas breiter, dann siehst du Chat und Baustein nebeneinander.
         </p>
         <PageHeader title={header.title} meta={header.meta} headingRef={heading} savedAt={savedAt} />
-        {view.kind === 'home' && <Home statuses={statuses} onOpenStep={(step) => setView({ kind: 'step', step })} />}
+        {view.kind === 'home' && (
+          <Home
+            statuses={statuses}
+            backup={backup}
+            onOpenStep={(step) => setView({ kind: 'step', step })}
+            onSaveBackup={onSaveBackup}
+          />
+        )}
         {view.kind === 'step' && <StepWorkspace key={view.step} step={steps[view.step]} />}
-        {view.kind === 'settings' && <Settings />}
+        {view.kind === 'settings' && (
+          <Settings
+            settings={settings}
+            onSettingsChange={onSettingsChange}
+            backup={backup}
+            onSaveBackup={onSaveBackup}
+            onReplaceProject={onReplaceProject}
+            previousVersion={previousVersion}
+            onRestorePrevious={onRestorePrevious}
+          />
+        )}
       </main>
     </div>
   )

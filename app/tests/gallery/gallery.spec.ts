@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { makeProject } from '../../src/domain/fixtures'
 import { openGallery, section, shot, state } from './shots'
 
 function watchErrors(page: Page): string[] {
@@ -144,7 +145,20 @@ test('reduced motion stops the pulse', async ({ page }) => {
   await expect.poll(animation).toBe('none')
 })
 
-const screenNames = ['home', 'home-mixed', 'step', 'step-mixed', 'settings', 'saved', 'save-failed', 'save-failed-step']
+const screenNames = [
+  'home',
+  'home-mixed',
+  'home-backup-recent',
+  'home-backup-due',
+  'home-backup-never',
+  'step',
+  'step-mixed',
+  'settings',
+  'settings-filled',
+  'saved',
+  'save-failed',
+  'save-failed-step',
+]
 // Without the app frame (no navigation).
 const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'load-invalid', 'load-newer', 'load-storage']
 
@@ -238,3 +252,69 @@ test('below 960 px the hint shows above the header', async ({ page }) => {
   await expect(page.getByText('Zieh das Fenster etwas breiter')).toBeVisible()
   await page.screenshot({ path: 'screenshots/gallery/screen-narrow.png', animations: 'disabled' })
 })
+
+test('backup reminder: ⚠ banner between card and steps; the sidebar line turns ⚠', async ({ page }) => {
+  await openScreen(page, 'home-backup-due')
+  const reminder = page.locator('.home .banner--warn')
+  await expect(reminder).toContainText('Dein letztes Backup ist 9 Tage alt.')
+  const [card, banner, part] = await Promise.all([
+    page.locator('.home__resume').boundingBox(),
+    reminder.boundingBox(),
+    page.locator('.home__part').first().boundingBox(),
+  ])
+  expect(card && banner && part && card.y + card.height < banner.y && banner.y + banner.height < part.y).toBe(true)
+  await expect(page.locator('nav [data-slot="backup-status"]')).toHaveText('Backup: vor 9 Tagen')
+  await shot(page.locator('nav'), 'sidebar-backup-due')
+
+  await page.getByRole('button', { name: 'Backup speichern' }).click()
+  await expect(page.getByText('Backup ist in deinen Downloads.')).toBeFocused()
+  await page.screenshot({ path: 'screenshots/gallery/screen-home-backup-saved.png', animations: 'disabled' })
+})
+
+test('settings: key error at the field, remove and restore dialogs, load dialog, unusable file', async ({ page }) => {
+  await openScreen(page, 'settings')
+  await page.getByLabel('API-Schlüssel').fill('zu-kurz')
+  await page.getByRole('button', { name: 'Speichern', exact: true }).click()
+  await expect(page.getByText(/nicht wie ein vollständiger API-Schlüssel/)).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-settings-key-error.png', animations: 'disabled' })
+
+  await openScreen(page, 'settings-filled')
+  await page.getByRole('button', { name: 'entfernen' }).click()
+  await expect(page.getByRole('dialog', { name: 'API-Schlüssel entfernen?' })).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-settings-remove-key.png', animations: 'disabled' })
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: 'Vorherige Version wiederherstellen' }).click()
+  await expect(page.getByRole('dialog', { name: 'Vorherige Version wiederherstellen?' })).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-settings-restore.png', animations: 'disabled' })
+  await page.keyboard.press('Escape')
+
+  const chooser = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Backup laden' }).click()
+  await (await chooser).setFiles({
+    name: 'wirkungshelferin-backup-2026-11-03.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ ...makeProject(), lastBackupAt: '2026-11-03T10:00:00.000Z' })),
+  })
+  await expect(page.getByRole('dialog', { name: 'Backup laden?' })).toContainText('vom 3. November 2026')
+  await page.screenshot({ path: 'screenshots/gallery/screen-settings-load-dialog.png', animations: 'disabled' })
+  await page.keyboard.press('Escape')
+
+  const again = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Backup laden' }).click()
+  await (await again).setFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"kein":"backup"}') })
+  await expect(page.getByText(/kein Backup der Wirkungshelferin/)).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-settings-load-error.png', animations: 'disabled' })
+})
+
+test('settings: inputs are 32 px high like the buttons beside them', async ({ page }) => {
+  await openScreen(page, 'settings')
+  const [input, button] = await Promise.all([
+    page.getByLabel('API-Schlüssel').boundingBox(),
+    page.getByRole('button', { name: 'Speichern', exact: true }).boundingBox(),
+  ])
+  expect(input?.height).toBe(32)
+  expect(button?.height).toBe(32)
+  expect(Math.abs(input!.y - button!.y)).toBeLessThan(1)
+})
+

@@ -23,6 +23,11 @@ export type Autosave = {
   flushNow: () => Promise<void>
   /** Stops the timers without saving. */
   dispose: () => void
+  /**
+   * Drops the pending document and writes nothing ever again. For a restore that replaces
+   * the stored document and reloads: the unload flush must not write the old one back.
+   */
+  stop: () => void
 }
 
 // Debounced autosave (tech design §8). A burst of changes becomes one write, and an older
@@ -34,6 +39,7 @@ export function createAutosave(store: Store, events: Events, delay = AUTOSAVE_DE
   let writing: Promise<void> | undefined
   /** Number of the newest write started; an older write that fails is not retried. */
   let started = 0
+  let stopped = false
 
   function stopTimer() {
     if (timer !== undefined) clearTimeout(timer)
@@ -42,12 +48,12 @@ export function createAutosave(store: Store, events: Events, delay = AUTOSAVE_DE
 
   async function write() {
     stopTimer()
-    if (!pending) return
+    if (!pending || stopped) return
     const doc = pending
     pending = undefined
     const seq = ++started
     const run = store.set(keys.project, doc).then(events.onSaved, (error: unknown) => {
-      if (seq === started) {
+      if (seq === started && !stopped) {
         // Keep it and try again later; the banner stays until a save works.
         pending ??= doc
         if (timer === undefined) timer = setTimeout(() => void flush(), RETRY_DELAY)
@@ -70,6 +76,7 @@ export function createAutosave(store: Store, events: Events, delay = AUTOSAVE_DE
 
   return {
     schedule(project) {
+      if (stopped) return
       pending = project
       stopTimer()
       timer = setTimeout(() => void flush(), delay)
@@ -77,5 +84,10 @@ export function createAutosave(store: Store, events: Events, delay = AUTOSAVE_DE
     flush,
     flushNow: write,
     dispose: stopTimer,
+    stop() {
+      stopped = true
+      pending = undefined
+      stopTimer()
+    },
   }
 }

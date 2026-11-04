@@ -28,6 +28,11 @@
   color: var(--text-muted);
 }
 
+.home__saved {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
 .home__part ul {
   display: grid;
   margin: var(--space-2) 0 0;

@@ -162,4 +162,28 @@ describe('Autosave', () => {
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY)
     expect(writes).toEqual([version(2)])
   })
+
+  it('stop drops the pending document and writes nothing afterwards, not even on unload', async () => {
+    const { autosave, writes, state } = setup()
+    autosave.schedule(version(1))
+    autosave.stop()
+    await autosave.flushNow()
+    autosave.schedule(version(2))
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY + RETRY_DELAY)
+    expect(writes).toEqual([])
+    expect(state.calls).toBe(0)
+  })
+
+  it('a write that fails after stop is not retried', async () => {
+    const { autosave, state, release } = setup()
+    state.fail = true
+    state.slow = true
+    autosave.schedule(version(1))
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY)
+    autosave.stop()
+    state.slow = false
+    release()
+    await vi.advanceTimersByTimeAsync(RETRY_DELAY * 2)
+    expect(state.calls).toBe(1)
+  })
 })

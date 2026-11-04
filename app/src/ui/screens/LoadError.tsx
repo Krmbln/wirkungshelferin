@@ -1,10 +1,11 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useState } from 'react'
 import type { Project } from '../../domain/schemas/project'
 import { Banner } from '../components/Banner'
 import { Button } from '../components/Button'
 import { Dialog } from '../components/Dialog'
 import type { LoadProblem } from '../../storage/load'
-import { backupFileName, backupProblemText, downloadJson, readBackupFile } from '../../storage/backup'
+import { backupFileName, downloadJson } from '../../storage/backup'
+import { useBackupFile } from '../backupFile'
 import { Screen } from './Screen'
 
 type Props = {
@@ -56,19 +57,7 @@ export function LoadError({ problem, raw, onUseBackup, reload = () => window.loc
 // The stored data is replaced only after the confirm dialog (design §7.6).
 function SaveAndReplace({ raw, onUseBackup }: Pick<Props, 'raw' | 'onUseBackup'>) {
   const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [backup, setBackup] = useState<Project | null>(null)
-  const fileInput = useRef<HTMLInputElement>(null)
-
-  async function onFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    setError(null)
-    const parsed = await readBackupFile(file)
-    if (parsed.ok) setBackup(parsed.project)
-    else setError(backupProblemText[parsed.problem])
-  }
+  const backup = useBackupFile()
 
   return (
     <>
@@ -89,36 +78,28 @@ function SaveAndReplace({ raw, onUseBackup }: Pick<Props, 'raw' | 'onUseBackup'>
         )}
         {saved && onUseBackup && (
           <>
-            <Button variant="text" onClick={() => fileInput.current?.click()}>
+            <Button variant="text" onClick={backup.pick}>
               Mit einem Backup weitermachen
             </Button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".json,application/json"
-              className="visually-hidden"
-              tabIndex={-1}
-              aria-hidden="true"
-              onChange={onFile}
-            />
+            {backup.input}
           </>
         )}
       </div>
-      {error && (
+      {backup.error && (
         <div className="screen__message">
-          <Banner tone="warn">{error}</Banner>
+          <Banner tone="warn">{backup.error}</Banner>
         </div>
       )}
       <Dialog
-        open={backup !== null}
+        open={backup.chosen !== null}
         title="Mit dem Backup weitermachen?"
-        onClose={() => setBackup(null)}
+        onClose={backup.cancel}
         actions={
           <>
-            <Button variant="secondary" data-autofocus onClick={() => setBackup(null)}>
+            <Button variant="secondary" data-autofocus onClick={backup.cancel}>
               Abbrechen
             </Button>
-            <Button variant="primary" onClick={() => (backup ? onUseBackup?.(backup) : undefined)}>
+            <Button variant="primary" onClick={() => (backup.chosen ? onUseBackup?.(backup.chosen) : undefined)}>
               Backup laden
             </Button>
           </>

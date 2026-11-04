@@ -1,0 +1,60 @@
+/* Settings (design §6.3): one form column, sections separated by whitespace and a 1 px line. */
+.settings {
+  display: grid;
+  align-content: start;
+  gap: var(--space-8);
+  max-width: 600px;
+}
+
+.settings__section {
+  display: grid;
+  justify-items: stretch;
+  gap: var(--space-4);
+}
+
+.settings__section + .settings__section {
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--line);
+}
+
+.settings__section h2 {
+  font: var(--text-heading);
+}
+
+.settings__row,
+.settings__key,
+.settings__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings__row .field__control {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings__key-value {
+  margin-right: var(--space-2);
+}
+
+/* Short values (model ID, effort) don't need the full width. */
+.settings__narrow {
+  max-width: 280px;
+}
+
+.settings__muted {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.settings__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings__status-icon {
+  display: inline-flex;
+  flex: none;
+}

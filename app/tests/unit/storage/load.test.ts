@@ -3,7 +3,7 @@ import { IDBFactory } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeProject } from '../../../src/domain/fixtures'
 import { projectSchema } from '../../../src/domain/schemas/project'
-import { loadProject, loadProjectOnce } from '../../../src/storage/load'
+import { findPreviousVersion, loadProject, loadProjectOnce, restorePreviousVersion } from '../../../src/storage/load'
 import { idbStore, keys, memoryStore, requestPersistence, type Store } from '../../../src/storage/store'
 import { v0Document, v0Migrations } from '../domain/v0'
 
@@ -128,5 +128,42 @@ describe('Persistent storage', () => {
 
   it('without the API: undefined', async () => {
     expect(await requestPersistence({} as StorageManager)).toBeUndefined()
+  })
+})
+
+describe('Previous version (undo a migration)', () => {
+  it('finds the pre-migration copy only when there is one', async () => {
+    expect(await findPreviousVersion(memoryStore({ [keys.project]: makeProject() }))).toBeUndefined()
+    expect(await findPreviousVersion(memoryStore({ [keys.preMigration(0)]: v0Document() }))).toBe(0)
+  })
+
+  it('a store that cannot be read offers no restore', async () => {
+    const store = memoryStore()
+    store.get = () => Promise.reject(new Error('blocked'))
+    expect(await findPreviousVersion(store)).toBeUndefined()
+  })
+
+  it('restoring puts the copy back as the project and keeps the copy', async () => {
+    const raw = v0Document()
+    const store = memoryStore({ [keys.project]: makeProject(), [keys.preMigration(0)]: raw })
+    await restorePreviousVersion(store, 0)
+    expect(store.data.get(keys.project)).toEqual(raw)
+    expect(store.data.get(keys.preMigration(0))).toEqual(raw)
+  })
+
+  it('migrate → restore → the next start migrates the copy again', async () => {
+    const raw = v0Document()
+    const store = memoryStore({ [keys.project]: raw })
+    const first = await loadProject(store, v0Migrations)
+    await restorePreviousVersion(store, 0)
+    expect(store.data.get(keys.project)).toEqual(raw)
+    expect(await loadProject(store, v0Migrations)).toEqual(first)
+  })
+
+  it('a missing copy is refused and changes nothing', async () => {
+    const p = makeProject()
+    const store = memoryStore({ [keys.project]: p })
+    await expect(restorePreviousVersion(store, 0)).rejects.toThrow()
+    expect(store.data.get(keys.project)).toEqual(p)
   })
 })

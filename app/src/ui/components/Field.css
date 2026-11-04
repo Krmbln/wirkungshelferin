@@ -1,0 +1,41 @@
+.field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.field__label {
+  font: var(--text-label);
+}
+
+/* 16 / 24 text, 32 px high like the buttons beside it. */
+.field__control {
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 3px var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: var(--text-body);
+}
+
+.field__control[aria-invalid='true'] {
+  border-color: var(--block);
+}
+
+.field__hint {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.field__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--text-small);
+}
+
+.field__error-icon {
+  display: inline-flex;
+  flex: none;
+}

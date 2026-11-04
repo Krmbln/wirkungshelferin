@@ -1,4 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
+import { daysAgo, type BackupState } from '../../domain/backup'
 import { Icon } from '../components/Icon'
 import { StatusIcon, statusLabel } from '../components/StatusIcon'
 import { stepsByPart, type Step, type StepStatus, type StepStatuses, type View } from '../steps'
@@ -7,11 +8,12 @@ import './Sidebar.css'
 type Props = {
   view: View
   statuses: StepStatuses
+  backup: BackupState
   onNavigate: (view: View) => void
 }
 
 // Left sidebar (design §5.2): Übersicht, steps grouped by part, backup slot, Einstellungen.
-export function Sidebar({ view, statuses, onNavigate }: Props) {
+export function Sidebar({ view, statuses, backup, onNavigate }: Props) {
   const current = (match: boolean) => (match ? ('page' as const) : undefined)
 
   return (
@@ -48,10 +50,16 @@ export function Sidebar({ view, statuses, onNavigate }: Props) {
       ))}
 
       <div className="sidebar__foot">
-        {/* Backup status slot, filled in step 6. */}
-        <p className="sidebar__backup" data-slot="backup-status">
-          <Icon name="backup" size={16} />
-          Noch kein Backup
+        {/* Status only; saving lives on home (reminder) and in Einstellungen. */}
+        <p className={`sidebar__backup${backup.due ? ' sidebar__backup--due' : ''}`} data-slot="backup-status">
+          {backup.due ? (
+            <span className="sidebar__backup-icon" aria-hidden="true">
+              <StatusIcon status="warn" tooltip={false} size={16} />
+            </span>
+          ) : (
+            <Icon name="backup" size={16} />
+          )}
+          {backup.days === undefined ? 'Noch kein Backup' : `Backup: ${daysAgo(backup.days)}`}
         </p>
         <button
           type="button"

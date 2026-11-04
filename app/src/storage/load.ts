@@ -36,6 +36,32 @@ export async function loadProject(store: Store, table: Migrations = migrations):
   return { kind: 'ready', project: parsed.project }
 }
 
+/**
+ * The version of the newest pre-migration copy, if any (tech design §8). Settings offers
+ * "Vorherige Version wiederherstellen" only then.
+ */
+export async function findPreviousVersion(store: Store): Promise<number | undefined> {
+  for (let v = SCHEMA_VERSION - 1; v >= 0; v--) {
+    try {
+      if ((await store.get(keys.preMigration(v))) !== undefined) return v
+    } catch {
+      return undefined
+    }
+  }
+  return undefined
+}
+
+/**
+ * Puts the pre-migration copy back as the project. The page then reloads, so the load
+ * pipeline migrates it again with the app's current migrations (a fixed one, typically).
+ * The copy itself stays.
+ */
+export async function restorePreviousVersion(store: Store, version: number): Promise<void> {
+  const raw = await store.get(keys.preMigration(version))
+  if (raw === undefined) throw new Error(`no copy from version ${version}`)
+  await store.set(keys.project, raw)
+}
+
 const loads = new WeakMap<Store, Promise<LoadResult>>()
 
 /**
