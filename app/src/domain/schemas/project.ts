@@ -1,0 +1,143 @@
+import { z } from 'zod'
+import { stepIds, stepStatuses, type StepId } from '../types'
+import { blockSchemas, collections, type Block } from './blocks'
+
+// One JSON document per project (tech design §7). Schema version stays 1 until step 24.
+export const SCHEMA_VERSION = 1
+
+const iso = z.iso.datetime()
+
+export const TEMP_ID = /^new:\d+$/
+export const ID = /^([a-z]+)(\d+)$/
+
+/** Raw API content blocks (text, thinking, tool_use, tool_result), stored unchanged. Refined in step 9. */
+const storedMessage = z.strictObject({
+  id: z.string(),
+  at: iso,
+  role: z.enum(['user', 'assistant']),
+  content: z.array(z.record(z.string(), z.unknown())),
+})
+
+const chatSegment = z.strictObject({
+  id: z.string(),
+  startedAt: iso,
+  summaryOfPrevious: z.string().optional(),
+  messages: z.array(storedMessage),
+})
+
+const qualityCheck = z.strictObject({
+  at: iso,
+  results: z.array(z.strictObject({ criterion: z.string(), result: z.enum(['ok', 'warn', 'block']), note: z.string() })),
+})
+
+// "veraltet" is not stored: it is derived from the block (proposals.ts), so it can't drift.
+export const proposalChange = z
+  .strictObject({
+    id: z.string(),
+    op: z.enum(['add', 'update', 'remove']),
+    collection: z.string(),
+    tempId: z.string().regex(TEMP_ID).optional(),
+    targetId: z.string().optional(),
+    /** The rev the assistant saw, from the block snapshot sent with the request. */
+    baseRev: z.number().int().min(1).optional(),
+    fields: z.record(z.string(), z.unknown()).optional(),
+    state: z.enum(['open', 'applied', 'rejected']),
+    /** add: the real id the temp id resolved to. */
+    resultId: z.string().optional(),
+    /** Set while applied, for "Rückgängig". */
+    undo: z
+      .strictObject({
+        before: z.record(z.string(), z.unknown()).nullable(),
+        index: z.number().int().min(0),
+        afterRev: z.number().int().min(1),
+      })
+      .optional(),
+  })
+  .superRefine((c, ctx) => {
+    const fail = (message: string) => ctx.addIssue({ code: 'custom', message })
+    if (c.op === 'add') {
+      if (!c.tempId) fail('add needs a tempId')
+      if (!c.fields) fail('add needs fields')
+      if (c.targetId) fail('add has no targetId')
+    } else {
+      if (!c.targetId) fail(`${c.op} needs a targetId`)
+      // A change to an item created in the same proposal has no rev to have seen.
+      if (c.baseRev === undefined && !(c.targetId && TEMP_ID.test(c.targetId))) fail(`${c.op} needs a baseRev`)
+      if (c.op === 'update' && !c.fields) fail('update needs fields')
+    }
+  })
+
+export const proposal = z.strictObject({
+  id: z.string(),
+  toolUseId: z.string(),
+  at: iso,
+  summary: z.string(),
+  changes: z.array(proposalChange),
+})
+
+const stepKey = z.enum(['0', '1', '2', '3', '4', '5', '6'])
+
+function stepState<B extends z.ZodType>(block: B) {
+  return z.strictObject({
+    status: z.enum(stepStatuses),
+    block,
+    segments: z.array(chatSegment),
+    proposals: z.array(proposal),
+    qualityCheck: qualityCheck.optional(),
+    confirmedWarnings: z.array(z.string()),
+    confirmed: z
+      .strictObject({ at: iso, block, basis: z.partialRecord(stepKey, iso) })
+      .optional(),
+    resume: z.strictObject({ summary: z.string(), nextAction: z.string(), at: iso }).optional(),
+  })
+}
+
+export const projectSchema = z
+  .strictObject({
+    schemaVersion: z.literal(SCHEMA_VERSION),
+    createdAt: iso,
+    updatedAt: iso,
+    lastBackupAt: iso.optional(),
+    lastActive: z.strictObject({ stepId: z.literal([...stepIds]), at: iso }).optional(),
+    privacyNoteSeen: z.boolean(),
+    steps: z.strictObject({
+      0: stepState(blockSchemas[0]),
+      1: stepState(blockSchemas[1]),
+      2: stepState(blockSchemas[2]),
+      3: stepState(blockSchemas[3]),
+      4: stepState(blockSchemas[4]),
+      5: stepState(blockSchemas[5]),
+      6: stepState(blockSchemas[6]),
+    }),
+    /** Highest number handed out per prefix. Never decreases, so ids are never reused. */
+    idCounters: z.record(z.string(), z.number().int().min(0)),
+  })
+  .superRefine((project, ctx) => {
+    const seen = new Set<string>()
+    for (const step of stepIds) {
+      const block = project.steps[step].block as Record<string, unknown>
+      for (const [name, meta] of Object.entries(collections[step])) {
+        const path = ['steps', step, 'block', name]
+        if (meta.singleton) {
+          const item = block[name] as { id: string }
+          if (item.id !== name) ctx.addIssue({ code: 'custom', path, message: `singleton id must be "${name}"` })
+          continue
+        }
+        for (const item of block[name] as { id: string }[]) {
+          const match = item.id.match(ID)
+          if (!match || match[1] !== meta.prefix) {
+            ctx.addIssue({ code: 'custom', path, message: `id ${item.id} needs prefix "${meta.prefix}"` })
+          } else if (Number(match[2]) > (project.idCounters[meta.prefix] ?? 0)) {
+            ctx.addIssue({ code: 'custom', path, message: `id ${item.id} is above its counter` })
+          }
+          if (seen.has(item.id)) ctx.addIssue({ code: 'custom', path, message: `duplicate id ${item.id}` })
+          seen.add(item.id)
+        }
+      }
+    }
+  })
+
+export type Project = z.infer<typeof projectSchema>
+export type StepState<S extends StepId = StepId> = Omit<Project['steps'][S], 'block'> & { block: Block<S> }
+export type Proposal = z.infer<typeof proposal>
+export type ProposalChange = z.infer<typeof proposalChange>

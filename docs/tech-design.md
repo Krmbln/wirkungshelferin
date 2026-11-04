@@ -248,16 +248,21 @@ StepState {
   resume?: { summary: string, nextAction: string, at: string }
 }
 
-Item { id: string, shortId: string, rev: number, editedByUser: boolean, why?: string }  // base for every list entry
-// shortId: assigned once per collection from a counter that is never reused (tg1, tg2 … even after tg1 is deleted);
-// persisted in the document and backups. Proposals and baseRev lookups always go by shortId, never by list position.
+Item { id: string, rev: number, editedByUser: boolean, why?: string }  // base for every list entry and singleton
+// id IS the short ID (step 4 build: one field instead of id + shortId): assigned once per collection from a counter
+// that is never reused (tg1, tg2 … even after tg1 is deleted); prefixes are unique across steps, so ids are unique
+// project-wide. Singletons (profile, frame, challenge, level7) use their collection name as id.
+// Persisted in the document and backups. Proposals and baseRev lookups always go by id, never by list position.
 
 ChatSegment { id, startedAt, summaryOfPrevious?: string, messages: StoredMessage[] }
 StoredMessage = the API message content blocks as returned (text, thinking, tool_use, tool_result) + local metadata (id, at)
 
 Proposal { id, toolUseId, at, summary, changes: ProposalChange[] }
-ProposalChange { id, op, collection, targetId?, baseRev?, fields?,
-                 state: "open" | "applied" | "rejected" | "stale" }
+ProposalChange { id, op, collection, tempId?, targetId?, baseRev?, fields?,
+                 state: "open" | "applied" | "rejected",
+                 resultId?,                       // add: the real id its temp id resolved to
+                 undo?: { before, index, afterRev } }  // while applied, for "Rückgängig"
+// "veraltet" is derived from the current block on every read (step 4 build), never stored, so it can't drift.
 
 Settings (separate IndexedDB key, never exported) { apiKey?, model, effort }
 ```

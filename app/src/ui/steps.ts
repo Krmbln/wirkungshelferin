@@ -1,8 +1,9 @@
+import type { StepId } from '../domain/types'
 import { guideFiles, type GuideFileName } from '../guide'
 import type { Status } from './components/StatusIcon'
 
 // The seven method steps (PRD F2). Numbering 0–6 everywhere (design §5.2).
-export type StepId = 0 | 1 | 2 | 3 | 4 | 5 | 6
+export type { StepId }
 export type StepStatus = Extract<Status, 'todo' | 'progress' | 'done' | 'stale'>
 
 export const parts = ['Kontext', 'Strategie', 'Analyse'] as const
