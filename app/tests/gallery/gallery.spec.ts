@@ -23,6 +23,7 @@ const sections = [
   'Banner',
   'Dialog',
   'Bewegung',
+  'App-Rahmen',
   'Sperrbildschirm',
 ]
 
@@ -141,4 +142,51 @@ test('reduced motion stops the pulse', async ({ page }) => {
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect.poll(animation).toBe('none')
+})
+
+const screenNames = ['home', 'home-mixed', 'step', 'step-mixed', 'settings']
+
+async function openScreen(page: Page, name: string) {
+  await page.goto(`./?gallery&screen=${name}`)
+  await page.getByRole('navigation', { name: 'Navigation' }).waitFor()
+  await page.evaluate(() => document.fonts.ready)
+}
+
+test('full-window screens render without errors', async ({ page }) => {
+  const errors = watchErrors(page)
+  for (const name of screenNames) {
+    await openScreen(page, name)
+    await page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  }
+  expect(errors).toEqual([])
+})
+
+test('current step: accent-soft row with accent text', async ({ page }) => {
+  await openScreen(page, 'step-mixed')
+  const row = page.locator('nav [aria-current="page"]')
+  await expect(row).toHaveAttribute('aria-label', '3 Ziele, in Arbeit')
+  const look = await row.evaluate((el) => {
+    const s = getComputedStyle(el)
+    return [s.backgroundColor, s.color]
+  })
+  expect(look).toEqual(['rgb(228, 240, 238)', 'rgb(31, 107, 102)'])
+})
+
+test('focused sidebar row shows its status tooltip', async ({ page }) => {
+  await openScreen(page, 'step-mixed')
+  await page.locator('nav [aria-label^="2 "]').focus()
+  await expect(page.locator('nav [aria-label^="2 "] .tooltip__bubble')).toHaveText('vielleicht veraltet')
+  // The bubble sits beside the sidebar, so the shot reaches into the main area.
+  await page.screenshot({
+    path: 'screenshots/gallery/sidebar-focus-tooltip.png',
+    clip: { x: 0, y: 0, width: 440, height: 520 },
+    animations: 'disabled',
+  })
+})
+
+test('below 960 px the hint shows above the header', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 760 })
+  await openScreen(page, 'step')
+  await expect(page.getByText('Zieh das Fenster etwas breiter')).toBeVisible()
+  await page.screenshot({ path: 'screenshots/gallery/screen-narrow.png', animations: 'disabled' })
 })

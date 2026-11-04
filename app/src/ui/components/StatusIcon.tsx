@@ -22,13 +22,16 @@ type Props = {
   size?: number
   /** Show the label as a hover tooltip. Off where the word already sits next to the icon. */
   tooltip?: boolean
+  /** Shows the tooltip without hover, e.g. while the parent row has keyboard focus. */
+  tooltipOpen?: boolean
+  tooltipSide?: 'below' | 'right'
 }
 
-export function StatusIcon({ status, size = 18, tooltip = true }: Props) {
+export function StatusIcon({ status, size = 18, tooltip = true, tooltipOpen = false, tooltipSide }: Props) {
   const { icon, label, tone } = mapping[status]
   const svg = <Icon name={icon} size={size} label={label} className={`status-icon status-icon--${tone}`} />
   return tooltip ? (
-    <Tooltip content={label} focusable={false}>
+    <Tooltip content={label} focusable={false} forceOpen={tooltipOpen} side={tooltipSide}>
       {svg}
     </Tooltip>
   ) : (

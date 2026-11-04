@@ -1,0 +1,28 @@
+.page-header {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-6);
+  /* Same height with or without the meta line, so switching views doesn't jump. */
+  min-height: calc(18px + 32px + 2 * var(--space-4) + 1px); /* + border (border-box) */
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.page-header__meta {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+/* Focus lands here after a navigation that removed the focused button; no ring for that. */
+.page-header h1:focus {
+  outline: none;
+}
+
+.page-header__saved {
+  flex: none;
+  font: var(--text-small);
+  color: var(--text-muted);
+}

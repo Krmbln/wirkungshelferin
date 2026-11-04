@@ -29,8 +29,8 @@ test('loads in Google Chrome without CSP violations', async ({ page }) => {
   )
   expect(brands).toContain('Google Chrome')
 
-  await expect(page.getByRole('heading', { name: 'Wirkungshelferin' })).toBeVisible()
-  await expect(page.getByText('Leitfaden geladen: 9 Dateien')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Übersicht' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Navigation' })).toBeVisible()
   await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveCount(1)
   // The self-hosted font loads under the CSP.
   await page.evaluate(() => document.fonts.ready)
@@ -46,5 +46,5 @@ test('blocks a browser without userAgentData (Safari, Firefox)', async ({ page }
 
   await expect(page.getByRole('heading', { name: 'Bitte öffne die Wirkungshelferin in Chrome' })).toBeVisible()
   await expect(page.getByText(/localhost:\d+\/wirkungshelferin\//)).toBeVisible()
-  await expect(page.getByText('Leitfaden geladen')).toHaveCount(0)
+  await expect(page.getByRole('navigation')).toHaveCount(0)
 })

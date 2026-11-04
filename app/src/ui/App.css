@@ -1,0 +1,45 @@
+/* App frame (design §5.2): sidebar + main, the full window; areas scroll inside. */
+.app {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  height: 100vh;
+  min-width: 720px;
+}
+
+.app__main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* The workspace scrolls inside its columns, not as a whole. */
+.app__main--step {
+  overflow: hidden;
+}
+
+.page-body {
+  padding: var(--space-8) var(--space-6);
+}
+
+/* Muted stand-in text until a later step fills the area. */
+.placeholder {
+  max-width: 70ch;
+  color: var(--text-muted);
+}
+
+/* One-line hint below 960 px; no stacked layout (design §5.1). */
+.app__narrow-hint {
+  display: none;
+  flex: none;
+  padding: var(--space-2) var(--space-6);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-subtle);
+  font: var(--text-small);
+}
+
+@media (max-width: 959px) {
+  .app__narrow-hint {
+    display: block;
+  }
+}

@@ -1,0 +1,87 @@
+/* Sidebar (design §5.2): fixed ~220 px, on --bg, 1 px line to the main area. */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 220px;
+  height: 100%;
+  padding: var(--space-6) var(--space-3) var(--space-4);
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.sidebar__name {
+  padding: 0 var(--space-3) var(--space-4);
+  font: var(--text-heading);
+}
+
+.sidebar__group {
+  margin-top: var(--space-4);
+}
+
+.sidebar__group ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Group labels: 13 / 600, muted, sentence case (design §4). */
+.sidebar__part {
+  padding: 0 var(--space-3) var(--space-1);
+  font: var(--text-small);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.sidebar__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--target-min);
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast);
+}
+
+.sidebar__row:hover {
+  background: var(--surface-subtle);
+}
+
+/* Current view: accent-soft background + accent text (design §5.2). */
+.sidebar__row[aria-current='page'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar__row svg {
+  flex: none;
+}
+
+.sidebar__num {
+  min-width: 0.6em;
+}
+
+.sidebar__foot {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-6);
+}
+
+.sidebar__backup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  font: var(--text-small);
+  color: var(--text-muted);
+}

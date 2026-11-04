@@ -44,6 +44,15 @@
   right: 0;
 }
 
+.tooltip--right .tooltip__bubble {
+  position: fixed;
+  transform: translateY(-50%);
+}
+
+.tooltip--right .tooltip__bubble::before {
+  inset: 0 100% 0 calc(-1 * var(--space-2));
+}
+
 .tooltip__bubble[hidden] {
   display: none;
 }

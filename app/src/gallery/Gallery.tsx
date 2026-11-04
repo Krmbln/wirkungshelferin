@@ -7,7 +7,10 @@ import { Icon, iconNames } from '../ui/components/Icon'
 import { StatusIcon, statusLabel, type Status } from '../ui/components/StatusIcon'
 import { ThinkingIndicator } from '../ui/components/ThinkingIndicator'
 import { Tooltip } from '../ui/components/Tooltip'
+import { App } from '../ui/App'
+import { Sidebar } from '../ui/frame/Sidebar'
 import { ChromeGate } from '../ui/gate/ChromeGate'
+import { initialStatuses, type StepStatuses, type View } from '../ui/steps'
 import './Gallery.css'
 
 // Dev-only state gallery (implementation plan, standing rule 2). Every [data-state]
@@ -54,7 +57,25 @@ const variants: { variant: ButtonVariant; label: string; name: string }[] = [
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// Every status once, as after re-confirming step 1 (made-up state, no data).
+const mixedStatuses: StepStatuses = { 0: 'done', 1: 'done', 2: 'stale', 3: 'progress', 4: 'todo', 5: 'todo', 6: 'todo' }
+
+// Full-window screens at ?gallery&screen=<name>, screenshotted at the real viewport size.
+export const screens: Record<string, { caption: string; view: View; statuses: StepStatuses }> = {
+  home: { caption: 'Übersicht, noch nichts begonnen', view: { kind: 'home' }, statuses: initialStatuses },
+  'home-mixed': { caption: 'Übersicht, alle Status', view: { kind: 'home' }, statuses: mixedStatuses },
+  step: { caption: 'Arbeitsbereich Schritt 0', view: { kind: 'step', step: 0 }, statuses: initialStatuses },
+  'step-mixed': { caption: 'Arbeitsbereich Schritt 3, alle Status', view: { kind: 'step', step: 3 }, statuses: mixedStatuses },
+  settings: { caption: 'Einstellungen (leer)', view: { kind: 'settings' }, statuses: initialStatuses },
+}
+
 export function Gallery({ appUrl }: { appUrl: string }) {
+  const screen = new URLSearchParams(window.location.search).get('screen')
+  if (screen && screens[screen]) return <App initialView={screens[screen].view} statuses={screens[screen].statuses} />
+  return <GalleryPage appUrl={appUrl} />
+}
+
+function GalleryPage({ appUrl }: { appUrl: string }) {
   const [dialogOpen, setDialogOpen] = useState(false)
 
   return (
@@ -235,6 +256,23 @@ export function Gallery({ appUrl }: { appUrl: string }) {
       <Section title="Bewegung">
         <State name="thinking" caption="denkt nach … (statisch bei reduzierter Bewegung)">
           <ThinkingIndicator />
+        </State>
+      </Section>
+
+      <Section title="App-Rahmen">
+        <State name="sidebar-mixed" caption="Seitenleiste, Schritt 3 aktuell, alle Status">
+          <div className="gframe gsidebar">
+            <Sidebar view={{ kind: 'step', step: 3 }} statuses={mixedStatuses} onNavigate={() => {}} />
+          </div>
+        </State>
+        <State name="screen-links" caption="Ganze Bildschirme (volle Fenstergröße)">
+          <ul className="gscreens">
+            {Object.entries(screens).map(([name, { caption }]) => (
+              <li key={name}>
+                <a href={`?gallery&screen=${name}`}>{caption}</a>
+              </li>
+            ))}
+          </ul>
         </State>
       </Section>
 

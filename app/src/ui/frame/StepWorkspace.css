@@ -1,0 +1,56 @@
+/* Two columns that scroll independently, divided by a 1 px line (design §5.2). */
+.workspace {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 45fr 55fr;
+  min-height: 0;
+  background: var(--surface);
+}
+
+.workspace__chat,
+.workspace__block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workspace__chat {
+  border-right: 1px solid var(--line);
+}
+
+.workspace__scroll {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+.workspace__block h2 {
+  margin-bottom: var(--space-3);
+}
+
+.workspace__composer {
+  flex: none;
+  margin: 0 var(--space-6) var(--space-6);
+}
+
+/* Sticky at the bottom of the block panel, at most ~40 % of its height (design §6.2). */
+.workspace__check {
+  flex: none;
+  max-height: 40%;
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+
+.workspace__check-heading {
+  margin-bottom: var(--space-2);
+}
+
+.placeholder-box {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+}

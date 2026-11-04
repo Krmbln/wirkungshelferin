@@ -1,0 +1,86 @@
+.home {
+  display: grid;
+  align-content: start;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: 760px;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+}
+
+/* "Wo du aufgehört hast" card: a panel with a 1 px line, no shadow (design §5.1). */
+.home__resume {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.home__eyebrow {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.home__lead {
+  margin-bottom: var(--space-2);
+  color: var(--text-muted);
+}
+
+.home__part ul {
+  display: grid;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.home__part li {
+  border-bottom: 1px solid var(--line);
+}
+
+/* Compact rows: 16 px text, 12 px vertical padding (design §5.3). */
+.home__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--target-min);
+  padding: var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast);
+}
+
+.home__row:hover {
+  background: var(--surface-subtle);
+}
+
+.home__row-icon {
+  display: inline-flex;
+}
+
+.home__row-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.home__row-status {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+/* A label, not a link: chip with an accent border, text stays --text (design §6.1). */
+.home__recommended {
+  flex: none;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  font: var(--text-small);
+  color: var(--text);
+}

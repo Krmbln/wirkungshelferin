@@ -105,7 +105,7 @@ Light mode only in v1 (Lukas works on a Mac in daylight; tokens make dark mode p
 │ Backup · ⚙   │                           │                          │
 └──────────────┴───────────────────────────┴──────────────────────────┘
 ```
-- **Left sidebar (fixed, ~220 px):** app name, "Übersicht" (home), steps grouped as Kontext / Strategie / Analyse with status icon + number + short name. Bottom: backup status ("Letztes Backup: vor 3 Tagen") and "Einstellungen". Steps keep the method's numbering 0–6 everywhere (guide, copy output).
+- **Left sidebar (fixed, ~220 px):** app name, "Übersicht" (home), steps grouped as Kontext / Strategie / Analyse with status icon + number + short name. Bottom: backup status ("Letztes Backup: vor 3 Tagen") and "Einstellungen" (text only, like "Übersicht"). The page title area keeps the same height with and without the "Schritt N · Teil" line, so switching views doesn't jump (step 3). Steps keep the method's numbering 0–6 everywhere (guide, copy output).
 - **Status icons (fixed mapping, each with `aria-label` and tooltip):** ○ noch nicht begonnen · ◐ in Arbeit · ✓ bestätigt · ⚠ vielleicht veraltet. The current step is shown by the highlight, not by an icon.
 - **Step workspace:** chat left (~45 %), block right (~55 %), both scroll independently. The divider is a 1 px line.
 - **Always visible orientation** (PRD §8): the current step is highlighted in the sidebar (accent-soft background + accent text) and the header says "Schritt N · [Teil]" (no "von 6": steps start at 0, which would read like a bug).
@@ -121,8 +121,9 @@ Spacious, not sparse. Lists in the block panel are compact rows (16 px text, 12 
 
 ### 6.1 Home ("Übersicht")
 1. **"Wo du aufgehört hast"** card at the top: step name, 1–2 sentence summary, next action, primary button **"Weiter"**. This is the only primary button on the page.
+   - *Until step 22* (step 3 build, UI/UX review): the card shows the recommended step with an honest label, "Hier fängst du an" when nothing is started, otherwise "Als Nächstes". "Wo du aufgehört hast" comes with real session data.
 2. Backup reminder (only if > 7 days): one line with ⚠ icon + "Backup speichern".
-3. Steps 0–6 grouped by part, each row: status icon, name, one-line status ("bestätigt am 12.11." / "in Arbeit" / "noch nicht begonnen" / "vielleicht veraltet – prüfen"). Click opens the step. Recommended next step marked with "Empfohlen als Nächstes".
+3. Steps 0–6 grouped by part, each row: status icon, name, one-line status ("bestätigt am 12.11." / "in Arbeit" / "noch nicht begonnen" / "vielleicht veraltet – prüfen"). Click opens the step. Recommended next step marked with "Empfohlen als Nächstes" as a small label chip (1 px accent border, `--text` text, 13 px, `--radius`), so it doesn't read as a link (step 3).
 4. Empty state (no project): two equal buttons side by side, **"Neu starten"** and **"Backup laden"**, with one sentence each explaining when to use which.
 
 ### 6.2 Step workspace
@@ -215,7 +216,7 @@ One primary button that changes with the state:
 ---
 
 ### 7.1 Tooltip and dialog specs (added in step 2)
-- **Tooltip:** dark bubble (`--text` background, white 13 px text, 6 px radius, max 280 px wide), 8 px below the trigger. Opens on hover and Enter, closes on Esc, blur and mouse leave; the pointer can move onto the bubble without closing it. Triggers in the right half of the window open leftwards. When the trigger already has the same text as its accessible name (status icons), the bubble is hidden from screen readers and adds no tab stop; the focusable parent row (sidebar, check row) shows it on focus.
+- **Tooltip:** dark bubble (`--text` background, white 13 px text, 6 px radius, max 280 px wide), 8 px below the trigger. Opens on hover and Enter, closes on Esc, blur and mouse leave; the pointer can move onto the bubble without closing it. Triggers in the right half of the window open leftwards. When the trigger already has the same text as its accessible name (status icons), the bubble is hidden from screen readers and adds no tab stop; the focusable parent row (sidebar, check row) shows it on focus. **Sidebar rows** show the status bubble on hover and keyboard focus (not after a click), placed **beside the row**, vertically centred, so it never covers the next row (step 3).
 - **Dialog:** native modal `<dialog>`, max 480 px, 10 px radius, the one shadow, dimmed backdrop. Title + ✕ on top, actions bottom right with the safe choice ("Abbrechen") first and focused.
 - **Change-type chips:** 6 px radius (`--radius`), min width 92 px.
 

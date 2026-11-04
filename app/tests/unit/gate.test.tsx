@@ -33,12 +33,12 @@ describe('Root', () => {
     expect(screen.getByRole('heading', { name: 'Bitte öffne die Wirkungshelferin in Chrome' })).toBeTruthy()
     expect(screen.getByText(APP_URL)).toBeTruthy()
     expect(screen.getAllByRole('listitem')).toHaveLength(3)
-    expect(screen.queryByText(/Leitfaden geladen/)).toBeNull()
+    expect(screen.queryByRole('navigation')).toBeNull()
   })
 
   it('shows the app in Chrome', () => {
     render(<Root nav={browsers.chrome} appUrl={APP_URL} />)
-    expect(screen.getByRole('heading', { name: 'Wirkungshelferin' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Übersicht' })).toBeTruthy()
     expect(screen.queryByText(/Bitte öffne/)).toBeNull()
   })
 })
