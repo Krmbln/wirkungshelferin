@@ -195,6 +195,16 @@ One primary button that changes with the state:
 - **Stopped mid-stream:** partial text stays, marked "abgebrochen" (muted); no proposal card.
 - **API key invalid mid-session:** inline error in the chat: "Dein API-Schlüssel funktioniert nicht mehr." + link "Zu den Einstellungen". Typed text stays.
 
+*Step 9 build (chat, UI/UX review 8/10):*
+- Turns 24 px apart; bubbles max 88 % wide, 12/16 px padding, `--radius-panel`. Claude's label "Wirkungshelferin" 13 px muted. Lukas's text plain with its line breaks; Claude's Markdown at body sizes (headings 15/600 like labels, lists indented, links accent, open in a new tab). Raw HTML shows as text, images as "[Bild: …]".
+- Composer: one box with a 1 px `--line-strong` border and the focus ring on the whole box; the textarea grows with the text up to a third of the window. Send = arrow icon (muted while empty); while a turn runs it becomes a secondary [Stopp] with a filled square (accepted exception to the line-icon rule, §8: universal stop symbol). After sending, Stopp or a retry, focus goes back to the input. Enter does nothing while a turn runs; the text stays.
+- "denkt nach …" shows until text arrives and again while Claude thinks or writes a tool call later in the same message (announced only the first time).
+- **Retry treatments (rule for later steps):** an error happening *now* → ⛔ banner in the chat, text beside the icon, buttons on a line below it (fits ~330 px); key or model problem → [Zu den Einstellungen] secondary + "Erneut versuchen" text button, key text "Dein API-Schlüssel funktioniert nicht mehr. Trag in den Einstellungen einen neuen ein."; any other problem → [Erneut versuchen] secondary. A problem from the *past* (after a reload the last turn has no answer) → one muted line "Darauf kam keine Antwort." + "Erneut versuchen" text button.
+- Text from a broken stream stays visible with a muted "unvollständig" (it isn't stored); a stopped message keeps "abgebrochen" (stored).
+- Until the proposal card (step 12), a message with a proposal shows a muted line "Vorschlag: …" with a 2 px `--line-strong` rule.
+- Empty chat: muted "Hier sprichst du mit der Wirkungshelferin über diesen Schritt. Schreib einfach los." (step 10 adds the intro panel).
+- Open: a "Zur neuesten Nachricht" button while Lukas has scrolled up during a stream (planned for step 10).
+
 ### 6.3 Setup & settings
 - **Setup (first start):** a single centred column (max 560 px), steps 1–4 as a short checklist: Willkommen → API-Schlüssel eingeben + "Verbindung testen" → Datenschutz-Hinweis → Erstes Backup. Each step one screen, "Weiter" as the only primary button.
   - *Step 7 build:* shown once per Chrome (after "Neu starten" or a backup loaded into a new Chrome); screens already done are skipped (after "Backup laden" only the key screen, whose lead starts "Dein Projekt ist geladen. In diesem Chrome fehlt nur noch der API-Schlüssel."). Welcome = "Bevor es losgeht" + numbered list of the steps with one line each. Screens 2–4 show a small horizontal checklist above the h1 (13 px muted, ✓ done / ◐ current in 600 `--text` / ○ todo, SVG icons), only when there are 2+ steps. The last screen's button says "Fertig". "Weiter"/"Fertig" stays the only primary and is aria-disabled with its reason beside it ("Teste zuerst die Verbindung." / "Speichere zuerst das Backup."). Focus moves to the new h1.

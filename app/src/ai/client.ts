@@ -10,7 +10,8 @@ export type SendResult =
   | { status: 'done'; message: BetaMessage }
   /** Stopped by the caller: what had arrived so far, if anything. */
   | { status: 'aborted'; partial?: BetaMessage }
-  | { status: 'failed'; problem: AiProblem }
+  /** `partial`: what arrived before a stream broke, for display only. */
+  | { status: 'failed'; problem: AiProblem; partial?: BetaMessage }
 
 export type SendOptions = {
   signal?: AbortSignal
@@ -87,7 +88,8 @@ export function sdkAiClient({ fetch: fetchImpl, online = () => navigator.onLine,
       } catch (error) {
         if (error instanceof APIUserAbortError || signal?.aborted) return { status: 'aborted', partial: stream?.currentMessage }
         logAiError('Call failed', error)
-        return { status: 'failed', problem: classifyError(error, online()) }
+        const partial = stream?.currentMessage
+        return { status: 'failed', problem: classifyError(error, online()), ...(partial?.content.length && { partial }) }
       }
     },
   }

@@ -129,8 +129,8 @@ describe('Session: start', () => {
       </StrictMode>,
     )
     expect(await screen.findByRole('heading', { level: 1, name: 'Übersicht' })).toBeTruthy()
-    // Once per key: the project, the settings and the pre-migration copy.
-    expect(get.mock.calls.map(([key]) => key).sort()).toEqual([keys.project, keys.preMigration(0), keys.settings].sort())
+    // Once per key: the project, the settings, the chat drafts and the pre-migration copy.
+    expect(get.mock.calls.map(([key]) => key).sort()).toEqual([keys.project, keys.preMigration(0), keys.settings, keys.drafts].sort())
   })
 
   it('once the app is open, coming back to the tab does not load again', async () => {

@@ -22,10 +22,14 @@ export function classifyError(error: unknown, online: boolean): AiProblem {
   return online ? 'other' : 'offline'
 }
 
-/** `setup`: no app frame yet, so nothing may point to the settings page. */
-export function problemText(problem: AiProblem, model: string, place: 'app' | 'setup' = 'app'): string {
+/**
+ * `setup`: no app frame yet, so nothing may point to the settings page.
+ * `chat`: the key worked before; the chat shows a link to the settings next to the text.
+ */
+export function problemText(problem: AiProblem, model: string, place: 'app' | 'setup' | 'chat' = 'app'): string {
   switch (problem) {
     case 'key':
+      if (place === 'chat') return 'Dein API-Schlüssel funktioniert nicht mehr. Trag in den Einstellungen einen neuen ein.'
       return 'Claude nimmt diesen API-Schlüssel nicht an. Prüf, ob du ihn ganz kopiert hast. Wenn ja, gib Karim Bescheid.'
     case 'credit':
       return 'Das Guthaben für Claude ist aufgebraucht. Gib Karim Bescheid.'

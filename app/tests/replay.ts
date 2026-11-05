@@ -36,3 +36,31 @@ export const sseEvents = (body: string) =>
     .split('\n\n')
     .filter((chunk) => chunk.trim())
     .map((chunk) => JSON.parse(chunk.split('\n').find((l) => l.startsWith('data: '))!.slice(6)) as { type: string } & Record<string, unknown>)
+
+/**
+ * A fetch that streams the body one SSE event at a time (a macrotask apart), like the API.
+ * A cut-off recording (`step1-stopped-*`) then hangs like a stream still thinking, until the
+ * request's signal aborts it — the way "Stopp" ends a real stream.
+ */
+export const pacedFetch = (body: string) =>
+  (async (_url: unknown, init?: RequestInit) => {
+    const chunks = body.split('\n\n').filter((c) => c.trim()).map((c) => `${c}\n\n`)
+    const finished = chunks.some((c) => c.includes('"message_stop"'))
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        init?.signal?.addEventListener('abort', () => controller.error(new DOMException('aborted', 'AbortError')))
+      },
+      async pull(controller) {
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        if (init?.signal?.aborted) return
+        const next = chunks.shift()
+        if (next) controller.enqueue(encoder.encode(next))
+        else if (finished) controller.close()
+        else await new Promise(() => {})
+      },
+    })
+    return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } })
+  }) as unknown as typeof fetch
+
+export const pacedClient = (name: string) => sdkAiClient({ fetch: pacedFetch(fixtureBody(name)), online: () => true, maxRetries: 0 })

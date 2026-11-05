@@ -148,7 +148,9 @@ test('reduced motion stops the pulse', async ({ page }) => {
   await expect.poll(animation).toBe('none')
 })
 
+const chatScreens = ['chat-empty', 'chat', 'chat-thinking', 'chat-streaming', 'chat-aborted', 'chat-key-error', 'chat-failed', 'chat-no-answer', 'chat-draft']
 const screenNames = [
+  ...chatScreens,
   'home',
   'home-mixed',
   'home-backup-recent',
@@ -351,4 +353,28 @@ test('setup: testing the key (busy, then success) and the settings test', async 
   await expect(page.getByText('Verbindung erfolgreich.')).toBeVisible()
   await page.screenshot({ path: 'screenshots/gallery/screen-settings-connection-ok.png', animations: 'disabled' })
   expect(errors).toEqual([])
+})
+
+test('chat states: one Stopp while streaming, errors as alerts in the chat, the composer focus ring', async ({ page }) => {
+  await openScreen(page, 'chat-streaming')
+  await expect(page.getByRole('button', { name: 'Stopp' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Senden' })).toHaveCount(0)
+  await openScreen(page, 'chat-thinking')
+  await expect(page.locator('.chat__log').getByText('denkt nach …')).toBeVisible()
+  await openScreen(page, 'chat-key-error')
+  const alert = page.locator('.chat__log').getByRole('alert')
+  await expect(alert).toContainText('Dein API-Schlüssel funktioniert nicht mehr.')
+  await expect(alert.getByRole('button', { name: 'Zu den Einstellungen' })).toBeVisible()
+  await openScreen(page, 'chat-aborted')
+  await expect(page.locator('.msg__aborted')).toHaveText('abgebrochen')
+  // The newest message is in view: the chat opens at the bottom.
+  await expect(page.locator('.msg').last()).toBeInViewport()
+  await page.getByRole('textbox', { name: 'Deine Nachricht' }).focus()
+  const outline = await page.locator('.composer').evaluate((el) => getComputedStyle(el).outlineStyle)
+  expect(outline).toBe('solid')
+  await page.screenshot({ path: 'screenshots/gallery/screen-chat-focus.png', animations: 'disabled' })
+  // Lukas scrolled up: the long conversation keeps its own scroll, the composer stays put.
+  await openScreen(page, 'chat')
+  const composer = await page.locator('.composer').boundingBox()
+  expect(composer && composer.y + composer.height).toBeLessThanOrEqual(860)
 })

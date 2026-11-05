@@ -23,6 +23,7 @@ import type { ConnectionResult } from '../ai/client'
 import { newProject } from '../domain/document'
 import { defaultSettings } from '../storage/settings'
 import { statusesOf } from '../ui/steps'
+import { chatScreens } from './chatScreens'
 import './Gallery.css'
 
 // Dev-only state gallery (implementation plan, standing rule 2). Every [data-state]
@@ -164,6 +165,7 @@ export const screens: Record<string, { caption: string; render: () => ReactNode 
     caption: 'Einrichtung: Backup gespeichert, Speicher dauerhaft',
     render: () => <GallerySetup step="backup" persisted backedUp />,
   },
+  ...chatScreens,
   'setup-key-only': {
     caption: 'Einrichtung nach „Backup laden“ in einem neuen Chrome: nur der Schlüssel',
     render: () => <GallerySetup project={backedUp} />,

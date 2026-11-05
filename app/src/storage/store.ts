@@ -6,6 +6,8 @@ import { createStore, del, get, set } from 'idb-keyval'
 export const keys = {
   project: 'project',
   settings: 'settings',
+  /** Unsent chat input per step. Not in the project document, so typing never shows "Gespeichert". */
+  drafts: 'drafts',
   /** The raw document as it was before a migration from version n. */
   preMigration: (version: number) => `project.pre-v${version}`,
 }

@@ -1,0 +1,92 @@
+import { expect, test, type Page } from '@playwright/test'
+import { dummyKey } from '../dummyKey'
+import { readStored, replayClaude, startProject, watchProblems, writeStored } from './helpers'
+
+// Step 9 in real Chrome against the build (CSP on): the recorded streams from `npm run contract`
+// replayed through the app's real SDK client.
+
+async function openStep1(page: Page) {
+  await startProject(page)
+  await writeStored(page, 'settings', { model: 'claude-opus-5-5', effort: 'medium', setupDone: true, apiKey: dummyKey })
+  await page.reload()
+  await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Zielgruppen/)
+}
+
+const input = (page: Page) => page.getByRole('textbox', { name: 'Deine Nachricht' })
+const log = (page: Page) => page.locator('.chat__log')
+
+type Segment = { messages: { role: string; aborted?: true }[] }
+const storedRoles = async (page: Page) => {
+  const project = (await readStored(page, 'project')) as { steps: Record<string, { segments: Segment[] }> }
+  return project.steps[1].segments.flatMap((s) => s.messages.map((m) => (m.aborted ? `${m.role} (abgebrochen)` : m.role)))
+}
+
+test('a recorded answer streams in and is stored; no CSP problems', async ({ page }) => {
+  const problems = await watchProblems(page)
+  const requests = await replayClaude(page, ['step1-opening'])
+  await openStep1(page)
+  await input(page).fill('Hallo, wir fangen an.')
+  await input(page).press('Enter')
+  await expect(log(page).getByText('Hallo, wir fangen an.')).toBeVisible()
+  // The opening answer is a proposal: until the card (step 12) its summary shows.
+  await expect(log(page).locator('.msg__proposal')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Senden' })).toBeVisible()
+  expect(requests).toHaveLength(1)
+  const body = requests[0].postDataJSON()
+  expect(body.max_tokens).toBe(16_000)
+  expect(body.stream).toBe(true)
+  await expect.poll(() => storedRoles(page)).toEqual(['user', 'assistant'])
+  expect(problems).toEqual([])
+})
+
+test('"Stopp" ends the answer; after a reload the chat is still there and the next message works', async ({ page }) => {
+  const problems = await watchProblems(page)
+  const requests = await replayClaude(page, ['step1-opening', 'step1-reload'], { hold: { 0: 3_000 } })
+  await openStep1(page)
+  await input(page).fill('Erste Nachricht')
+  await input(page).press('Enter')
+  await expect(log(page).getByText('denkt nach …')).toBeVisible()
+  await page.getByRole('button', { name: 'Stopp' }).click()
+  await expect(log(page).getByText('abgebrochen')).toBeVisible()
+  await expect.poll(() => storedRoles(page)).toEqual(['user', 'assistant (abgebrochen)'])
+
+  await page.reload()
+  await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
+  await expect(log(page).getByText('Erste Nachricht')).toBeVisible()
+  await expect(log(page).getByText('abgebrochen')).toBeVisible()
+
+  await input(page).fill('Zweite Nachricht')
+  await input(page).press('Enter')
+  await expect.poll(() => storedRoles(page)).toEqual(['user', 'assistant (abgebrochen)', 'user', 'assistant'])
+  // The stopped turn is not sent again: two user turns, nothing in between.
+  const sent = requests.at(-1)!.postDataJSON()
+  expect(sent.messages.map((m: { role: string }) => m.role)).toEqual(['user', 'user'])
+  await expect(log(page).locator('.msg--assistant').last()).not.toContainText('abgebrochen')
+  expect(problems).toEqual([])
+})
+
+test('Shift+Enter makes a new line; the draft is saved while typing and survives a reload', async ({ page }) => {
+  await replayClaude(page, ['step1-opening'])
+  await openStep1(page)
+  await input(page).pressSequentially('Zeile 1')
+  await input(page).press('Shift+Enter')
+  await input(page).pressSequentially('Zeile 2')
+  await expect(input(page)).toHaveValue('Zeile 1\nZeile 2')
+  // Stored while typing, not at unload (Chrome drops writes that start while the page unloads).
+  await expect.poll(() => readStored(page, 'drafts')).toEqual({ 1: 'Zeile 1\nZeile 2' })
+  await page.reload()
+  await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
+  await expect(input(page)).toHaveValue('Zeile 1\nZeile 2')
+})
+
+test('a sent message survives a reload while Claude still answers (saved at once, not at unload)', async ({ page }) => {
+  await replayClaude(page, ['step1-opening'], { hold: { 0: 5_000 } })
+  await openStep1(page)
+  await input(page).fill('Sofort neu laden')
+  await input(page).press('Enter')
+  await expect(log(page).getByText('Sofort neu laden')).toBeVisible()
+  await page.reload()
+  await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
+  await expect(log(page).getByText('Sofort neu laden')).toBeVisible()
+})

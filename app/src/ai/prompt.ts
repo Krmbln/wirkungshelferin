@@ -147,6 +147,16 @@ export function nextTurn(turn: Turn, order: MessageOrder = MESSAGE_ORDER): NewMe
   return [user([...results, ...own]), ...(events.length ? [system()] : [])]
 }
 
+/**
+ * What Lukas wrote in a stored user turn. nextTurn always ends his turn with [his text, snapshot],
+ * so it is the text block before the last one.
+ */
+export function lukasText(message: Pick<StoredMessage, 'role' | 'content'>): string | undefined {
+  if (message.role !== 'user' || message.content.length < 2) return undefined
+  const block = message.content[message.content.length - 2]
+  return block.type === 'text' ? (block.text as string) : undefined
+}
+
 /** A copy with the second breakpoint on the newest user turn, so the history caches turn by turn. */
 export function withCacheBreakpoint(messages: BetaMessageParam[]): BetaMessageParam[] {
   const index = messages.findLastIndex((m) => m.role === 'user')

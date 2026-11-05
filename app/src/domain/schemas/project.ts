@@ -11,8 +11,9 @@ export const TEMP_ID = /^new:\d+$/
 export const ID = /^([a-z]+)(\d+)$/
 
 /**
- * Raw API content blocks (text, thinking, tool_use, tool_result), stored unchanged. Refined in step 9.
- * `system` = app events (tech design §6.2). `aborted` = a stopped turn: shown, never sent again.
+ * Raw API content blocks (text, thinking, tool_use, tool_result), stored unchanged: the
+ * history is append-only (tech design §6.2). `system` = app events. `aborted` = a stopped
+ * turn: shown, never sent again. The other fields are local metadata, never sent.
  */
 export const storedMessage = z.strictObject({
   id: z.string(),
@@ -20,6 +21,8 @@ export const storedMessage = z.strictObject({
   role: z.enum(['user', 'assistant', 'system']),
   content: z.array(z.record(z.string(), z.unknown())),
   aborted: z.literal(true).optional(),
+  /** Invalid tool calls of this assistant turn (tool_use id → errors), answered as error results next turn. */
+  toolErrors: z.record(z.string(), z.array(z.string())).optional(),
 })
 
 export type StoredMessage = z.infer<typeof storedMessage>
@@ -95,6 +98,8 @@ function stepState<B extends z.ZodType>(block: B) {
       .strictObject({ at: iso, block, basis: z.partialRecord(stepKey, iso) })
       .optional(),
     resume: z.strictObject({ summary: z.string(), nextAction: z.string(), at: iso }).optional(),
+    /** The block as the newest stored user turn showed it: base for "unverändert" and for baseRev. */
+    sentBlock: block.optional(),
   })
 }
 

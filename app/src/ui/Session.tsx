@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { sdkAiClient, type AiClient } from '../ai/client'
 import { withBackupTime } from '../domain/backup'
 import { newProject } from '../domain/document'
 import type { Project } from '../domain/schemas/project'
+import type { StepId } from '../domain/types'
 import { createAutosave } from '../storage/autosave'
 import { backupProblemText, downloadBackup, readBackupFile } from '../storage/backup'
+import { loadDrafts, saveDrafts, type Drafts } from '../storage/drafts'
 import { findPreviousVersion, loadProjectOnce, restorePreviousVersion, type LoadProblem } from '../storage/load'
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../storage/settings'
 import { requestPersistence, type Store } from '../storage/store'
 import { holdTabLock } from '../storage/tabLock'
 import { App } from './App'
+import { useChatRunner } from './chat/useChatRunner'
 import { EmptyState } from './screens/EmptyState'
 import { LoadError } from './screens/LoadError'
 import { SecondTab } from './screens/SecondTab'
@@ -45,6 +48,10 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
   const [previousVersion, setPreviousVersion] = useState<number>()
   const [savedAt, setSavedAt] = useState<number>()
   const [saveFailed, setSaveFailed] = useState(false)
+  const [drafts, setDrafts] = useState<Drafts>({})
+  /** The newest project, for changes that land later (a streamed answer). */
+  const current = useRef<Project | null>(null)
+  if (phase.kind === 'ready') current.current = phase.project
 
   const autosave = useMemo(
     () =>
@@ -86,10 +93,12 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
         if (!live) return
         // Settings live under their own key and never block the start. Loaded on the error
         // path too: continuing with a backup from there must not reset key and setup.
-        const [stored, previous] = await Promise.all([loadSettings(store), findPreviousVersion(store)])
+        const [stored, previous, savedDrafts] = await Promise.all([loadSettings(store), findPreviousVersion(store), loadDrafts(store)])
         if (!live) return
         setSettings(stored)
         setPreviousVersion(previous)
+        drafted.current = savedDrafts
+        setDrafts(savedDrafts)
         setPhase(result.kind === 'error' ? result : { kind: 'ready', project: result.kind === 'ready' ? result.project : null })
       } finally {
         entering = false
@@ -140,10 +149,39 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
   /** Every project change goes through here, so it is always saved. */
   const update = useCallback(
     (project: Project) => {
+      current.current = project
       setPhase({ kind: 'ready', project })
       autosave.schedule(project)
     },
     [autosave],
+  )
+
+  /**
+   * A change computed from the newest project, e.g. an answer that arrives after other edits.
+   * `now`: saved at once instead of after the pause. Chrome drops writes that start while the
+   * page unloads, so a chat turn must not wait for the unload flush (lessons-learned, step 9).
+   */
+  const change = useCallback(
+    (fn: (project: Project) => Project, { now = false }: { now?: boolean } = {}) => {
+      if (!current.current) return
+      update(fn(current.current))
+      if (now) void autosave.flush()
+    },
+    [update, autosave],
+  )
+
+  const chat = useChatRunner({ ai, settings, change })
+
+  const drafted = useRef<Drafts>({})
+  const changeDraft = useCallback(
+    (step: StepId, text: string) => {
+      const next = { ...drafted.current, [step]: text }
+      if (!text) delete next[step]
+      drafted.current = next
+      setDrafts(next)
+      void saveDrafts(store, next)
+    },
+    [store],
   )
 
   // Starting or loading a project is a deliberate act: saved at once, not after the pause.
@@ -232,6 +270,9 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
       previousVersion={previousVersion}
       onRestorePrevious={restorePrevious}
       testConnection={ai.testConnection}
+      chat={chat}
+      drafts={drafts}
+      onDraftChange={changeDraft}
     />
   )
 }

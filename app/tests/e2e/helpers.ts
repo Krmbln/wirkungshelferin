@@ -1,5 +1,9 @@
 import type { Page, Request } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { sseAnswer } from '../fakeClaude'
+
+const FIXTURE_DIR = fileURLToPath(new URL('../fixtures/sse/', import.meta.url))
 
 // Every test starts with an empty browser profile, so the app opens on the empty state.
 // Setup (step 7) is marked as done first, so the project opens on home; setup.spec.ts
@@ -35,7 +39,7 @@ export async function completeSetup(page: Page, key: string): Promise<void> {
 type Answer = { status: number; body: string; contentType: string }
 
 /** Answers every request to api.anthropic.com from the test; returns the requests made. */
-export async function fakeClaude(page: Page, respond: () => Answer): Promise<Request[]> {
+export async function fakeClaude(page: Page, respond: () => Answer | Promise<Answer>): Promise<Request[]> {
   const requests: Request[] = []
   await page.route('https://api.anthropic.com/**', async (route) => {
     const request = route.request()
@@ -47,10 +51,26 @@ export async function fakeClaude(page: Page, respond: () => Answer): Promise<Req
     }
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     requests.push(request)
-    const { status, body, contentType } = respond()
-    await route.fulfill({ status, body, headers: { ...cors, 'content-type': contentType } })
+    const { status, body, contentType } = await respond()
+    // A request the page stopped meanwhile ("Stopp") can't be answered any more.
+    await route.fulfill({ status, body, headers: { ...cors, 'content-type': contentType } }).catch(() => undefined)
   })
   return requests
+}
+
+/**
+ * The SSE-replay harness: answers the n-th chat request with the n-th recorded stream from
+ * tests/fixtures/sse (made-up content, recorded by `npm run contract`); the last one repeats.
+ * `hold` keeps a request open that long first, so the test can press "Stopp" in between.
+ */
+export async function replayClaude(page: Page, names: string[], { hold = {} }: { hold?: Record<number, number> } = {}) {
+  let n = 0
+  return fakeClaude(page, async () => {
+    const i = n++
+    if (hold[i]) await new Promise((resolve) => setTimeout(resolve, hold[i]))
+    const body = await readFile(`${FIXTURE_DIR}${names[Math.min(i, names.length - 1)]}.sse`, 'utf8')
+    return { status: 200, body, contentType: 'text/event-stream' }
+  })
 }
 
 // Collects CSP violations and console errors from the moment the page starts.

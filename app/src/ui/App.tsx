@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { unanswered } from '../ai/chat'
 import { backupState } from '../domain/backup'
 import type { Project } from '../domain/schemas/project'
+import type { StepId } from '../domain/types'
+import type { Drafts } from '../storage/drafts'
 import { defaultSettings, type Settings as SettingsValue } from '../storage/settings'
+import { Chat } from './chat/Chat'
+import type { ChatControls } from './chat/useChatRunner'
 import { Banner } from './components/Banner'
 import { Button } from './components/Button'
 import { Home } from './frame/Home'
@@ -31,11 +36,16 @@ type Props = {
   testConnection?: SettingsProps['testConnection']
   /** Gallery and tests pin the clock; the app follows the real one. */
   now?: Date
+  /** Chat turns (Session's runner); the gallery passes fixed runs. */
+  chat?: ChatControls
+  drafts?: Drafts
+  onDraftChange?: (step: StepId, text: string) => void
 }
 
 const noop = () => {}
 const resolved = async () => {}
 const connected = async () => ({ ok: true }) as const
+const idleChat: ChatControls = { runs: {}, send: noop, stop: noop, retry: noop }
 
 // No router (tech design §2): app state decides the view.
 export function App({
@@ -51,6 +61,9 @@ export function App({
   onRestorePrevious,
   testConnection = connected,
   now: fixedNow,
+  chat = idleChat,
+  drafts = {},
+  onDraftChange = noop,
 }: Props) {
   const [view, setView] = useState<View>(initialView)
   const now = useNow(fixedNow)
@@ -116,7 +129,27 @@ export function App({
             onSaveBackup={onSaveBackup}
           />
         )}
-        {view.kind === 'step' && <StepWorkspace key={view.step} step={steps[view.step]} />}
+        {view.kind === 'step' && (
+          <StepWorkspace
+            key={view.step}
+            step={steps[view.step]}
+            chat={
+              <Chat
+                messages={project.steps[view.step].segments.flatMap((s) => s.messages)}
+                proposals={project.steps[view.step].proposals}
+                run={chat.runs[view.step]}
+                unanswered={unanswered(project, view.step)}
+                draft={drafts[view.step] ?? ''}
+                onDraftChange={(text) => onDraftChange(view.step, text)}
+                onSend={(text) => chat.send(view.step, text)}
+                onStop={() => chat.stop(view.step)}
+                onRetry={() => chat.retry(view.step)}
+                onOpenSettings={() => setView({ kind: 'settings' })}
+                model={settings.model}
+              />
+            }
+          />
+        )}
         {view.kind === 'settings' && (
           <Settings
             settings={settings}

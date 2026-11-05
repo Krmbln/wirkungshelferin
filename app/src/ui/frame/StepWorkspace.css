@@ -30,11 +30,6 @@
   margin-bottom: var(--space-3);
 }
 
-.workspace__composer {
-  flex: none;
-  margin: 0 var(--space-6) var(--space-6);
-}
-
 /* Sticky at the bottom of the block panel, at most ~40 % of its height (design §6.2). */
 .workspace__check {
   flex: none;
@@ -46,11 +41,4 @@
 
 .workspace__check-heading {
   margin-bottom: var(--space-2);
-}
-
-.placeholder-box {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  color: var(--text-muted);
 }

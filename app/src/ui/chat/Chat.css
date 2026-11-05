@@ -1,0 +1,194 @@
+/* Chat column (design §6.2): Claude left on --surface-subtle, Lukas right with a 1 px line. */
+.chat__messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.msg {
+  max-width: 88%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-panel);
+  overflow-wrap: anywhere;
+}
+
+.msg--assistant {
+  align-self: flex-start;
+  background: var(--surface-subtle);
+}
+
+.msg--user {
+  align-self: flex-end;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.msg__label {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.msg__plain {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.msg__thinking {
+  margin: 0;
+}
+
+.md + .msg__thinking,
+.md + .md {
+  margin-top: var(--space-3);
+}
+
+.msg__aborted {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.msg__proposal {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line-strong);
+  color: var(--text-muted);
+}
+
+.chat__error {
+  margin-top: var(--space-6);
+}
+
+/* The chat column can be ~330 px wide: text beside the icon, the buttons on a line below it. */
+.chat__error .banner {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  row-gap: var(--space-3);
+}
+
+.chat__error .banner > .status-icon {
+  margin-top: 2px;
+}
+
+.chat__error .banner__actions {
+  flex-wrap: wrap;
+  grid-column: 2;
+}
+
+.chat__no-answer {
+  margin: var(--space-6) 0 0;
+  color: var(--text-muted);
+}
+
+/* Markdown: body sizes only, so a heading from Claude never outranks the page. */
+.md > :first-child {
+  margin-top: 0;
+}
+
+.md > :last-child {
+  margin-bottom: 0;
+}
+
+.md p,
+.md ul,
+.md ol,
+.md blockquote,
+.md pre {
+  margin: 0 0 var(--space-3);
+}
+
+.md ul,
+.md ol {
+  padding-left: var(--space-6);
+}
+
+.md li + li {
+  margin-top: var(--space-1);
+}
+
+.md h1,
+.md h2,
+.md h3,
+.md h4,
+.md h5,
+.md h6 {
+  margin: var(--space-4) 0 var(--space-2);
+  font: var(--text-label);
+}
+
+.md blockquote {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line);
+  color: var(--text-muted);
+}
+
+.md code {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.md pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.md hr {
+  margin: var(--space-4) 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.md a {
+  color: var(--accent);
+}
+
+/* Composer: grows with the text up to a third of the column, then scrolls. */
+.composer {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+  align-items: flex-end;
+  margin: 0 var(--space-6) var(--space-6);
+  padding: var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.composer:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.composer__input {
+  flex: 1;
+  min-height: 48px;
+  max-height: 33vh;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: var(--text-body);
+  resize: none;
+  field-sizing: content;
+}
+
+/* Nothing to send yet: the icon goes quiet (Enter and a click do nothing then). */
+.composer:has(.composer__input:placeholder-shown) .composer__send {
+  color: var(--text-muted);
+}
+
+.composer__input:focus-visible {
+  outline: none;
+}
+
+.composer__input::placeholder {
+  color: var(--text-muted);
+}
