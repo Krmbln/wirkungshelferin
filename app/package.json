@@ -14,6 +14,7 @@
     "test:watch": "vitest --project unit",
     "test:domain": "vitest run --project unit tests/unit/domain --reporter=verbose",
     "test:dist": "vitest run --project dist",
+    "contract": "vitest run --project contract --reporter=verbose",
     "e2e": "playwright test",
     "gallery": "playwright test --config playwright.gallery.config.ts",
     "scan": "bash ../scripts/scan.test.sh && bash ../scripts/scan.sh",

@@ -10,13 +10,19 @@ const iso = z.iso.datetime()
 export const TEMP_ID = /^new:\d+$/
 export const ID = /^([a-z]+)(\d+)$/
 
-/** Raw API content blocks (text, thinking, tool_use, tool_result), stored unchanged. Refined in step 9. */
-const storedMessage = z.strictObject({
+/**
+ * Raw API content blocks (text, thinking, tool_use, tool_result), stored unchanged. Refined in step 9.
+ * `system` = app events (tech design §6.2). `aborted` = a stopped turn: shown, never sent again.
+ */
+export const storedMessage = z.strictObject({
   id: z.string(),
   at: iso,
-  role: z.enum(['user', 'assistant']),
+  role: z.enum(['user', 'assistant', 'system']),
   content: z.array(z.record(z.string(), z.unknown())),
+  aborted: z.literal(true).optional(),
 })
+
+export type StoredMessage = z.infer<typeof storedMessage>
 
 const chatSegment = z.strictObject({
   id: z.string(),

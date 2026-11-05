@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { sdkAiClient } from '../../../src/ai/client'
 import { FALLBACK_BETA, MAX_TOKENS } from '../../../src/ai/request'
+import { stepTools } from '../../../src/ai/tools'
 import { defaultSettings, type Settings } from '../../../src/storage/settings'
 import { dummyKey } from '../../dummyKey'
 import { errorBody, sseAnswer, sseError } from '../../fakeClaude'
@@ -50,8 +51,8 @@ describe('connection test: request options = a chat call', () => {
       stream: true,
       system: [{ type: 'text', cache_control: { type: 'ephemeral', ttl: '1h' } }],
     })
-    // Thinking can't be turned off on this model; the request leaves it at the default.
-    expect(body).not.toHaveProperty('thinking')
+    // Thinking can't be turned off on this model; adaptive is stated explicitly.
+    expect(body.thinking).toEqual({ type: 'adaptive' })
   })
 
   it('uses the model from the settings', async () => {
@@ -109,5 +110,74 @@ describe('connection test: failures', () => {
     const logged = JSON.stringify([log.mock.calls, warn.mock.calls, info.mock.calls])
     expect(logged).not.toContain(dummyKey)
     expect(logged).not.toContain(dummyKey.slice(-12))
+  })
+})
+
+describe('send: one streamed call', () => {
+  const call = {
+    system: 'System',
+    messages: [{ role: 'user' as const, content: 'Hallo' }],
+    maxTokens: MAX_TOKENS.chat,
+    tools: stepTools(1),
+  }
+
+  it('sends the step tools with auto tool choice and the shared options', async () => {
+    const fake = fakeFetch(() => sse(sseAnswer()))
+    const result = await client(fake.fetch).send(settings, call)
+    expect(result.status).toBe('done')
+    expect(result.status === 'done' && result.message.content).toEqual([expect.objectContaining({ type: 'text', text: 'OK' })])
+    const { body, headers } = fake.sent[0]
+    expect(headers.get('anthropic-beta')).toBe(FALLBACK_BETA)
+    expect(body).toMatchObject({ max_tokens: 16_000, fallbacks: 'default', output_config: { effort: 'high' }, tool_choice: { type: 'auto' } })
+    expect((body.tools as { name: string; strict: boolean }[]).map((t) => [t.name, t.strict])).toEqual([
+      ['propose_changes', true],
+      ['report_quality_check', true],
+    ])
+  })
+
+  it('a per-call effort overrides the setting', async () => {
+    const fake = fakeFetch(() => sse(sseAnswer()))
+    await client(fake.fetch).send(settings, { ...call, effort: 'low' })
+    expect(fake.sent[0].body.output_config).toEqual({ effort: 'low' })
+  })
+
+  it('a refusal is a finished answer; the caller reads stop_reason', async () => {
+    const result = await client(fakeFetch(() => sse(sseAnswer('refusal'))).fetch).send(settings, call)
+    expect(result.status === 'done' && result.message.stop_reason).toBe('refusal')
+  })
+
+  it('failures map like the connection test; no key or offline means no request', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(await client(fakeFetch(() => failure(529, 'overloaded_error')).fetch).send(settings, call)).toEqual({ status: 'failed', problem: 'busy' })
+    const fake = fakeFetch(() => sse(sseAnswer()))
+    expect(await client(fake.fetch, false).send(settings, call)).toEqual({ status: 'failed', problem: 'offline' })
+    expect(await client(fake.fetch).send(defaultSettings, call)).toEqual({ status: 'failed', problem: 'key' })
+    expect(fake.calls).not.toHaveBeenCalled()
+  })
+
+  it('stopped mid-stream: aborted, with what had arrived', async () => {
+    // The first two events arrive, then the stream waits until the request is aborted.
+    const [start, block] = sseAnswer().split('\n\n')
+    const hanging = vi.fn(async (_: unknown, init?: RequestInit) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(`${start}\n\n${block}\n\n`))
+          init?.signal?.addEventListener('abort', () => controller.error(new DOMException('aborted', 'AbortError')))
+        },
+      })
+      return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } })
+    })
+    const controller = new AbortController()
+    const events: string[] = []
+    const result = await client(hanging as unknown as typeof fetch).send(settings, call, {
+      signal: controller.signal,
+      onEvent: (e) => {
+        events.push(e.type)
+        if (e.type === 'content_block_start') controller.abort()
+      },
+    })
+    expect(events).toEqual(['message_start', 'content_block_start'])
+    expect(result.status).toBe('aborted')
+    expect(result.status === 'aborted' && result.partial?.content).toEqual([{ type: 'text', text: '' }])
   })
 })

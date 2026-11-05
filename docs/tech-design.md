@@ -157,6 +157,8 @@ Order matters for caching (tools → system → messages):
 
 **Message order after an assistant turn with tool calls:** `[user: all pending tool_result blocks]` → `[system: app events]` → `[user: Lukas's text + block snapshot]`. If the API rejects this shape (consecutive user turns around a system message), the fallback is one user message: tool_results first, then the events as text, then Lukas's text and the snapshot. The live contract test (§13) settles the shape **before** any UI is built on it; prompt assembly has a unit test for the chosen order.
 
+*As decided by the live contract (step 8, 2026-11-05):* the order is the **single user message** — `[user: tool_results, then the events as "[App] …" text, then Lukas's text, then the snapshot]`. The API refuses a `system` message between two user turns (it must end the array or come right before an assistant turn). Events as a `system` message *after* Lukas's turn pass a normal turn, but break after a stopped answer: the stopped answer is never sent, which leaves `[system] → [user]`. `MESSAGE_ORDER` in `src/ai/prompt.ts` holds the decision, and the contract fails if a later run disagrees. The context message and every snapshot are stored inside the user turn that carried them, so the history stays append-only. Stopped turns are stored with `aborted: true` and left out of every payload; a stopped turn's `tool_use` therefore never needs a `tool_result`. Both cache breakpoints use the 1-hour TTL.
+
 **Caching:** two breakpoints, one after the system prompt and one on the last message, so the growing history is cached turn by turn. The system-prompt breakpoint uses the **1-hour TTL**, because Lukas often edits the block or thinks for more than 5 minutes between turns.
 
 **Append-only rule:** the stored history is never edited, including the assistant's thinking blocks, which are stored and sent back unchanged. The current models reject edited history on newer accounts. When a chat gets long, the app doesn't rewrite it; it starts a **new segment** (see 6.5).
@@ -176,6 +178,8 @@ Both tools use `strict: true`, `tool_choice: auto` (forced tool choice isn't sup
 - Every variant has `additionalProperties: false`; the union is generated from the step's Zod schemas.
 - **Temporary IDs:** an `add` carries a `tempId` (`new:1`); other changes in the same proposal may reference it (e.g. a new link pointing to a new output). Applying resolves temp IDs to real IDs.
 - A unit test sends every generated step schema through the strict-mode check of the live contract test (§13). If a step's union is too large for strict mode, that step falls back to `strict: false` with the same Zod validation.
+*As built (step 8):* strict mode allows at most 16 union-typed and 24 optional parameters per request, so the schema is flat. Every field is required; optional texts are `""`; `why` only exists on Why-carrying collections. There is one variant per collection (`op` add | update; singletons: update only, under their own id) plus one shared `remove` variant, and this list is the only union. **An update carries the item's complete fields**; the app keeps only the fields that differ from the snapshot it sent and adds `baseRev` itself, so Claude never supplies revs. Both tools set `eager_input_streaming`; every input is validated with the same Zod schema before it becomes a card. All 7 steps passed strict mode live, so none needs the `strict: false` fallback.
+
 **`report_quality_check`** — the assistant's rubric judgement (✓ / ⚠ per criterion + one sentence). Criteria IDs come from the step's rubric table in the guide.
 
 Because the tool input streams, the app validates each tool input against its Zod schema before showing it. Invalid input → an error `tool_result` back to the assistant, never a broken card.
@@ -197,6 +201,8 @@ Because the tool input streams, the app validates each tool input against its Zo
 
 ### 6.6 PDF import (step 0)
 The PDF is sent once as a base64 `document` block with an extraction instruction (works for scanned PDFs, since the model reads pages visually). The extracted text is streamed and stored; if it hits `max_tokens`, the app asks the model to continue where it stopped. The file is discarded. Limits: files up to ~24 MB (the 32 MB request limit minus base64 overhead), 600 pages. Failure → plain message + paste fallback (PRD F3).
+
+*As built (step 8):* `extractPdf` uses effort `low` (copying text needs no deep thinking, and thinking counts against `max_tokens`). On a `max_tokens` stop, the full assistant turn goes back unchanged, followed by a user turn quoting the end of the text so far ("mach genau dort weiter"); there is no assistant prefill on this model. At most 4 rounds; then `incomplete` with the text so far.
 
 ### 6.7 Errors (PRD F1, §5)
 The SDK's typed errors are mapped to plain German messages with what to do:

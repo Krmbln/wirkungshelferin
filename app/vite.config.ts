@@ -58,6 +58,18 @@ export default defineConfig({
           include: ['tests/dist/**/*.test.ts'],
         },
       },
+      {
+        // `npm run contract` only: real API calls, never in `check` or CI (implementation plan step 8).
+        extends: true,
+        test: {
+          name: 'contract',
+          environment: 'node',
+          include: ['tests/contract/**/*.test.ts'],
+          testTimeout: 300_000,
+          hookTimeout: 30_000,
+          fileParallelism: false,
+        },
+      },
     ],
   },
 })

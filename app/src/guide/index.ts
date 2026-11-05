@@ -23,3 +23,10 @@ export const guideFiles = {
 } as const
 
 export type GuideFileName = keyof typeof guideFiles
+
+/** The guide file of a method step ("step-1-…"). */
+export function stepGuide(step: number): { name: GuideFileName; text: string } {
+  const name = (Object.keys(guideFiles) as GuideFileName[]).find((n) => n.startsWith(`step-${step}-`))
+  if (!name) throw new Error(`No guide file for step ${step}`)
+  return { name, text: guideFiles[name] }
+}

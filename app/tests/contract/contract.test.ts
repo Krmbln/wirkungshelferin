@@ -1,0 +1,448 @@
+// @vitest-environment node
+import { existsSync, writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import type { BetaMessage, BetaToolResultBlockParam, BetaToolUseBlock } from '@anthropic-ai/sdk/resources/beta/messages/messages'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { sdkAiClient, type SendOptions, type SendResult } from '../../src/ai/client'
+import { extractPdf } from '../../src/ai/pdf'
+import {
+  MESSAGE_ORDER,
+  contextText,
+  historyMessages,
+  nextTurn,
+  pendingToolUses,
+  snapshotText,
+  systemPrompt,
+  withCacheBreakpoint,
+  type MessageOrder,
+  type Turn,
+} from '../../src/ai/prompt'
+import { checkToolResult, errorToolResult, proposalToolResult, toProposal } from '../../src/ai/proposal'
+import { MAX_TOKENS } from '../../src/ai/request'
+import { CHECK, PROPOSE, stepTools } from '../../src/ai/tools'
+import { stepOf, type LooseBlock } from '../../src/domain/block'
+import type { Item } from '../../src/domain/schemas/blocks'
+import { demoProject } from '../../src/domain/demo'
+import { reducer } from '../../src/domain/reducer'
+import { changeView } from '../../src/domain/proposals'
+import { projectSchema, type Project, type Proposal, type StoredMessage } from '../../src/domain/schemas/project'
+import { stepIds } from '../../src/domain/types'
+import type { Settings } from '../../src/storage/settings'
+import { PDF_FIRST_LINE, PDF_LAST_LINE, PDF_ROWS, madeUpPdfBase64 } from '../madeUpPdf'
+import { FIXTURES, recorder } from './recorder'
+
+// `npm run contract` (implementation plan step 8): the real ai/ layer against the real API.
+// Manual only, costs a few cents per run. Each check is one test; the report at the end
+// states the decided message order and what the run cost.
+
+const REPORT = fileURLToPath(new URL('./REPORT.md', import.meta.url))
+const AT = '2026-11-05T10:00:00.000Z'
+
+// ---------------------------------------------------------------- setup
+
+let settings: Settings
+const rec = recorder()
+const ai = sdkAiClient({ fetch: rec.fetch, online: () => true })
+
+beforeAll(() => {
+  const env = fileURLToPath(new URL('../../.env.local', import.meta.url))
+  if (!existsSync(env)) throw new Error('app/.env.local fehlt (ANTHROPIC_API_KEY=…).')
+  process.loadEnvFile(env)
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY fehlt in app/.env.local.')
+  // The app's defaults: the contract tests what Lukas will run.
+  settings = { apiKey, model: 'claude-opus-5-5', effort: 'medium', setupDone: true }
+})
+
+// ---------------------------------------------------------------- report
+
+type Row = { check: string; ok: boolean; note: string }
+const rows: Row[] = []
+const usage = { calls: 0, input: 0, output: 0, cacheRead: 0, write1h: 0, write5m: 0 }
+const facts: string[] = []
+
+function count(message: BetaMessage | undefined) {
+  if (!message) return
+  const u = message.usage
+  usage.calls++
+  usage.input += u.input_tokens ?? 0
+  usage.output += u.output_tokens ?? 0
+  usage.cacheRead += u.cache_read_input_tokens ?? 0
+  const creation = u.cache_creation
+  usage.write1h += creation?.ephemeral_1h_input_tokens ?? 0
+  usage.write5m += creation?.ephemeral_5m_input_tokens ?? 0
+}
+
+/** Opus 5.5 per million tokens: $4 in, $20 out, $0.20 cache read, cache writes 2× (1 h) / 1.25× (5 min). */
+const dollars = () =>
+  (usage.input * 4 + usage.output * 20 + usage.cacheRead * 0.2 + usage.write1h * 8 + usage.write5m * 5) / 1e6
+
+/** Runs a check, then records ✓ or ✗ (with the reason) for the report. */
+async function check(name: string, run: () => Promise<string | void>) {
+  try {
+    const note = (await run()) ?? ''
+    rows.push({ check: name, ok: true, note })
+  } catch (error) {
+    rows.push({ check: name, ok: false, note: (error as Error).message.split('\n')[0] })
+    throw error
+  }
+}
+
+afterAll(() => {
+  const lines = [
+    '# Live API contract — last run',
+    '',
+    `Run: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC · model ${settings?.model} · effort ${settings?.effort}`,
+    '',
+    '| | Check | Note |',
+    '|---|---|---|',
+    ...rows.map((r) => `| ${r.ok ? '✓' : '✗'} | ${r.check} | ${r.note.replace(/\|/g, '/')} |`),
+    '',
+    ...facts.map((f) => `- ${f}`),
+    '',
+    `Usage: ${usage.calls} calls · input ${usage.input} · output ${usage.output} · cache read ${usage.cacheRead} · ` +
+      `cache write 1 h ${usage.write1h} / 5 min ${usage.write5m} · **≈ $${dollars().toFixed(2)}**`,
+    '',
+  ]
+  writeFileSync(REPORT, lines.join('\n'))
+  console.log(`\n${lines.join('\n')}`)
+})
+
+// ---------------------------------------------------------------- helpers
+
+/** Fails a check with the API's error text when a call didn't come back done. */
+function done(result: SendResult): BetaMessage {
+  if (result.status === 'done') {
+    count(result.message)
+    const dropped = (result.message as BetaMessage & { input_transformations?: { type: string }[] }).input_transformations ?? []
+    expect(dropped.filter((t) => t.type === 'thinking_dropped'), 'thinking blocks were dropped').toEqual([])
+    return result.message
+  }
+  if (result.status === 'aborted') throw new Error('aborted')
+  throw new Error(`${result.problem}: ${rec.lastError() ?? ''}`)
+}
+
+const toolUses = (message: BetaMessage) => message.content.filter((b): b is BetaToolUseBlock => b.type === 'tool_use')
+
+// ---------------------------------------------------------------- 1. strict mode
+
+describe('1 · tool schemas in strict mode', () => {
+  for (const step of stepIds) {
+    it(`step ${step}: both tools are accepted with strict: true`, () =>
+      check(`Strict schemas step ${step}`, async () => {
+        const message = done(
+          await ai.send(settings, {
+            system: 'Vertragstest der Wirkungshelferin.',
+            tools: stepTools(step),
+            messages: [{ role: 'user', content: 'Antworte nur mit „OK“. Benutze kein Werkzeug.' }],
+            maxTokens: 512,
+            effort: 'low',
+          }),
+        )
+        return `stop: ${message.stop_reason}`
+      }))
+  }
+})
+
+// ---------------------------------------------------------------- 2. step 1 conversation
+
+describe('2 · step 1 conversation (demo project)', () => {
+  const step = 1 as const
+  let project: Project = demoProject()
+  let stored: StoredMessage[] = []
+  let seen: LooseBlock | undefined
+  let proposals: Proposal[] = []
+  let decided: MessageOrder | undefined
+  const cacheReads: number[] = []
+  let n = 0
+
+  const block = () => stepOf(project, step).block
+  const store = (messages: Pick<StoredMessage, 'role' | 'content' | 'aborted'>[]) => {
+    for (const m of messages) stored.push({ id: `m${++n}`, at: AT, ...m } as StoredMessage)
+  }
+
+  /** Answers every pending tool_use: proposals with what Lukas did, broken calls with the errors. */
+  function toolResults(): BetaToolResultBlockParam[] {
+    return pendingToolUses(stored).map((id) => {
+      const proposal = proposals.find((p) => p.toolUseId === id)
+      if (proposal) return proposalToolResult(project, step, proposal)
+      const use = stored.flatMap((m) => m.content).find((b) => b.id === id)
+      return use?.name === CHECK ? checkToolResult(id) : errorToolResult(id, invalid.get(id) ?? ['Vorschlag war ungültig.'])
+    })
+  }
+
+  /** Sends Lukas's next turn; `keep` stores it (append-only) together with the answer. */
+  async function send(
+    turn: Omit<Turn, 'snapshot' | 'pending'>,
+    opts: { order?: MessageOrder; maxTokens?: number; record?: string; keep?: boolean } & SendOptions = {},
+  ) {
+    const at = structuredClone(project)
+    // What the snapshot shows is what Claude saw, even if the block changes while it answers.
+    const shown = structuredClone(block())
+    const snapshot = snapshotText(step, shown, seen)
+    const appended = nextTurn({ ...turn, pending: pendingToolUses(stored), snapshot }, opts.order)
+    const messages = withCacheBreakpoint(historyMessages([...stored, ...appended] as StoredMessage[]))
+    if (opts.record) rec.recordNext(opts.record)
+    const result = await ai.send(
+      settings,
+      { system: systemPrompt(step), tools: stepTools(step), messages, maxTokens: opts.maxTokens ?? MAX_TOKENS.chat },
+      { signal: opts.signal, onEvent: opts.onEvent },
+    )
+    await rec.flushed()
+    if (opts.keep !== false && result.status !== 'failed') {
+      seen = shown
+      const answer = result.status === 'done' ? result.message : result.partial
+      store([...appended, ...(answer ? [{ role: 'assistant' as const, content: answer.content as never, ...(result.status === 'aborted' && { aborted: true as const }) }] : [])])
+    }
+    // The project as the recorded request saw it: replay tests convert the answer against it.
+    if (opts.record) writeFileSync(`${FIXTURES}${opts.record}.json`, JSON.stringify({ step, project: at }, null, 2))
+    return result
+  }
+
+  /** Invalid calls, answered with an error tool_result in the next turn (tool_use id → errors). */
+  const invalid = new Map<string, string[]>()
+
+  /** Turns every propose_changes call of the answer into a stored proposal; invalid calls are kept for the error result. */
+  function takeProposals(message: BetaMessage): Proposal[] {
+    const found: Proposal[] = []
+    for (const use of toolUses(message).filter((u) => u.name === PROPOSE)) {
+      const result = toProposal(step, use.input, { seen: seen!, toolUseId: use.id, proposalId: `p${proposals.length + 1}`, at: AT })
+      if (!result.ok) {
+        invalid.set(use.id, result.errors)
+        continue
+      }
+      project = reducer(project, { type: 'proposal/add', step, proposal: result.proposal })
+      proposals.push(result.proposal)
+      found.push(result.proposal)
+    }
+    return found
+  }
+  const latest = (proposal: Proposal) => project.steps[step].proposals.find((p) => p.id === proposal.id)!
+  const syncProposals = () => (proposals = proposals.map(latest))
+
+  it('opening: valid propose_changes, temp ids resolve to real ids', () =>
+    check('Step 1 opening: tool call valid, temp ids → real ids', async () => {
+      const message = done(
+        await send(
+          {
+            context: contextText(project, step),
+            text: 'Hallo! Schritt 0 ist bestätigt. Mach mir bitte gleich einen ersten Vorschlag für die Herausforderung, die Zielgruppen und die Beteiligten.',
+          },
+          { record: 'step1-opening' },
+        ),
+      )
+      cacheReads.push(message.usage.cache_read_input_tokens ?? 0)
+      let [proposal] = takeProposals(message)
+      let note = ''
+      if (!proposal && invalid.size) {
+        // The designed path for a broken call: the errors go back, Claude corrects it.
+        note = `first call invalid (${[...invalid.values()].flat().join(' ')}), corrected after the error tool_result; `
+        facts.push(`Opening: ${note.slice(0, -2)}`)
+        const retry = done(await send({ toolResults: toolResults(), text: 'Bitte korrigiere den Vorschlag.' }, { record: 'step1-opening-corrected' }))
+        ;[proposal] = takeProposals(retry)
+      }
+      expect(proposal, 'no valid propose_changes call').toBeDefined()
+      const adds = proposal.changes.filter((c) => c.op === 'add')
+      expect(adds.length).toBeGreaterThan(1)
+      // Lukas takes all but the last change, rejects that one.
+      const last = proposal.changes.at(-1)!
+      project = reducer(project, { type: 'change/reject', step, proposalId: proposal.id, changeId: last.id })
+      project = reducer(project, { type: 'change/applyAll', step, proposalId: proposal.id })
+      syncProposals()
+      const applied = latest(proposal).changes.filter((c) => c.state === 'applied')
+      for (const c of applied.filter((c) => c.op === 'add')) expect(c.resultId).toMatch(/^[a-z]+\d+$/)
+      projectSchema.parse(project)
+      return `${note}${proposal.changes.length} changes (${adds.length} adds), ${applied.length} applied, 1 rejected`
+    }))
+
+  it('message order: the documented shapes against the real API', () =>
+    check('Message order', async () => {
+      // Lukas edits a target group himself, then writes.
+      const tg = (block().targetGroups as Item[])[0] as Item & { description: string }
+      project = reducer(project, {
+        type: 'item/edit',
+        step,
+        collection: 'targetGroups',
+        id: tg.id,
+        fields: { description: `${tg.description} Vor allem aus den Hochhäusern am Weidengrund.` },
+      })
+      const proposal = proposals[0]
+      const appliedCount = proposal.changes.filter((c) => c.state === 'applied').length
+      const turn = {
+        toolResults: toolResults(),
+        events: [
+          `Die Person hat ${appliedCount} Änderungen aus Vorschlag ${proposal.id} übernommen und 1 abgelehnt.`,
+          `Die Person hat die Beschreibung von ${tg.id} selbst geändert.`,
+        ],
+        text: `Bitte grenz ${tg.id} auf die 12- bis 14-Jährigen ein, die Älteren kommen kaum.`,
+      }
+
+      // A, B and C on the same history, not stored: does the API accept the shape?
+      const shape = async (order: MessageOrder) => {
+        const result = await send(turn, { order, maxTokens: 512, keep: false })
+        if (result.status === 'done') count(result.message)
+        return result.status === 'failed' ? `refused (${(rec.lastError() ?? '').slice(0, 200)})` : 'accepted'
+      }
+      const a = await shape('system-between')
+      const b = await shape('system-after')
+      const c = await shape('single-user')
+      // B after a stopped answer: the stop leaves [user] → [system: events] → [user].
+      const probe = await ai.send(settings, {
+        system: 'Vertragstest der Wirkungshelferin.',
+        messages: [
+          { role: 'user', content: 'Hallo.' },
+          { role: 'system', content: 'Die Person hat eine Änderung übernommen.' },
+          { role: 'user', content: 'Antworte nur mit „OK“.' },
+        ],
+        maxTokens: 256,
+        effort: 'low',
+      })
+      if (probe.status === 'done') count(probe.message)
+      const afterStop = probe.status === 'failed' ? `refused (${(rec.lastError() ?? '').slice(0, 200)})` : 'accepted'
+
+      facts.push(`Shape A \`system-between\` ([user: tool_results] → [system: events] → [user: text]): ${a}`)
+      facts.push(`Shape B \`system-after\` ([user: tool_results + text] → [system: events]): ${b}`)
+      facts.push(`Shape B after a stopped answer ([user] → [system] → [user]): ${afterStop}`)
+      facts.push(`Shape C \`single-user\` ([user: tool_results + "[App] …" + text]): ${c}`)
+      decided = b === 'accepted' && afterStop === 'accepted' ? 'system-after' : c === 'accepted' ? 'single-user' : undefined
+      facts.push(`**Decided message order: \`${decided}\`** (MESSAGE_ORDER in src/ai/prompt.ts)`)
+      expect(decided, `set MESSAGE_ORDER to '${decided}' in src/ai/prompt.ts and run the contract again`).toBe(MESSAGE_ORDER)
+
+      // The real turn, in the decided order.
+      cacheReads.push(done(await send(turn, { record: 'step1-update' })).usage.cache_read_input_tokens ?? 0)
+      return String(decided)
+    }))
+
+  it('short ids: an update to an existing item applies against the rev Claude saw', () =>
+    check('Step 1 update by short id + baseRev', async () => {
+      // `seen` is still the block the update request showed.
+      const answer = stored.filter((m) => m.role === 'assistant').at(-1)!
+      const found = takeProposals({ content: answer.content } as unknown as BetaMessage)
+      const updates = found.flatMap((p) => p.changes.filter((c) => c.op === 'update').map((c) => ({ p, c })))
+      expect(updates.length, 'no update in the answer').toBeGreaterThan(0)
+      for (const { p, c } of updates) {
+        expect(changeView(project, step, p.id, c.id).kind).toBe('open')
+        project = reducer(project, { type: 'change/apply', step, proposalId: p.id, changeId: c.id })
+      }
+      syncProposals()
+      const { p, c } = updates[0]
+      expect(latest(p).changes.find((x) => x.id === c.id)!.state).toBe('applied')
+      return `${updates.map(({ c }) => `${c.targetId} (baseRev ${c.baseRev})`).join(', ')} applied`
+    }))
+
+  it('stop during thinking: left out of the next payload', () =>
+    check('Stopped during thinking (turn with an app event)', async () => {
+      const controller = new AbortController()
+      // The event makes the hard case: its system message is followed by Lukas's next turn,
+      // because the stopped answer between them is never sent.
+      const result = await send(
+        {
+          toolResults: toolResults(),
+          events: [`Die Person hat die Änderung an ${proposals.at(-1)!.changes[0].targetId} übernommen.`],
+          text: 'Was meinst du: Sind die Eltern eine eigene Zielgruppe?',
+        },
+        { record: 'step1-stopped-thinking', signal: controller.signal, onEvent: (e) => e.type === 'content_block_start' && controller.abort() },
+      )
+      expect(result.status).toBe('aborted')
+      if (result.status === 'aborted') count(result.partial)
+      return `first block: ${result.status === 'aborted' ? result.partial?.content[0]?.type ?? 'none' : '-'}`
+    }))
+
+  it('stop during tool_use: left out of the next payload', () =>
+    check('Stopped during tool_use', async () => {
+      const controller = new AbortController()
+      let sawToolUse = false
+      const result = await send(
+        { toolResults: toolResults(), text: 'Lass das. Schlag bitte die Hausverwaltung der Siedlung als Beteiligte vor.' },
+        {
+          record: 'step1-stopped-tool',
+          signal: controller.signal,
+          onEvent: (e) => {
+            if (e.type === 'content_block_start' && e.content_block.type === 'tool_use') (sawToolUse = true), controller.abort()
+          },
+        },
+      )
+      expect(sawToolUse, 'the answer had no tool_use to stop in').toBe(true)
+      expect(result.status).toBe('aborted')
+      if (result.status === 'aborted') count(result.partial)
+      return 'stopped at tool_use start'
+    }))
+
+  it('after both stops: history accepted, no aborted content sent', () =>
+    check('History after stopped turns accepted (strict history check)', async () => {
+      const kept = stored.filter((m) => !m.aborted).length
+      const result = await send(
+        { toolResults: toolResults(), text: 'Sorry, ich hab zweimal abgebrochen. Schlag bitte die Hausverwaltung als Beteiligte vor.' },
+        { record: 'step1-after-stop' },
+      )
+      const sent = rec.lastRequest()!.messages as { role: string; content: { type: string }[] }[]
+      // Everything stored and not stopped, plus the new turn (one user message, no events).
+      expect(sent.length).toBe(kept + 1)
+      const message = done(result)
+      cacheReads.push(message.usage.cache_read_input_tokens ?? 0)
+      // Orphans would be a tool_use without a tool_result in the next user turn.
+      for (let i = 0; i < sent.length - 1; i++) {
+        const ids = sent[i].content.filter((b) => b.type === 'tool_use').length
+        if (ids && sent[i].role === 'assistant') expect(sent[i + 1].content.filter((b) => b.type === 'tool_result').length).toBe(ids)
+      }
+      const found = takeProposals(message)
+      return `${sent.length} messages sent, ${stored.filter((m) => m.aborted).length} stopped turns left out, ${found.length} new proposal(s)`
+    }))
+
+  it('reload with an open proposal: tool_result "offen" accepted', () =>
+    check('Reload with open proposal', async () => {
+      // A reload = the stored document and history read back from JSON.
+      project = projectSchema.parse(JSON.parse(JSON.stringify(project)))
+      stored = JSON.parse(JSON.stringify(stored)) as StoredMessage[]
+      syncProposals()
+      const results = toolResults()
+      const open = results.some((r) => String(r.content).includes('offen'))
+      const message = done(
+        await send(
+          { toolResults: results, text: 'Ich schau mir den Vorschlag gleich an. Was ist für dich gerade der unsicherste Punkt?' },
+          { record: 'step1-reload' },
+        ),
+      )
+      cacheReads.push(message.usage.cache_read_input_tokens ?? 0)
+      return `${results.length} tool_result(s)${open ? ', with open changes' : ''}; stop: ${message.stop_reason}`
+    }))
+
+  it('cache hits: system prompt and history are read from the cache', () =>
+    check('Cache hits', async () => {
+      expect(cacheReads.length).toBeGreaterThan(2)
+      const [first, ...later] = cacheReads
+      for (const read of later) expect(read).toBeGreaterThan(0)
+      // The history caches turn by turn, so later turns read more than the first cached one.
+      expect(later.at(-1)!).toBeGreaterThan(later[0])
+      facts.push(`Cache reads per turn: ${cacheReads.join(' → ')} tokens`)
+      return `first turn ${first}, then ${later.join(', ')}`
+    }))
+})
+
+// ---------------------------------------------------------------- 3. PDF
+
+describe('3 · PDF smoke check (made-up PDF)', () => {
+  it('extracts the text, continuing after max_tokens', () =>
+    check('PDF extraction with continuation', async () => {
+      let round = 0
+      // The real client, recording each round and counting its usage.
+      const recording: typeof ai = {
+        ...ai,
+        async send(s, call, o) {
+          rec.recordNext(`pdf-round${++round}`)
+          const result = await ai.send(s, call, o)
+          await rec.flushed()
+          if (result.status === 'done') count(result.message)
+          return result
+        },
+      }
+      const result = await extractPdf(recording, settings, madeUpPdfBase64(), { maxTokens: 700, maxRounds: 6 })
+      if (result.status !== 'done') throw new Error(`PDF: ${result.status} ${rec.lastError() ?? ''}`)
+      expect(result.rounds, 'no continuation happened').toBeGreaterThan(1)
+      expect(result.text).toContain(PDF_FIRST_LINE.split(' - ')[0])
+      const missing = Array.from({ length: PDF_ROWS }, (_, i) => i + 1).filter((i) => !result.text.includes(`Nachmittag ${i}:`))
+      expect(missing, 'rows missing in the extracted text').toEqual([])
+      expect(result.text).toContain(PDF_LAST_LINE)
+      return `${result.rounds} rounds, ${result.text.length} characters, all ${PDF_ROWS} rows`
+    }))
+})
