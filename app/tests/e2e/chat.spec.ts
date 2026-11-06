@@ -90,3 +90,44 @@ test('a sent message survives a reload while Claude still answers (saved at once
   await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
   await expect(log(page).getByText('Sofort neu laden')).toBeVisible()
 })
+
+test('step 10: a model change in the settings starts a new segment with a summary', async ({ page }) => {
+  const problems = await watchProblems(page)
+  const requests = await replayClaude(page, ['step1-opening', 'step1-reload', 'step1-reload'])
+  await openStep1(page)
+  await expect(page.getByRole('button', { name: 'Worum geht es?' })).toHaveAttribute('aria-expanded', 'true')
+  await input(page).fill('Hallo, wir fangen an.')
+  await input(page).press('Enter')
+  await expect(page.getByRole('button', { name: 'Senden' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Einstellungen' }).click()
+  const model = page.getByRole('textbox', { name: 'Modell' })
+  await model.fill('claude-sonnet-5-5')
+  await model.press('Enter')
+  await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
+  await input(page).fill('Weiter geht’s.')
+  await input(page).press('Enter')
+  await expect(log(page).getByText('Neuer Gesprächsabschnitt')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Senden' })).toBeVisible()
+
+  expect(requests).toHaveLength(3)
+  const summary = requests[1].postDataJSON()
+  expect(summary).toMatchObject({ model: 'claude-sonnet-5-5', max_tokens: 4_000, output_config: { effort: 'low' } })
+  expect(summary.tools).toBeUndefined()
+  expect(JSON.stringify(summary.messages)).toContain('Hallo, wir fangen an.')
+  const turn = requests[2].postDataJSON()
+  expect(turn.messages).toHaveLength(1)
+  expect(JSON.stringify(turn.messages)).toContain('zusammengefasst]')
+  expect(JSON.stringify(turn.messages)).not.toContain('tool_result')
+
+  const project = (await readStored(page, 'project')) as { steps: Record<string, { segments: { model?: string; summaryOfPrevious?: string }[] }> }
+  const segments = project.steps[1].segments
+  expect(segments.map((s) => s.model)).toEqual(['claude-opus-5-5', 'claude-sonnet-5-5'])
+  expect(segments[1].summaryOfPrevious).toBeTruthy()
+  // Survives a reload right away (saved at once, lessons-learned step 9).
+  await page.reload()
+  await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
+  await expect(log(page).getByText('Neuer Gesprächsabschnitt')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Worum geht es?' })).toHaveAttribute('aria-expanded', 'false')
+  expect(problems).toEqual([])
+})

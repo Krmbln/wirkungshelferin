@@ -10,6 +10,8 @@ export type StreamBlock = { type: 'text'; text: string } | { type: 'other' }
 
 export type ChatRun =
   | { kind: 'running'; blocks: StreamBlock[] }
+  /** The summary before a new segment (summarise.ts); `text` = Lukas's turn, not stored yet. */
+  | { kind: 'summarising'; text: string }
   /** `partial`: text that arrived before the stream broke, shown until the next try. */
   | { kind: 'failed'; problem: AiProblem; partial: string }
 

@@ -44,6 +44,10 @@
   right: 0;
 }
 
+.tooltip--fixed .tooltip__bubble {
+  position: fixed;
+}
+
 .tooltip--right .tooltip__bubble {
   position: fixed;
   transform: translateY(-50%);

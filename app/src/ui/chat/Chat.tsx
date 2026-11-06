@@ -1,19 +1,26 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { problemText } from '../../ai/errors'
 import { lukasText } from '../../ai/prompt'
 import { PROPOSE } from '../../ai/tools'
-import type { Proposal, StoredMessage } from '../../domain/schemas/project'
+import type { ChatSegment, Proposal, StoredMessage } from '../../domain/schemas/project'
+import type { StepIntro } from '../../guide/intro'
 import { Banner } from '../components/Banner'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { ThinkingIndicator } from '../components/ThinkingIndicator'
+import { IntroPanel } from './IntroPanel'
 import { Markdown } from './Markdown'
+import { sessionBreak, sessionLabel } from './sessions'
 import { isThinking, messageTexts, streamTexts, type ChatRun } from './stream'
 import './Chat.css'
 
 export type ChatProps = {
-  /** Every stored message of the step, oldest first. */
-  messages: StoredMessage[]
+  /** The step's chat segments, oldest first; all stay visible. */
+  segments: ChatSegment[]
+  /** The step's intro panel; open while the chat is empty. */
+  intro?: StepIntro
+  /** For the "Letzte Sitzung" divider. */
+  now: Date
   proposals: Proposal[]
   run?: ChatRun
   /** The newest turn is Lukas's and has no answer (e.g. after a reload during a failed turn). */
@@ -32,12 +39,19 @@ const FOLLOW_SLACK = 80
 
 // The chat column (design §6.2). Lukas's turns right, Claude's left; the stream shows
 // "denkt nach …" until text arrives. Errors stay in the chat, the input is never lost.
-export function Chat({ messages, proposals, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model }: ChatProps) {
+export function Chat({ segments, intro, now, proposals, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model }: ChatProps) {
   const log = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const following = useRef(true)
-  const running = run?.kind === 'running'
+  // Lukas scrolled up to read while an answer comes in: "Zur neuesten Nachricht" shows.
+  const [away, setAway] = useState(false)
+  const messages = segments.flatMap((s) => s.messages)
+  // Open on a first visit, collapsed once the step has a chat; it never closes under Lukas's hands.
+  const [introOpen, setIntroOpen] = useState(() => !messages.length)
+  const running = run?.kind === 'running' || run?.kind === 'summarising'
   const announcement = useAnnouncement(messages)
+  const visible = messages.filter((m) => m.role !== 'system')
+  const sessionStart = sessionBreak(visible.map((m) => m.at), now)
 
   // Send ↔ Stopp and the error banner come and go; focus that went with them returns to the
   // input, so Lukas can keep typing without clicking back (design §10).
@@ -55,11 +69,20 @@ export function Chat({ messages, proposals, run, unanswered, draft, onDraftChang
     if (el && following.current) el.scrollTop = el.scrollHeight
   }, [messages.length, streamed, run?.kind])
 
+  const toNewest = () => {
+    const el = log.current
+    if (el) el.scrollTop = el.scrollHeight
+    following.current = true
+    setAway(false)
+    input.current?.focus()
+  }
+
   function send() {
     const text = draft.trim()
     if (!text || running) return
     onDraftChange('')
     following.current = true
+    setAway(false)
     onSend(text)
     input.current?.focus()
   }
@@ -77,23 +100,41 @@ export function Chat({ messages, proposals, run, unanswered, draft, onDraftChang
     send()
   }
 
+  // Session divider before the first message after the newest break (or at the end), segment
+  // dividers where a new segment starts. Both at one spot merge into one line.
+  const session = sessionStart && sessionLabel(sessionStart.last, now)
+  const items: ReactNode[] = []
+  let index = 0
+  segments.forEach((segment, si) => {
+    segment.messages.forEach((message, mi) => {
+      const here = message.role !== 'system' && sessionStart?.index === index++
+      if (si > 0 && mi === 0) items.push(<SegmentDivider key={`seg-${segment.id}`} summary={segment.summaryOfPrevious} session={here ? session : undefined} />)
+      else if (here) items.push(<SessionDivider key="session" label={session!} />)
+      items.push(<ChatMessage key={message.id} message={message} proposals={proposals} />)
+    })
+  })
+  // At the end: Lukas is back and hasn't written yet. A summary run shows the new segment's line already.
+  const atEnd = sessionStart?.index === visible.length ? session : undefined
+  if (run?.kind === 'summarising') items.push(<SegmentDivider key="seg-pending" pending session={atEnd} />)
+  else if (atEnd) items.push(<SessionDivider key="session" label={atEnd} />)
+
   return (
     <>
+      {intro && <IntroPanel intro={intro} open={introOpen} onToggle={() => setIntroOpen((o) => !o)} />}
       <div
         className="workspace__scroll chat__log"
         ref={log}
         onScroll={(e) => {
           const el = e.currentTarget
           following.current = el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_SLACK
+          setAway(!following.current)
         }}
       >
         {!messages.length && !run && (
           <p className="placeholder">Hier sprichst du mit der Wirkungshelferin über diesen Schritt. Schreib einfach los.</p>
         )}
         <ol className="chat__messages">
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} proposals={proposals} />
-          ))}
+          {items}
           {run && <RunMessage run={run} />}
         </ol>
         {run?.kind === 'failed' && <RunError run={run} model={model} onRetry={retry} onOpenSettings={onOpenSettings} />}
@@ -109,6 +150,13 @@ export function Chat({ messages, proposals, run, unanswered, draft, onDraftChang
       <div className="visually-hidden" aria-live="polite" data-testid="chat-live">
         {announcement}
       </div>
+      {running && away && (
+        <div className="chat__jump">
+          <Button variant="secondary" icon={<Icon name="chevronDown" />} onClick={toNewest}>
+            Zur neuesten Nachricht
+          </Button>
+        </div>
+      )}
       <form
         className="composer"
         onSubmit={(e) => {
@@ -179,7 +227,59 @@ function ChatMessage({ message, proposals }: { message: StoredMessage; proposals
   )
 }
 
+function SessionDivider({ label }: { label: string }) {
+  return (
+    <li className="chat__divider">
+      <span className="chat__divider-label">{label}</span>
+    </li>
+  )
+}
+
+/**
+ * Where a new segment starts: the assistant knows what's above only from the summary.
+ * `pending` = the summary is still being written. `session` = a break ended here too.
+ */
+function SegmentDivider({ summary, session, pending = false }: { summary?: string; session?: string; pending?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const id = useId()
+  return (
+    <li className="chat__divider chat__divider--segment">
+      <span className="chat__divider-label">{session ? `${session} · Neuer Gesprächsabschnitt` : 'Neuer Gesprächsabschnitt'}</span>
+      {pending ? null : summary ? (
+        <>
+          <button type="button" className="chat__summary-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
+            Zusammenfassung
+            <Icon name={open ? 'chevronDown' : 'chevronRight'} />
+          </button>
+          <div id={id} className="chat__summary" hidden={!open}>
+            <p className="chat__summary-lead">Das Gespräch darüber kennt die Wirkungshelferin nur noch so:</p>
+            <Markdown>{summary}</Markdown>
+          </div>
+        </>
+      ) : (
+        <span className="chat__divider-note">Das Gespräch darüber kennt die Wirkungshelferin nicht mehr. Dein Baustein ist davon nicht betroffen.</span>
+      )}
+    </li>
+  )
+}
+
 function RunMessage({ run }: { run: ChatRun }) {
+  if (run.kind === 'summarising') {
+    // Lukas's turn waits for the summary; it is stored with the new segment's first message.
+    return (
+      <>
+        <li className="msg msg--user">
+          <p className="msg__plain">{run.text}</p>
+        </li>
+        <li className="msg msg--assistant" aria-busy>
+          <span className="msg__label">Wirkungshelferin</span>
+          <p className="msg__thinking">
+            <ThinkingIndicator label="fasst das bisherige Gespräch zusammen …" />
+          </p>
+        </li>
+      </>
+    )
+  }
   const texts = run.kind === 'running' ? streamTexts(run.blocks) : run.partial ? [run.partial] : []
   if (run.kind === 'failed' && !texts.length) return null
   const thinking = run.kind === 'running' && isThinking(run.blocks)

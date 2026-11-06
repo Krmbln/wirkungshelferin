@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { makeProject, makeProposal } from '../domain/fixtures'
-import type { Project, StoredMessage } from '../domain/schemas/project'
+import type { ChatSegment, Project, StoredMessage } from '../domain/schemas/project'
 import type { Drafts } from '../storage/drafts'
 import { App } from '../ui/App'
 import type { ChatRun } from '../ui/chat/stream'
@@ -10,9 +10,9 @@ import type { ChatRun } from '../ui/chat/stream'
 
 const at = '2026-11-04T11:40:00.000Z'
 let n = 0
-const user = (text: string): StoredMessage => ({
+const user = (text: string, when = at): StoredMessage => ({
   id: `g${++n}`,
-  at,
+  at: when,
   role: 'user',
   content: [{ type: 'text', text }, { type: 'text', text: '[Baustein unverändert]' }],
 })
@@ -50,20 +50,20 @@ const proposals = [
   ),
 ].map((p) => ({ ...p, toolUseId: 'toolu_g1' }))
 
-function project(messages: StoredMessage[]): Project {
+function project(messages: StoredMessage[], segments?: ChatSegment[]): Project {
   const p = makeProject({ steps: { 0: { status: 'confirmed' }, 1: { status: 'in_progress', proposals } } })
-  p.steps[1].segments = messages.length ? [{ id: 'seg1', startedAt: at, messages }] : []
+  p.steps[1].segments = segments ?? (messages.length ? [{ id: 'seg1', startedAt: at, messages }] : [])
   return p
 }
 
 const galleryNow = new Date('2026-11-04T12:00:00')
 const noop = () => {}
 
-function ChatScreen({ messages = conversation, run, drafts }: { messages?: StoredMessage[]; run?: ChatRun; drafts?: Drafts }) {
+function ChatScreen({ messages = conversation, segments, run, drafts }: { messages?: StoredMessage[]; segments?: ChatSegment[]; run?: ChatRun; drafts?: Drafts }) {
   return (
     <App
       now={galleryNow}
-      project={project(messages)}
+      project={project(messages, segments)}
       initialView={{ kind: 'step', step: 1 }}
       chat={{ runs: run ? { 1: run } : {}, send: noop, stop: noop, retry: noop }}
       drafts={drafts}
@@ -73,6 +73,28 @@ function ChatScreen({ messages = conversation, run, drafts }: { messages?: Store
 
 const lastQuestion = user('Meistens Jüngere, so 12 bis 14.')
 const partial = 'Gut, dann ist die Gruppe enger, als ich dachte. Bei 12- bis 14-Jährigen spielen die **Eltern** oft'
+
+// Step 10: an earlier session on 26.10., a new segment carrying a summary.
+const earlier = '2026-10-26T15:10:00.000Z'
+const oldTalk = conversation.map((m) => ({ ...m, at: earlier }))
+const summary =
+  '- Die Schraubzeit ist eine offene Fahrradwerkstatt für Jugendliche im Stadtteil.\n- Herausforderung: fehlende Mobilität und fehlende Orte am Nachmittag.\n- Jugendliche 12–14 als erste Zielgruppe vorgeschlagen, noch nicht übernommen.\n- Zuletzt gefragt: Wer kommt am häufigsten?'
+const newTalk = [
+  lastQuestion,
+  claude('Danke. Dann nehmen wir die 12- bis 14-Jährigen als Fokusgruppe. Wer redet bei euch noch mit – Eltern, Schule, Jugendamt?'),
+]
+const segmented = (withSummary: boolean): ChatSegment[] => [
+  { id: 'seg1', startedAt: earlier, model: 'claude-opus-5-5', messages: oldTalk },
+  { id: 'seg2', startedAt: at, model: 'claude-sonnet-5-5', ...(withSummary && { summaryOfPrevious: summary }), messages: newTalk },
+]
+const longTalk = [
+  ...conversation,
+  lastQuestion,
+  claude(
+    'Gut. Dann schauen wir auf die **Beteiligten**. Das sind alle, die mit eurem Angebot zu tun haben oder es beeinflussen:\n\n- die Eltern, die ihre Kinder schicken oder auch nicht,\n- die Schule nebenan,\n- das Jugendamt als Geldgeber,\n- und eure Ehrenamtlichen.\n\nWer davon ist für euch am wichtigsten?',
+  ),
+  user('Die Ehrenamtlichen, ohne die läuft nichts. Und das Jugendamt, weil es uns bezahlt.'),
+]
 
 export const chatScreens: Record<string, { caption: string; render: () => ReactNode }> = {
   'chat-empty': { caption: 'Chat: noch leer', render: () => <ChatScreen messages={[]} /> },
@@ -102,6 +124,25 @@ export const chatScreens: Record<string, { caption: string; render: () => ReactN
   'chat-no-answer': {
     caption: 'Chat: nach dem Neuladen ohne Antwort',
     render: () => <ChatScreen messages={[...conversation, lastQuestion]} />,
+  },
+  'chat-intro': { caption: 'Chat: Intro offen (erster Besuch)', render: () => <ChatScreen messages={[]} /> },
+  'chat-session': {
+    caption: 'Chat: „Letzte Sitzung“ vor den neuen Nachrichten',
+    render: () => <ChatScreen messages={[...oldTalk, ...newTalk]} />,
+  },
+  'chat-back': {
+    caption: 'Chat: zurück nach einer Pause, noch nichts Neues',
+    render: () => <ChatScreen messages={oldTalk} />,
+  },
+  'chat-summarising': {
+    caption: 'Chat: fasst vor einem neuen Abschnitt zusammen',
+    render: () => <ChatScreen messages={conversation} run={{ kind: 'summarising', text: 'Meistens Jüngere, so 12 bis 14.' }} />,
+  },
+  'chat-segment': { caption: 'Chat: neuer Abschnitt mit Zusammenfassung', render: () => <ChatScreen segments={segmented(true)} /> },
+  'chat-segment-none': { caption: 'Chat: neuer Abschnitt ohne Zusammenfassung', render: () => <ChatScreen segments={segmented(false)} /> },
+  'chat-long-streaming': {
+    caption: 'Chat: langes Gespräch, Antwort kommt an',
+    render: () => <ChatScreen messages={longTalk} run={{ kind: 'running', blocks: [{ type: 'other' }, { type: 'text', text: partial }] }} />,
   },
   'chat-draft': {
     caption: 'Chat: Entwurf mit mehreren Zeilen',

@@ -5,6 +5,7 @@ import type { Project } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import type { Drafts } from '../storage/drafts'
 import { defaultSettings, type Settings as SettingsValue } from '../storage/settings'
+import { stepIntro } from '../guide/intro'
 import { Chat } from './chat/Chat'
 import type { ChatControls } from './chat/useChatRunner'
 import { Banner } from './components/Banner'
@@ -135,7 +136,9 @@ export function App({
             step={steps[view.step]}
             chat={
               <Chat
-                messages={project.steps[view.step].segments.flatMap((s) => s.messages)}
+                segments={project.steps[view.step].segments}
+                intro={stepIntro(view.step)}
+                now={now}
                 proposals={project.steps[view.step].proposals}
                 run={chat.runs[view.step]}
                 unanswered={unanswered(project, view.step)}

@@ -6,6 +6,7 @@ import type { AiClient, SendOptions, SendResult } from '../../src/ai/client'
 import type { Call } from '../../src/ai/request'
 import { makeProject } from '../../src/domain/fixtures'
 import type { Project } from '../../src/domain/schemas/project'
+import { defaultSettings } from '../../src/storage/settings'
 import { keys, memoryStore } from '../../src/storage/store'
 import { Markdown } from '../../src/ui/chat/Markdown'
 import { Session } from '../../src/ui/Session'
@@ -288,5 +289,227 @@ describe('Markdown is inert', () => {
     expect(links[0].getAttribute('href')).toBe('https://example.org/a')
     expect(links[0].getAttribute('target')).toBe('_blank')
     expect(links[0].getAttribute('rel')).toBe('noopener noreferrer')
+  })
+})
+
+// ---------------------------------------------------------------- step 10
+
+const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString()
+const said = (id: string, role: 'user' | 'assistant', text: string, at: string) => ({
+  id,
+  at,
+  role,
+  content: role === 'user' ? [{ type: 'text', text }, { type: 'text', text: '[Baustein unverändert]' }] : [{ type: 'text', text }],
+})
+
+/** Step 1 with one exchange on `model`, `hours` ago. */
+function withChat({ model = 'claude-opus-5-5', hours = 0.1 } = {}) {
+  const project = makeProject({ steps: { 1: { status: 'in_progress' } } })
+  project.steps[1].segments = [
+    { id: 'seg1', startedAt: hoursAgo(hours), model, messages: [said('u1', 'user', 'Wir reparieren Räder.', hoursAgo(hours)), said('a1', 'assistant', 'Für wen seid ihr da?', hoursAgo(hours))] },
+  ] as never
+  return project
+}
+
+const storeWith = (project: Project, model = 'claude-opus-5-5') =>
+  memoryStore({ [keys.settings]: { ...defaultSettings, model, setupDone: true }, [keys.project]: project })
+
+describe('chat: intro panel and terms', () => {
+  it('is open on a first visit and collapsed once the step has a chat', async () => {
+    const { view } = await openStep()
+    const toggle = screen.getByRole('button', { name: 'Worum geht es?' })
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText(/^Wirkung passiert immer bei Menschen/).closest('[hidden]')).toBeNull()
+    view.unmount()
+
+    await openStep(readyStore({ [keys.project]: withChat() }))
+    expect(screen.getByRole('button', { name: 'Worum geht es?' }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByText(/^Wirkung passiert immer bei Menschen/).closest('[hidden]')).not.toBeNull()
+  })
+
+  it('opens and closes by keyboard, and stays open after the first message', async () => {
+    const { user, driven, input } = await openStep(readyStore({ [keys.project]: withChat() }))
+    const toggle = screen.getByRole('button', { name: 'Worum geht es?' })
+    toggle.focus()
+    await user.keyboard('{Enter}')
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    await user.keyboard(' ')
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    await user.keyboard('{Enter}')
+    await user.type(input(), 'Jugendliche.{Enter}')
+    await driven.finish('Danke.')
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('term tooltips: Tab reaches them, Enter shows the glossary text, Esc hides it', async () => {
+    const { user } = await openStep()
+    screen.getByRole('button', { name: 'Worum geht es?' }).focus()
+    await user.tab()
+    expect(document.activeElement?.textContent).toBe('Herausforderung')
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('tooltip').textContent).toMatch(/^Das gesellschaftliche Problem/)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    await user.tab()
+    await user.tab()
+    await user.keyboard('{Enter}')
+    const both = screen.getByRole('tooltip').textContent!
+    expect(both).toMatch(/Direkte Zielgruppe:.*Indirekte Zielgruppe:/)
+  })
+})
+
+describe('chat: "Letzte Sitzung"', () => {
+  it('after a break, the divider sits under the old chat; a new message goes below it', async () => {
+    const { user, driven, input } = await openStep(readyStore({ [keys.project]: withChat({ hours: 30 }) }))
+    const divider = within(log()).getByText(/^Letzte Sitzung: (gestern|\d\d\.\d\d\.)$/)
+    const items = [...log().querySelectorAll('.chat__messages > li')]
+    expect(items.indexOf(divider.closest('li')!)).toBe(items.length - 1)
+    await user.type(input(), 'Da bin ich wieder.{Enter}')
+    await driven.finish('Schön.')
+    const after = [...log().querySelectorAll('.chat__messages > li')].map((li) => li.textContent)
+    expect(after.slice(-3)).toEqual([expect.stringMatching(/^Letzte Sitzung/), 'Da bin ich wieder.', expect.stringMatching(/Schön\./)])
+  })
+
+  it('no divider within one session', async () => {
+    await openStep(readyStore({ [keys.project]: withChat({ hours: 0.5 }) }))
+    expect(within(log()).queryByText(/Letzte Sitzung/)).toBeNull()
+  })
+})
+
+describe('chat: a new segment after a model change', () => {
+  it('summarises first, then sends the turn in a new segment that carries the summary', async () => {
+    const store = storeWith(withChat(), 'claude-sonnet-5-5')
+    const { user, driven, input } = await openStep(store)
+    await user.type(input(), 'Weiter mit den Gruppen.{Enter}')
+
+    // The summary call: plain transcript, effort low; Lukas's text waits with it.
+    expect(driven.pending).toHaveLength(1)
+    expect(driven.pending[0].call).toMatchObject({ effort: 'low', maxTokens: 4_000 })
+    expect(JSON.stringify(driven.pending[0].call.messages)).toMatch(/Wir reparieren Räder/)
+    expect(within(log()).getByText('fasst das bisherige Gespräch zusammen …')).toBeTruthy()
+    expect(within(log()).getByText('Weiter mit den Gruppen.')).toBeTruthy()
+    // The new segment's line shows already, so nothing jumps when the answer starts.
+    expect(within(log()).getByText('Neuer Gesprächsabschnitt')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Stopp' })).toBeTruthy()
+    expect(await store.get(keys.drafts)).toEqual({ 1: 'Weiter mit den Gruppen.' })
+
+    await driven.finish('- Fahrradwerkstatt für Jugendliche')
+    expect(driven.pending).toHaveLength(2)
+    const turn = driven.pending[1].call
+    expect(turn.messages).toHaveLength(1)
+    expect(JSON.stringify(turn.messages)).toMatch(/zusammengefasst\]\\n- Fahrradwerkstatt für Jugendliche/)
+    await waitFor(async () => expect(await store.get(keys.drafts)).toEqual({}))
+
+    await driven.finish('Gut, weiter.')
+    const segments = (await stored(store)).steps[1].segments
+    expect(segments.map((s) => [s.model, s.messages.length])).toEqual([['claude-opus-5-5', 2], ['claude-sonnet-5-5', 2]])
+    expect(segments[1].summaryOfPrevious).toBe('- Fahrradwerkstatt für Jugendliche')
+
+    // Old segment still visible above the divider; the summary one click away.
+    expect(within(log()).getByText('Wir reparieren Räder.')).toBeTruthy()
+    expect(within(log()).getByText('Neuer Gesprächsabschnitt')).toBeTruthy()
+    const toggle = within(log()).getByRole('button', { name: 'Zusammenfassung' })
+    const summary = () => within(log()).getByText('Fahrradwerkstatt für Jugendliche')
+    expect(summary().closest('[hidden]')).not.toBeNull()
+    await user.click(toggle)
+    expect(summary().closest('[hidden]')).toBeNull()
+  })
+
+  it('after a break, the session and segment lines merge into one, during the summary and after it', async () => {
+    const store = storeWith(withChat({ hours: 30 }), 'claude-sonnet-5-5')
+    const { user, driven, input } = await openStep(store)
+    await user.type(input(), 'Wieder da.{Enter}')
+    const merged = /^Letzte Sitzung: (gestern|\d\d\.\d\d\.) · Neuer Gesprächsabschnitt$/
+    expect(within(log()).getByText(merged)).toBeTruthy()
+    expect(within(log()).queryByText(/^Letzte Sitzung: (gestern|\d\d\.\d\d\.)$/)).toBeNull()
+    await driven.finish('- Zusammenfassung')
+    await driven.finish('Willkommen zurück.')
+    expect(within(log()).getAllByText(/Letzte Sitzung/)).toHaveLength(1)
+    expect(within(log()).getByText(merged)).toBeTruthy()
+  })
+
+  it('Stopp during the summary stores nothing and puts the text back into the input', async () => {
+    const store = storeWith(withChat(), 'claude-sonnet-5-5')
+    const { user, driven, input } = await openStep(store)
+    await user.type(input(), 'Noch eine Frage.{Enter}')
+    await user.click(screen.getByRole('button', { name: 'Stopp' }))
+    expect(input().value).toBe('Noch eine Frage.')
+    expect(driven.pending).toHaveLength(1)
+    expect(within(log()).queryByText('fasst das bisherige Gespräch zusammen …')).toBeNull()
+    expect((await stored(store)).steps[1].segments).toHaveLength(1)
+    expect(await store.get(keys.drafts)).toEqual({ 1: 'Noch eine Frage.' })
+  })
+
+  it('a reload during the summary brings the text back into the input', async () => {
+    const store = storeWith(withChat(), 'claude-sonnet-5-5')
+    const { user, view, input } = await openStep(store)
+    await user.type(input(), 'Gleich weg.{Enter}')
+    view.unmount()
+    const again = await openStep(reloaded(store))
+    expect(again.input().value).toBe('Gleich weg.')
+    expect((await stored(again.store)).steps[1].segments[0].messages).toHaveLength(2)
+  })
+
+  it('a failed summary after a model change still starts a new segment, marked without summary', async () => {
+    const store = storeWith(withChat(), 'claude-sonnet-5-5')
+    const { user, driven, input } = await openStep(store)
+    await user.type(input(), 'Hallo.{Enter}')
+    await driven.fail('unreachable')
+    await driven.finish('Hallo zurück.')
+    const segments = (await stored(store)).steps[1].segments
+    expect(segments).toHaveLength(2)
+    expect(segments[1].summaryOfPrevious).toBeUndefined()
+    expect(within(log()).getByText(/^Das Gespräch darüber kennt die Wirkungshelferin nicht mehr\. Dein Baustein/)).toBeTruthy()
+  })
+})
+
+describe('chat: a new segment when the chat gets long', () => {
+  const long = () => {
+    const project = withChat()
+    const messages = Array.from({ length: 40 }, (_, i) => said(`m${i}`, i % 2 ? 'assistant' : 'user', `Nachricht ${i}`, hoursAgo(0.1)))
+    project.steps[1].segments[0].messages = messages as never
+    return project
+  }
+
+  it('at 40 messages the next turn rolls over with a summary', async () => {
+    const store = storeWith(long())
+    const { user, driven, input } = await openStep(store)
+    await user.type(input(), 'Weiter.{Enter}')
+    expect(driven.pending[0].call.effort).toBe('low')
+    await driven.finish('Kurz gesagt: viel besprochen.')
+    await driven.finish('Ok.')
+    const segments = (await stored(store)).steps[1].segments
+    expect(segments.map((s) => s.messages.length)).toEqual([40, 2])
+  })
+
+  it('a failed summary keeps the turn in the old segment (it tries again next time)', async () => {
+    const store = storeWith(long())
+    const { user, driven, input } = await openStep(store)
+    await user.type(input(), 'Weiter.{Enter}')
+    await driven.fail('unreachable')
+    expect(JSON.stringify(driven.pending[1].call.messages)).toMatch(/Nachricht 39/)
+    await driven.finish('Ok.')
+    expect((await stored(store)).steps[1].segments.map((s) => s.messages.length)).toEqual([42])
+  })
+})
+
+describe('chat: "Zur neuesten Nachricht"', () => {
+  it('shows while an answer streams and Lukas has scrolled up; a click goes back to following', async () => {
+    const { user, driven, input } = await openStep(readyStore({ [keys.project]: withChat() }))
+    await user.type(input(), 'Erzähl mehr.{Enter}')
+    const el = log()
+    Object.defineProperty(el, 'scrollHeight', { configurable: true, value: 2000 })
+    Object.defineProperty(el, 'clientHeight', { configurable: true, value: 400 })
+    expect(screen.queryByRole('button', { name: 'Zur neuesten Nachricht' })).toBeNull()
+    act(() => {
+      el.scrollTop = 0
+      el.dispatchEvent(new Event('scroll'))
+    })
+    await user.click(screen.getByRole('button', { name: 'Zur neuesten Nachricht' }))
+    expect(screen.queryByRole('button', { name: 'Zur neuesten Nachricht' })).toBeNull()
+    expect(document.activeElement).toBe(input())
+    act(() => el.dispatchEvent(new Event('scroll')))
+    await driven.finish('Mehr.')
+    expect(screen.queryByRole('button', { name: 'Zur neuesten Nachricht' })).toBeNull()
   })
 })

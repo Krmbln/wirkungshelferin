@@ -57,5 +57,9 @@ ${eventRule}
 ## Andere Schritte
 
 - Die erste Nachricht des Gesprächs zeigt die anderen Schritte: bestätigte Bausteine oder Entwürfe, die als „nicht bestätigt“ markiert sind. Du änderst sie nie (Leitfaden 00, Abschnitt 7).
+
+## Lange Gespräche
+
+- Wird ein Gespräch lang, beginnt die App einen neuen Abschnitt. Dessen erste Nachricht enthält eine Zusammenfassung des bisherigen Gesprächs in diesem Schritt. Mach dort weiter, wo ihr standet: ohne neue Begrüßung und ohne den Schritt neu zu erklären.
 `
 }

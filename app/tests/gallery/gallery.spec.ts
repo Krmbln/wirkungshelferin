@@ -148,7 +148,24 @@ test('reduced motion stops the pulse', async ({ page }) => {
   await expect.poll(animation).toBe('none')
 })
 
-const chatScreens = ['chat-empty', 'chat', 'chat-thinking', 'chat-streaming', 'chat-aborted', 'chat-key-error', 'chat-failed', 'chat-no-answer', 'chat-draft']
+const chatScreens = [
+  'chat-empty',
+  'chat',
+  'chat-thinking',
+  'chat-streaming',
+  'chat-aborted',
+  'chat-key-error',
+  'chat-failed',
+  'chat-no-answer',
+  'chat-draft',
+  'chat-intro',
+  'chat-session',
+  'chat-back',
+  'chat-summarising',
+  'chat-segment',
+  'chat-segment-none',
+  'chat-long-streaming',
+]
 const screenNames = [
   ...chatScreens,
   'home',
@@ -377,4 +394,68 @@ test('chat states: one Stopp while streaming, errors as alerts in the chat, the 
   await openScreen(page, 'chat')
   const composer = await page.locator('.composer').boundingBox()
   expect(composer && composer.y + composer.height).toBeLessThanOrEqual(860)
+})
+
+test('chat step 10: intro, term tooltip, dividers, summary, "Zur neuesten Nachricht"', async ({ page }) => {
+  const log = page.locator('.chat__log')
+  const shot = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+
+  // Collapsed intro is one line above the messages.
+  await openScreen(page, 'chat')
+  const toggle = page.getByRole('button', { name: 'Worum geht es?' })
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  expect((await page.locator('.intro').boundingBox())!.height).toBeLessThanOrEqual(46)
+
+  // Open on a first visit; a term opens by keyboard and the bubble stays inside the window.
+  await openScreen(page, 'chat-intro')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await toggle.focus()
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await expect(page.locator(':focus')).toHaveText('direkte/indirekte Zielgruppe')
+  await page.keyboard.press('Enter')
+  const bubble = page.getByRole('tooltip')
+  await expect(bubble).toContainText('Indirekte Zielgruppe:')
+  const box = (await bubble.boundingBox())!
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(1280)
+  // Not clipped by the intro's own scroll box: the bubble is what sits at its centre.
+  const onTop = await bubble.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2))
+  })
+  expect(onTop).toBe(true)
+  await shot('chat-term')
+  await page.keyboard.press('Escape')
+  await expect(bubble).toBeHidden()
+
+  // "Letzte Sitzung" before the new activity, or last when nothing new came yet.
+  await openScreen(page, 'chat-session')
+  const items = log.locator('.chat__messages > li')
+  const texts = await items.allTextContents()
+  const divider = texts.findIndex((t) => t === 'Letzte Sitzung: 26.10.')
+  expect(texts[divider + 1]).toBe('Meistens Jüngere, so 12 bis 14.')
+  await openScreen(page, 'chat-back')
+  await expect(items.last()).toHaveText('Letzte Sitzung: 26.10.')
+  await expect(items.last()).toBeInViewport()
+
+  // Summary of the old segment, one click away.
+  await openScreen(page, 'chat-segment')
+  await log.getByRole('button', { name: 'Zusammenfassung' }).click()
+  await expect(log.getByText('Das Gespräch darüber kennt die Wirkungshelferin nur noch so:')).toBeVisible()
+  await log.locator('.chat__divider--segment').scrollIntoViewIfNeeded()
+  await shot('chat-segment-open')
+
+  // Scrolled up while an answer streams: the jump button, which brings the newest back.
+  await openScreen(page, 'chat-long-streaming')
+  const jump = page.getByRole('button', { name: 'Zur neuesten Nachricht' })
+  await expect(jump).toHaveCount(0)
+  await log.evaluate((el) => el.scrollTo(0, 0))
+  await expect(jump).toBeVisible()
+  await shot('chat-jump')
+  await jump.click()
+  await expect(page.locator('.msg').last()).toBeInViewport()
+  await expect(jump).toHaveCount(0)
+  await expect(page.getByRole('textbox', { name: 'Deine Nachricht' })).toBeFocused()
 })

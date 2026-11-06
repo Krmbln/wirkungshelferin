@@ -6,6 +6,7 @@ import type { StepId } from '../domain/types'
 import { contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, systemPrompt, withCacheBreakpoint } from './prompt'
 import { checkToolResult, errorToolResult, proposalToolResult, toProposal } from './proposal'
 import { MAX_TOKENS, type Call } from './request'
+import { carriedText } from './summarise'
 import { CHECK, PROPOSE, stepTools } from './tools'
 
 // One chat turn as pure functions (tech design §6.2): Lukas's turn is stored before the
@@ -25,9 +26,9 @@ type Meta = { at: string; newId?: () => string }
 const defaultId = () => crypto.randomUUID()
 
 /** The segment new messages go into; the step's first message starts one. */
-function currentSegment(project: Project, step: StepId, at: string, newId: () => string) {
+function currentSegment(project: Project, step: StepId, at: string, newId: () => string, model?: string) {
   const segments = project.steps[step].segments
-  if (!segments.length) segments.push({ id: newId(), startedAt: at, messages: [] })
+  if (!segments.length) segments.push({ id: newId(), startedAt: at, ...(model && { model }), messages: [] })
   return segments[segments.length - 1]
 }
 
@@ -55,18 +56,36 @@ export function toolResultsFor(project: Project, step: StepId, pending: string[]
   })
 }
 
+type TurnMeta = Meta & {
+  /** The model of the settings; a segment this turn starts records it. */
+  model?: string
+  /** Start a new segment that carries this summary of the old one (summarise.ts); none = it failed. */
+  newSegment?: { summary?: string }
+}
+
+/** The answers to the old segment's open tool calls, as app lines: the new segment has no tool_use to answer. */
+function carriedResults(project: Project, step: StepId): string[] {
+  const pending = pendingToolUses(storedOf(project, step))
+  return toolResultsFor(project, step, pending).map((r) => `Zu deinem letzten Werkzeugaufruf im vorigen Abschnitt: ${typeof r.content === 'string' ? r.content : ''}`)
+}
+
 /** Stores Lukas's turn (pending tool results, context in a segment's first turn, snapshot) and builds the request. */
-export function prepareTurn(project: Project, step: StepId, text: string, { at, newId = defaultId }: Meta): Prepared {
+export function prepareTurn(project: Project, step: StepId, text: string, { at, newId = defaultId, model, newSegment }: TurnMeta): Prepared {
   const next = structuredClone(project)
   const state = stepOf(next, step)
-  const segment = currentSegment(next, step, at, newId)
+  const rolled = Boolean(newSegment && state.segments.length)
+  const events = rolled ? carriedResults(project, step) : []
+  if (rolled) state.segments.push({ id: newId(), startedAt: at, ...(model && { model }), ...(newSegment?.summary && { summaryOfPrevious: newSegment.summary }), messages: [] })
+  const segment = currentSegment(next, step, at, newId, model)
   const first = !segment.messages.length
   const pending = pendingToolUses(segment.messages)
   const shown = structuredClone(state.block)
+  const context = rolled ? `${contextText(project, step)}\n\n${carriedText(newSegment?.summary)}` : contextText(project, step)
   const appended = nextTurn({
     pending,
-    toolResults: toolResultsFor(project, step, pending),
-    context: first ? contextText(project, step) : undefined,
+    toolResults: rolled ? [] : toolResultsFor(project, step, pending),
+    events,
+    context: first ? context : undefined,
     text,
     // A new segment always gets the full block.
     snapshot: snapshotText(step, shown, first ? undefined : (state.sentBlock as LooseBlock | undefined)),
@@ -119,6 +138,11 @@ export function commitAnswer(project: Project, step: StepId, answer: Answer, sho
     else toolErrors[block.id] = result.errors
   }
   const message: StoredMessage = { id: newId(), at, role: 'assistant', content }
+  const usage = answer.message.usage
+  if (usage) {
+    const prompt = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0)
+    message.usage = { prompt, output: usage.output_tokens }
+  }
   if (Object.keys(toolErrors).length) message.toolErrors = toolErrors
   next.steps[step].segments.at(-1)!.messages.push(message)
   return next

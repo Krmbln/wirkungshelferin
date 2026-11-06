@@ -23,6 +23,8 @@ export const storedMessage = z.strictObject({
   aborted: z.literal(true).optional(),
   /** Invalid tool calls of this assistant turn (tool_use id → errors), answered as error results next turn. */
   toolErrors: z.record(z.string(), z.array(z.string())).optional(),
+  /** Tokens of a complete answer: the whole prompt it read and its output. Decides when a segment rolls over. */
+  usage: z.strictObject({ prompt: z.number().int().nonnegative(), output: z.number().int().nonnegative() }).optional(),
 })
 
 export type StoredMessage = z.infer<typeof storedMessage>
@@ -30,9 +32,13 @@ export type StoredMessage = z.infer<typeof storedMessage>
 const chatSegment = z.strictObject({
   id: z.string(),
   startedAt: iso,
+  /** The model the segment talks to; a different model in the settings starts a new segment. Missing = from before step 10. */
+  model: z.string().optional(),
   summaryOfPrevious: z.string().optional(),
   messages: z.array(storedMessage),
 })
+
+export type ChatSegment = z.infer<typeof chatSegment>
 
 const qualityCheck = z.strictObject({
   at: iso,

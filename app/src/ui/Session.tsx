@@ -12,7 +12,7 @@ import { defaultSettings, loadSettings, saveSettings, type Settings } from '../s
 import { requestPersistence, type Store } from '../storage/store'
 import { holdTabLock } from '../storage/tabLock'
 import { App } from './App'
-import { useChatRunner } from './chat/useChatRunner'
+import { useChatRunner, type DraftKeeper } from './chat/useChatRunner'
 import { EmptyState } from './screens/EmptyState'
 import { LoadError } from './screens/LoadError'
 import { SecondTab } from './screens/SecondTab'
@@ -170,8 +170,6 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
     [update, autosave],
   )
 
-  const chat = useChatRunner({ ai, settings, change })
-
   const drafted = useRef<Drafts>({})
   const changeDraft = useCallback(
     (step: StepId, text: string) => {
@@ -183,6 +181,21 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
     },
     [store],
   )
+
+  // Lukas's text is safe while a summary runs before his turn is stored (useChatRunner).
+  const draftKeeper = useMemo<DraftKeeper>(
+    () => ({
+      hold: (step, text) => void saveDrafts(store, { ...drafted.current, [step]: text }),
+      release: () => void saveDrafts(store, drafted.current),
+      restore: (step, text) => {
+        const typed = drafted.current[step]
+        changeDraft(step, typed ? `${text}\n${typed}` : text)
+      },
+    }),
+    [store, changeDraft],
+  )
+  const readProject = useCallback(() => current.current, [])
+  const chat = useChatRunner({ ai, settings, project: readProject, change, drafts: draftKeeper })
 
   // Starting or loading a project is a deliberate act: saved at once, not after the pause.
   const start = useCallback(

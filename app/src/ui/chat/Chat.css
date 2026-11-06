@@ -109,6 +109,15 @@
   padding-left: var(--space-6);
 }
 
+/* Messages sit inside an <ol>: without this Chrome draws nested bullets as circles. */
+.md ul {
+  list-style-type: disc;
+}
+
+.md ol {
+  list-style-type: decimal;
+}
+
 .md li + li {
   margin-top: var(--space-1);
 }
@@ -191,4 +200,169 @@
 
 .composer__input::placeholder {
   color: var(--text-muted);
+}
+
+/* Intro panel (design §6.2): pinned above the messages, one line when collapsed. */
+/* Only the body scrolls, so the toggle stays in reach on a short window. */
+.intro {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  max-height: 45%;
+  border-bottom: 1px solid var(--line);
+}
+
+.intro[data-open] {
+  background: var(--surface-subtle);
+}
+
+.intro__heading {
+  margin: 0;
+  font: var(--text-label);
+}
+
+.intro__toggle {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-6);
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.intro__toggle:hover {
+  background: var(--surface-subtle);
+}
+
+.intro__toggle:focus-visible {
+  outline-offset: -2px;
+}
+
+.intro__toggle svg {
+  color: var(--text-muted);
+}
+
+.intro__body {
+  min-height: 0;
+  max-width: calc(70ch + 2 * var(--space-6));
+  padding: 0 var(--space-6) var(--space-4);
+  overflow-y: auto;
+}
+
+.intro__body[hidden] {
+  display: none;
+}
+
+/* Room for the focus ring between a term and the " · " beside it. */
+.intro__terms .tooltip {
+  margin-inline: 3px;
+}
+
+.intro__body p {
+  margin: 0 0 var(--space-3);
+}
+
+.intro__body .intro__terms {
+  margin-bottom: 0;
+}
+
+.intro__label {
+  margin: 0 0 var(--space-1);
+  font: var(--text-label);
+}
+
+span.intro__label {
+  margin: 0;
+}
+
+.term__entry {
+  display: block;
+}
+
+.term__entry + .term__entry {
+  margin-top: var(--space-2);
+}
+
+/* Dividers: "Letzte Sitzung" and a new segment, muted lines across the chat. */
+.chat__divider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: center;
+  color: var(--text-muted);
+  font: var(--text-small);
+  text-align: center;
+}
+
+.chat__divider-label {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  width: 100%;
+}
+
+.chat__divider-label::before,
+.chat__divider-label::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--line);
+}
+
+.chat__summary-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--accent);
+  font: var(--text-small);
+  cursor: pointer;
+}
+
+.chat__summary-toggle:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.chat__summary {
+  align-self: stretch;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  color: var(--text);
+  font: var(--text-body);
+  text-align: left;
+}
+
+.chat__summary[hidden] {
+  display: none;
+}
+
+.chat__summary-lead {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+/* "Zur neuesten Nachricht": floats over the bottom of the messages, above the composer. */
+.chat__jump {
+  position: relative;
+  flex: none;
+  height: 0;
+}
+
+.chat__jump .btn {
+  position: absolute;
+  bottom: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import './Tooltip.css'
 
 type Props = {
@@ -18,10 +18,15 @@ type Props = {
    * doesn't clip it.
    */
   side?: 'below' | 'right'
+  /**
+   * Below the trigger in a fixed position, for triggers inside a scrolling box (e.g. the intro
+   * panel) that would clip the bubble. Closes when anything scrolls, so it never floats off.
+   */
+  fixed?: boolean
   className?: string
 }
 
-// Opens on hover and on Enter, closes on Esc, blur and mouse leave (design §10).
+// Opens on hover, click and Enter, closes on Esc, blur and mouse leave (design §6.2, §10).
 // The bubble is inside the wrapper, so moving the pointer onto it keeps it open (WCAG 1.4.13).
 export function Tooltip({
   content,
@@ -29,13 +34,14 @@ export function Tooltip({
   focusable = true,
   forceOpen = false,
   side = 'below',
+  fixed = false,
   className,
 }: Props) {
   const id = useId()
   const wrapper = useRef<HTMLSpanElement>(null)
   const [open, setOpen] = useState(false)
   const [alignEnd, setAlignEnd] = useState(false)
-  const [beside, setBeside] = useState<{ top: number; left: number } | null>(null)
+  const [beside, setBeside] = useState<CSSProperties | null>(null)
   const shown = open || forceOpen
 
   // Esc must close a hover-opened tooltip too, wherever focus is (WCAG 1.4.13).
@@ -44,9 +50,14 @@ export function Tooltip({
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false)
     }
+    const onScroll = () => setOpen(false)
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open])
+    if (fixed) document.addEventListener('scroll', onScroll, true)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('scroll', onScroll, true)
+    }
+  }, [open, fixed])
 
   function measure() {
     const el = wrapper.current
@@ -57,7 +68,10 @@ export function Tooltip({
       return
     }
     // Triggers in the right half open leftwards, so the bubble isn't clipped at the edge.
-    setAlignEnd(el.getBoundingClientRect().left > window.innerWidth / 2)
+    const rect = el.getBoundingClientRect()
+    const end = rect.left > window.innerWidth / 2
+    setAlignEnd(end)
+    if (fixed) setBeside(end ? { top: rect.bottom + 8, right: window.innerWidth - rect.right } : { top: rect.bottom + 8, left: rect.left })
   }
 
   useEffect(() => {
@@ -78,7 +92,9 @@ export function Tooltip({
     }
   }
 
-  const classes = ['tooltip', side === 'right' ? 'tooltip--right' : alignEnd && 'tooltip--end', className].filter(Boolean).join(' ')
+  const classes = ['tooltip', side === 'right' ? 'tooltip--right' : alignEnd && 'tooltip--end', fixed && side === 'below' && 'tooltip--fixed', className]
+    .filter(Boolean)
+    .join(' ')
   return (
     <span ref={wrapper} className={classes} onMouseEnter={show} onMouseLeave={() => setOpen(false)}>
       <span
@@ -86,6 +102,7 @@ export function Tooltip({
         tabIndex={focusable ? 0 : undefined}
         aria-describedby={focusable ? id : undefined}
         onKeyDown={focusable ? onKeyDown : undefined}
+        onClick={focusable ? show : undefined}
         onBlur={() => setOpen(false)}
       >
         {children}
@@ -95,7 +112,7 @@ export function Tooltip({
         id={id}
         className="tooltip__bubble"
         hidden={!shown}
-        style={side === 'right' && beside ? beside : undefined}
+        style={(side === 'right' || fixed) && beside ? beside : undefined}
         aria-hidden={focusable ? undefined : true}
       >
         {content}

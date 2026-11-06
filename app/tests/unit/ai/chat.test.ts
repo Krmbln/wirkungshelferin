@@ -195,3 +195,54 @@ describe('append-only history', () => {
     expect(chatCall(project, 1).messages.length).toBe(messagesOf(project).filter((m) => !m.aborted).length)
   })
 })
+
+describe('new segment (step 10)', () => {
+  it('starts a segment that carries the summary; open tool calls of the old one become app lines', async () => {
+    const prepared = prepareTurn(start(), 1, 'Hallo.', { ...meta, model: 'claude-opus-5-5' })
+    const project = commit(prepared, await answer(prepared))
+    const old = structuredClone(project.steps[1].segments[0])
+    expect(old.model).toBe('claude-opus-5-5')
+
+    const next = prepareTurn(project, 1, 'Weiter geht’s.', { ...meta, model: 'claude-sonnet-5-5', newSegment: { summary: 'Die Person leitet eine Fahrradwerkstatt.' } })
+    const segments = next.project.steps[1].segments
+    expect(segments).toHaveLength(2)
+    expect(segments[0]).toEqual(old)
+    expect(segments[1]).toMatchObject({ model: 'claude-sonnet-5-5', summaryOfPrevious: 'Die Person leitet eine Fahrradwerkstatt.' })
+
+    // Only the new segment is sent: one user turn, no tool_result (no tool_use to answer).
+    expect(next.call.messages).toHaveLength(1)
+    const content = blocks(next.call.messages[0])
+    expect(content.some((b) => b.type === 'tool_result')).toBe(false)
+    const texts = content.map((b) => (b as { text: string }).text)
+    expect(texts[0]).toMatch(/^\[App\] Zu deinem letzten Werkzeugaufruf im vorigen Abschnitt: .*offen/s)
+    expect(texts[1]).toMatch(/^\[Projektstand\]/)
+    expect(texts[1]).toMatch(/\[Bisheriges Gespräch in diesem Schritt, zusammengefasst\]\nDie Person leitet eine Fahrradwerkstatt\./)
+    expect(texts.at(-2)).toBe('Weiter geht’s.')
+    expect(texts.at(-1)).toMatch(/^\[Bausteinstand Schritt 1\]/)
+    expectNoOrphans(next.call.messages)
+    expect(lukasText(messagesOf(next.project).at(-1)!)).toBe('Weiter geht’s.')
+  })
+
+  it('without a summary the new segment says the old conversation is gone', async () => {
+    const prepared = prepareTurn(start(), 1, 'Hallo.', meta)
+    const project = commit(prepared, await answer(prepared))
+    const next = prepareTurn(project, 1, 'Und jetzt?', { ...meta, model: 'claude-sonnet-5-5', newSegment: {} })
+    expect(next.project.steps[1].segments[1].summaryOfPrevious).toBeUndefined()
+    expect(JSON.stringify(next.call.messages)).toMatch(/liegt dir nicht vor/)
+  })
+
+  it('a complete answer keeps its token usage; a stopped one has none', async () => {
+    const prepared = prepareTurn(start(), 1, 'Hallo.', meta)
+    const result = await answer(prepared)
+    if (result.status !== 'done') throw new Error(result.status)
+    const project = commit(prepared, result)
+    const u = result.message.usage
+    expect(messagesOf(project).at(-1)!.usage).toEqual({
+      prompt: u.input_tokens + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0),
+      output: u.output_tokens,
+    })
+    const stopped = commitAnswer(prepareTurn(project, 1, 'x', meta).project, 1, { status: 'aborted' }, prepared.shown, meta)
+    expect(messagesOf(stopped).at(-1)!.usage).toBeUndefined()
+    expect(projectSchema.safeParse(stopped).success).toBe(true)
+  })
+})
