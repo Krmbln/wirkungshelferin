@@ -1,4 +1,5 @@
-import { findItem, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
+import { findItem, isEmptyItem, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
+import { deleteTargetGroup } from './groups'
 import { applyAll, applyChange, rejectChange, undoChange } from './proposals'
 import { collectionMeta, type Item } from './schemas/blocks'
 import type { Project, Proposal } from './schemas/project'
@@ -16,6 +17,8 @@ export type Action =
   /** Lukas edits an item inline: rev rises, the item counts as edited by him. */
   | ({ type: 'item/edit'; id: string; fields: Record<string, unknown> } & Target)
   | ({ type: 'item/remove'; id: string } & Target)
+  /** A row Lukas just added and left empty goes again; one with any content stays. */
+  | ({ type: 'item/discard'; id: string } & Target)
   /** The 10-second "Rückgängig" after a removal (design §7.6). */
   | ({ type: 'item/restore'; item: Item; index: number } & Target)
   | { type: 'proposal/add'; step: StepId; proposal: Proposal }
@@ -23,9 +26,13 @@ export type Action =
   | ({ type: 'change/reject' } & ChangeRef)
   | ({ type: 'change/undo' } & ChangeRef)
   | { type: 'change/applyAll'; step: StepId; proposalId: string }
+  /** Removes a target group with its step 2–4 items (after the confirm dialog, PRD F5). */
+  | { type: 'targetGroup/delete'; id: string }
 
 export function reducer(project: Project, action: Action): Project {
   switch (action.type) {
+    case 'targetGroup/delete':
+      return deleteTargetGroup(project, action.id)
     case 'change/apply':
       return applyChange(project, action.step, action.proposalId, action.changeId)
     case 'change/reject':
@@ -75,9 +82,11 @@ function editBlock(project: Project, action: ItemAction): Project {
       putItem(block, action.collection, item, found.index)
       break
     }
+    case 'item/discard':
     case 'item/remove': {
       const found = findItem(block, action.collection, action.id)
       if (!found) return project
+      if (action.type === 'item/discard' && !isEmptyItem(action.step, action.collection, found.item)) return project
       ;(block[action.collection] as Item[]).splice(found.index, 1)
       break
     }

@@ -168,6 +168,8 @@ const chatScreens = [
 ]
 const screenNames = [
   ...chatScreens,
+  'block-empty',
+  'block',
   'home',
   'home-mixed',
   'home-backup-recent',
@@ -458,4 +460,98 @@ test('chat step 10: intro, term tooltip, dividers, summary, "Zur neuesten Nachri
   await expect(page.locator('.msg').last()).toBeInViewport()
   await expect(jump).toHaveCount(0)
   await expect(page.getByRole('textbox', { name: 'Deine Nachricht' })).toBeFocused()
+})
+
+test('block step 11: inline fields, "von dir geändert", undo line, dialog for a group with content', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const panel = page.getByRole('region', { name: 'Baustein' })
+  // Colour checks: no 150 ms transition caught halfway (lessons-learned, step 2).
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await openScreen(page, 'block')
+  const scroll = panel.locator('.workspace__scroll')
+  // Nothing sticks out sideways in the block column.
+  expect(await scroll.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+
+  // The field text lines up with the section heading; hover shows the pencil and the subtle background.
+  const name = panel.getByRole('textbox', { name: 'Name der Zielgruppe' }).first()
+  const heading = panel.getByRole('heading', { name: 'Zielgruppen' })
+  const [textX, headingX] = await Promise.all([
+    name.evaluate((el) => el.getBoundingClientRect().x + parseFloat(getComputedStyle(el).paddingLeft) + parseFloat(getComputedStyle(el).borderLeftWidth)),
+    heading.evaluate((el) => el.getBoundingClientRect().x),
+  ])
+  expect(Math.abs(textX - headingX)).toBeLessThanOrEqual(1)
+  const pencil = name.locator('xpath=..').locator('.inline__pencil')
+  await name.hover()
+  await expect(pencil).toBeVisible()
+  const subtle = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--surface-subtle').trim())
+  expect(await name.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+    await page.evaluate((c) => {
+      const el = document.createElement('span')
+      el.style.color = c
+      document.body.append(el)
+      const value = getComputedStyle(el).color
+      el.remove()
+      return value
+    }, subtle),
+  )
+  await shotScreen('block-hover')
+
+  // Editing: border + focus ring, Enter saves, the row says "von dir geändert".
+  await name.click()
+  expect(await name.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
+  await expect(pencil).toBeHidden()
+  await shotScreen('block-editing')
+  await page.keyboard.press('End')
+  await page.keyboard.type(' (Kern)')
+  await page.keyboard.press('Enter')
+  await expect(name).not.toBeFocused()
+  await expect(panel.locator('[data-item-id="tg1"]').getByText('von dir geändert')).toBeVisible()
+
+  // Click targets of the small controls are at least 32 px high.
+  for (const target of [panel.getByRole('button', { name: /entfernen$/ }).first(), panel.locator('.bcontrol').first(), panel.getByRole('button', { name: 'Zielgruppe hinzufügen' })]) {
+    const box = (await target.boundingBox())!
+    expect(box.height).toBeGreaterThanOrEqual(32)
+    expect(box.width).toBeGreaterThanOrEqual(32)
+  }
+
+  // A group without content, by keyboard: removed at once, the undo line in its place with
+  // focus and a visible focus ring.
+  await panel.getByRole('button', { name: 'Zielgruppe „Eltern der Jugendlichen“ entfernen' }).focus()
+  await page.keyboard.press('Enter')
+  const undo = panel.getByRole('button', { name: 'Rückgängig' })
+  await expect(undo).toBeFocused()
+  expect(await undo.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
+  await shotScreen('block-undo')
+  await page.keyboard.press('Enter')
+  await expect(panel.locator('[data-item-id="tg2"]')).toBeVisible()
+
+  // The focus group has content in step 2: a dialog first; Esc keeps everything.
+  await panel.getByRole('button', { name: /^Zielgruppe „Jugendliche 12–17.*entfernen$/ }).focus()
+  await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toContainText('In Schritt 2 gibt es schon 2 Einträge zu dieser Gruppe.')
+  const cancel = dialog.getByRole('button', { name: 'Abbrechen' })
+  await expect(cancel).toBeFocused()
+  expect(await cancel.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
+  // Three actions, one per line, all inside the dialog.
+  const dialogBox = (await dialog.boundingBox())!
+  for (const button of await dialog.locator('.dialog__actions .btn').all()) {
+    const box = (await button.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(dialogBox.x)
+    expect(box.x + box.width).toBeLessThanOrEqual(dialogBox.x + dialogBox.width)
+  }
+  await shotScreen('block-dialog')
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(panel.locator('[data-item-id="tg1"]')).toBeVisible()
+
+  await openScreen(page, 'block-empty')
+  await panel.getByRole('button', { name: 'Zielgruppe hinzufügen' }).click()
+  await expect(panel.getByRole('textbox', { name: 'Name der Zielgruppe' })).toBeFocused()
+  await shotScreen('block-added')
+})
+
+test('block parts: states for the review', async ({ page }) => {
+  await openGallery(page)
+  await shot(section(page, 'Baustein-Teile'), 'block-parts')
 })

@@ -72,6 +72,23 @@ describe('prepareTurn', () => {
     const third = prepareTurn(project, 1, 'Und jetzt?', meta)
     expect(String(messagesOf(third.project).at(-1)!.content.at(-1)!.text)).toMatch(/^\[Bausteinstand Schritt 1\]/)
   })
+
+  it('a hand edit sends the full snapshot with the short id, the new rev and editedByUser (step 11)', async () => {
+    const first = prepareTurn(start(), 1, 'Hallo.', meta)
+    let project = commit(first, await answer(first))
+    project = reducer(project, { type: 'change/applyAll', step: 1, proposalId: 'p1' })
+    project = prepareTurn(project, 1, 'Übernommen.', meta).project
+    const group = project.steps[1].block.targetGroups[0]
+    project = reducer(project, { type: 'item/edit', step: 1, collection: 'targetGroups', id: group.id, fields: { name: 'Von Hand umbenannt' } })
+
+    const edited = prepareTurn(project, 1, 'Ich habe etwas geändert.', meta)
+    const snapshot = String(messagesOf(edited.project).at(-1)!.content.at(-1)!.text)
+    const line = snapshot.split('\n').find((l) => l.includes('Von Hand umbenannt'))!
+    expect(JSON.parse(line.slice(2))).toMatchObject({ id: group.id, rev: group.rev + 1, editedByUser: true, name: 'Von Hand umbenannt' })
+
+    const again = prepareTurn(edited.project, 1, 'Und weiter.', meta)
+    expect(messagesOf(again.project).at(-1)!.content.at(-1)!.text).toBe('[Baustein unverändert]')
+  })
 })
 
 describe('commitAnswer', () => {

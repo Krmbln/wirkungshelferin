@@ -11,11 +11,13 @@ type Props = {
    *  data-autofocus, so Enter never confirms a destructive action by accident. */
   actions: ReactNode
   onClose: () => void
+  /** Three actions don't fit side by side in 480 px: full width, one per line. */
+  stacked?: boolean
 }
 
 // Only for destructive or irreversible actions (design §5.2, §7.6). Native <dialog>:
 // focus trap, Esc and the backdrop come from the browser.
-export function Dialog({ open, title, children, actions, onClose }: Props) {
+export function Dialog({ open, title, children, actions, onClose, stacked = false }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -47,7 +49,7 @@ export function Dialog({ open, title, children, actions, onClose }: Props) {
         </Button>
       </div>
       <div className="dialog__body">{children}</div>
-      <div className="dialog__actions">{actions}</div>
+      <div className={stacked ? 'dialog__actions dialog__actions--stacked' : 'dialog__actions'}>{actions}</div>
     </dialog>
   )
 }

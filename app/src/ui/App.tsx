@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { unanswered } from '../ai/chat'
 import { backupState } from '../domain/backup'
+import type { Action } from '../domain/reducer'
 import type { Project } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import type { Drafts } from '../storage/drafts'
 import { defaultSettings, type Settings as SettingsValue } from '../storage/settings'
 import { stepIntro } from '../guide/intro'
+import { BlockPanel } from './block/BlockPanel'
 import { Chat } from './chat/Chat'
 import type { ChatControls } from './chat/useChatRunner'
 import { Banner } from './components/Banner'
@@ -41,6 +43,8 @@ type Props = {
   chat?: ChatControls
   drafts?: Drafts
   onDraftChange?: (step: StepId, text: string) => void
+  /** Lukas's edits in the block panel (Session: reducer + save at once). */
+  onBlockAction?: (action: Action) => void
 }
 
 const noop = () => {}
@@ -65,6 +69,7 @@ export function App({
   chat = idleChat,
   drafts = {},
   onDraftChange = noop,
+  onBlockAction = noop,
 }: Props) {
   const [view, setView] = useState<View>(initialView)
   const now = useNow(fixedNow)
@@ -134,6 +139,7 @@ export function App({
           <StepWorkspace
             key={view.step}
             step={steps[view.step]}
+            block={<BlockPanel project={project} step={view.step} onAction={onBlockAction} />}
             chat={
               <Chat
                 segments={project.steps[view.step].segments}

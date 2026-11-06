@@ -1,0 +1,273 @@
+/* Block panel (design §6.2, "Step 11 build"). */
+.bpanel {
+  display: grid;
+  gap: var(--space-3); /* + the rows' 12 px padding = 24 px between sections */
+}
+
+/* Sections: heading with "+ hinzufügen" at the right */
+.bsection__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+}
+
+.bsection__head h3 {
+  font: var(--text-label);
+}
+
+.bsection__empty {
+  padding: var(--space-3) 0;
+  color: var(--text-muted);
+}
+
+.blist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blist > li + li {
+  border-top: 1px solid var(--line);
+}
+
+/* One item: its fields, and at the right "von dir geändert" + ✕ */
+/* "von dir geändert" + ✕ sit beside the first field only; the fields below use the full
+   width (otherwise the label would squeeze every line of the row). */
+.bitem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-3) 0;
+}
+
+.bitem__body {
+  display: contents;
+}
+
+.bitem__body > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.bitem__body > :first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.bitem__side {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: start;
+  min-height: var(--target-min);
+}
+
+.bitem__edited {
+  font: var(--text-small);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.bitem__remove {
+  color: var(--text-muted);
+}
+
+.bitem__remove:hover {
+  color: var(--text);
+}
+
+/* Inline text: an always-editable textarea that looks like text. The negative margin keeps
+   the text in line with the headings; the hover background reaches past it. */
+.inline {
+  position: relative;
+  display: block;
+}
+
+.inline__input {
+  display: block;
+  width: calc(100% + var(--space-2) + 1px);
+  min-height: var(--target-min);
+  margin-left: calc(-1 * (var(--space-2) + 1px));
+  padding: 3px 28px 3px var(--space-2);
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  font: var(--text-body);
+  resize: none;
+  field-sizing: content;
+  transition: background-color var(--motion-fast);
+}
+
+.inline__input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.inline:hover .inline__input,
+.inline[data-force-state='hover'] .inline__input {
+  background: var(--surface-subtle);
+  cursor: text;
+}
+
+.inline .inline__input:focus {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+.inline__input[aria-invalid='true'] {
+  border-color: var(--block);
+}
+
+.inline__pencil {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  display: none;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* An empty field must not look like hint text: light fill and the pencil at rest. */
+.inline__input:placeholder-shown {
+  background: var(--surface-subtle);
+}
+
+.inline:hover:not(:focus-within) .inline__pencil,
+.inline:not(:focus-within):has(.inline__input:placeholder-shown) .inline__pencil,
+.inline[data-force-state='hover'] .inline__pencil {
+  display: inline-flex;
+}
+
+.inline--strong .inline__input {
+  font-weight: 600;
+}
+
+/* Small inline text beside the controls (size estimate) */
+.inline--small {
+  display: inline-block;
+  flex: none;
+  max-width: 100%;
+}
+
+.inline--small .inline__input {
+  /* Grows with its text (field-sizing); an absolute cap, since a % cap is cyclic here. */
+  width: auto;
+  min-width: 10em;
+  max-width: 22em;
+  padding-block: 5px;
+  font: 400 15px/20px var(--font);
+}
+
+/* Secondary fields as small native controls */
+.bcontrols {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-4);
+}
+
+.bcontrols__group {
+  display: flex;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.bcontrol {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--target-min);
+  font: 400 15px/20px var(--font);
+  cursor: pointer;
+}
+
+.bcontrol input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* "Warum?" and other labelled fields under an item */
+.why,
+.bfield {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--space-1);
+}
+
+.why__label,
+.bfield__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: 600 13px/18px var(--font);
+  color: var(--text-muted);
+}
+
+/* "Warum?" is needed to confirm: full text colour, so it is easy to find. */
+.why__label {
+  color: var(--text);
+}
+
+.why__missing {
+  font-weight: 400;
+}
+
+/* "Größe:" once the size has a value */
+.bsize {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+}
+
+.bsize__label {
+  font: 400 15px/20px var(--font);
+  color: var(--text-muted);
+}
+
+/* Reference chip (first used in step 16) */
+.refchip {
+  display: inline-block;
+  max-width: 240px;
+  padding: 1px var(--space-2);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: var(--text-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.refchip--missing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* The 10-second "Rückgängig" in place of a removed row */
+.undo .btn {
+  font: 600 13px/18px var(--font);
+}
+
+.undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+  min-height: calc(var(--target-min) + 2 * var(--space-2));
+  font: var(--text-small);
+  color: var(--text-muted);
+}

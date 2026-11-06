@@ -24,6 +24,9 @@ import { newProject } from '../domain/document'
 import { defaultSettings } from '../storage/settings'
 import { statusesOf } from '../ui/steps'
 import { chatScreens } from './chatScreens'
+import { blockScreens } from './blockScreens'
+import { InlineText } from '../ui/block/InlineText'
+import { ReferenceChip, UndoLine, WhyField } from '../ui/block/parts'
 import './Gallery.css'
 
 // Dev-only state gallery (implementation plan, standing rule 2). Every [data-state]
@@ -166,6 +169,7 @@ export const screens: Record<string, { caption: string; render: () => ReactNode 
     render: () => <GallerySetup step="backup" persisted backedUp />,
   },
   ...chatScreens,
+  ...blockScreens,
   'setup-key-only': {
     caption: 'Einrichtung nach „Backup laden“ in einem neuen Chrome: nur der Schlüssel',
     render: () => <GallerySetup project={backedUp} />,
@@ -396,6 +400,50 @@ function GalleryPage({ appUrl }: { appUrl: string }) {
           >
             <p>Das Backup vom 28.10. ersetzt deinen aktuellen Stand. Dein jetziger Stand geht dabei verloren.</p>
           </Dialog>
+        </State>
+      </Section>
+
+      <Section title="Baustein-Teile">
+        <State name="inline-empty" caption="Textfeld leer (Platzhalter)">
+          <div className="gblock">
+            <InlineText value="" label="Name" placeholder="Name der Gruppe" strong onSave={noop} />
+          </div>
+        </State>
+        <State name="inline-filled" caption="Textfeld gefüllt">
+          <div className="gblock">
+            <InlineText value="Jugendliche 12–17 aus der Siedlung" label="Name" strong onSave={noop} />
+          </div>
+        </State>
+        <State name="inline-hover" caption="Textfeld bei Hover (Stift)">
+          <div className="gblock">
+            <InlineText value="Kommen nach der Schule in die offene Werkstatt." label="Beschreibung" multiline onSave={noop} forceState="hover" />
+          </div>
+        </State>
+        <State name="why-empty" caption="„Warum?“ leer">
+          <div className="gblock">
+            <WhyField value="" onSave={noop} />
+          </div>
+        </State>
+        <State name="why-blocked" caption="„Warum?“ fehlt, nach der Prüfung (ab Schritt 13)">
+          <div className="gblock">
+            <WhyField value="" onSave={noop} blocked />
+          </div>
+        </State>
+        <State name="refchip" caption="Verweis-Chip, kurz und lang">
+          <div className="gblock">
+            <ReferenceChip text="Räder sind teuer" />{' '}
+            <ReferenceChip text="Jugendliche haben nachmittags kaum Orte, an denen sie selbst etwas schaffen" />
+          </div>
+        </State>
+        <State name="refchip-missing" caption="Verweis fehlt">
+          <div className="gblock">
+            <ReferenceChip />
+          </div>
+        </State>
+        <State name="undo-line" caption="Entfernt, 10 Sekunden „Rückgängig“">
+          <div className="gblock">
+            <UndoLine label="Eltern der Jugendlichen" onUndo={noop} focus={false} />
+          </div>
         </State>
       </Section>
 

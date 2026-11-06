@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { sdkAiClient, type AiClient } from '../ai/client'
 import { withBackupTime } from '../domain/backup'
 import { newProject } from '../domain/document'
+import { reducer, type Action } from '../domain/reducer'
 import type { Project } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import { createAutosave } from '../storage/autosave'
@@ -164,7 +165,10 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
   const change = useCallback(
     (fn: (project: Project) => Project, { now = false }: { now?: boolean } = {}) => {
       if (!current.current) return
-      update(fn(current.current))
+      const next = fn(current.current)
+      // Nothing changed (e.g. an edit that left the text as it was): nothing to save.
+      if (next === current.current) return
+      update(next)
       if (now) void autosave.flush()
     },
     [update, autosave],
@@ -195,6 +199,8 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
     [store, changeDraft],
   )
   const readProject = useCallback(() => current.current, [])
+  // An edit is a deliberate act like a chat turn: saved at once (lessons-learned, step 9).
+  const editBlock = useCallback((action: Action) => change((p) => reducer(p, action), { now: true }), [change])
   const chat = useChatRunner({ ai, settings, project: readProject, change, drafts: draftKeeper })
 
   // Starting or loading a project is a deliberate act: saved at once, not after the pause.
@@ -286,6 +292,7 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
       chat={chat}
       drafts={drafts}
       onDraftChange={changeDraft}
+      onBlockAction={editBlock}
     />
   )
 }
