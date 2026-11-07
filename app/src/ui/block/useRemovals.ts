@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { Action } from '../../domain/reducer'
 import type { Item } from '../../domain/schemas/blocks'
 
 // The 10-second "Rückgängig" after a removal (design §7.6). Screen state only: a reload or
@@ -6,7 +7,15 @@ import type { Item } from '../../domain/schemas/blocks'
 
 export const UNDO_MS = 10_000
 
-export type Removal = { key: number; collection: string; item: Item; index: number; label: string }
+export type Removal = {
+  key: number
+  collection: string
+  item: Item
+  index: number
+  label: string
+  /** Removed by "Übernehmen" in a proposal: undo through the proposal, so card and block agree. */
+  undoAction?: Action
+}
 
 export function useRemovals(onExpire?: (removal: Removal) => void) {
   const [removals, setRemovals] = useState<Removal[]>([])
@@ -33,6 +42,7 @@ export function useRemovals(onExpire?: (removal: Removal) => void) {
           drop(key)
         }, UNDO_MS),
       )
+      return key
     },
     [drop],
   )

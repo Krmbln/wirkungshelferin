@@ -78,6 +78,26 @@ describe('toProposal', () => {
     ])
   })
 
+  it('an update of an item created in the same proposal keeps only what differs from the add; "" never clears it', () => {
+    const p = project()
+    const result = toProposal(
+      1,
+      call([
+        { op: 'add', collection: 'targetGroups', id: 'new:1', fields: group({ name: 'Eltern', description: 'holen ab', why: 'Sie entscheiden mit.' }) },
+        // The tool sends every field; the empty ones must not wipe the add's description and why.
+        { op: 'update', collection: 'targetGroups', id: 'new:1', fields: group({ name: 'Eltern', sizeEstimate: 'etwa 20' }) },
+        { op: 'update', collection: 'targetGroups', id: 'new:1', fields: group({ name: 'Eltern', sizeEstimate: 'etwa 20' }) },
+      ]),
+      meta(p),
+    )
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.proposal.changes.map((c) => c.fields)).toEqual([expect.objectContaining({ description: 'holen ab' }), { sizeEstimate: 'etwa 20' }])
+    const applied = reducer(p, { type: 'proposal/add', step: 1, proposal: result.proposal })
+    const done = reducer(applied, { type: 'change/applyAll', step: 1, proposalId: 'p1' })
+    expect(done.steps[1].block.targetGroups[1]).toMatchObject({ description: 'holen ab', why: 'Sie entscheiden mit.', sizeEstimate: 'etwa 20' })
+  })
+
   it.each([
     ['add without a temp id', [{ op: 'add', collection: 'targetGroups', id: 'tg9', fields: group() }], 'vorläufige ID'],
     ['duplicate temp id', [1, 2].map(() => ({ op: 'add', collection: 'targetGroups', id: 'new:1', fields: group() })), 'doppelt'],

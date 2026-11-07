@@ -9,7 +9,9 @@ import { Button } from '../components/Button'
 import { Dialog } from '../components/Dialog'
 import { InlineText } from './InlineText'
 import { BlockItem, BlockSection, UndoLine, WhyField } from './parts'
+import type { Applied } from './BlockPanel'
 import { useRemovals, type Removal } from './useRemovals'
+import { scrollIntoView } from '../proposals/highlight'
 
 // Step 1: challenge, target groups, stakeholders (PRD F5, design §6.2 "Step 11 build").
 
@@ -22,9 +24,14 @@ const PREFIX: Record<ListName, string> = { targetGroups: 'tg', stakeholders: 'sh
 const groupLabel = (g: TargetGroup) => g.name || 'Zielgruppe ohne Namen'
 const stakeholderLabel = (s: Stakeholder) => s.role || 'Beteiligte ohne Rolle'
 
-type Props = { project: Project; onAction: (action: Action) => void }
+type Props = {
+  project: Project
+  onAction: (action: Action) => void
+  /** Changes just applied from a proposal: a removal gets the undo line at its place. */
+  applied?: Applied
+}
 
-export function Step1Block({ project, onAction }: Props) {
+export function Step1Block({ project, onAction, applied }: Props) {
   const block = project.steps[1].block
   const panel = useRef<HTMLDivElement>(null)
   // Where focus goes after the next render (a new row, a restored row, the add button).
@@ -43,6 +50,38 @@ export function Step1Block({ project, onAction }: Props) {
     // The undo line goes; focus that sat on it moves to the section instead of <body>.
     const line = panel.current?.querySelector(`[data-undo-key="${removal.key}"]`)
     if (line?.contains(document.activeElement)) focusNext.current = `[data-add="${removal.collection}"]`
+  })
+
+  // An applied ENTFERNEN shows its cause in the block too (design §7.2): the undo line at the
+  // removed row's place, without taking focus from the card.
+  const scrollNext = useRef<number | null>(null)
+  useEffect(() => {
+    if (!applied) return
+    const proposal = project.steps[1].proposals.find((p) => p.id === applied.proposalId)
+    for (const id of applied.changeIds) {
+      const change = proposal?.changes.find((c) => c.id === id)
+      if (!proposal || change?.op !== 'remove' || change.state !== 'applied' || !change.undo?.before) continue
+      const item = change.undo.before as Item
+      const label = change.collection === 'targetGroups' ? groupLabel(item as TargetGroup) : stakeholderLabel(item as Stakeholder)
+      const key = push({
+        collection: change.collection,
+        item,
+        index: change.undo.index,
+        label,
+        undoAction: { type: 'change/undo', step: 1, proposalId: proposal.id, changeId: change.id },
+      })
+      scrollNext.current = key
+    }
+    // Only a new apply adds lines; later edits of the project don't.
+  }, [applied?.n])
+
+  useEffect(() => {
+    if (scrollNext.current === null) return
+    const line = panel.current?.querySelector(`[data-undo-key="${scrollNext.current}"]`)
+    if (line) {
+      scrollIntoView(line)
+      scrollNext.current = null
+    }
   })
 
   useEffect(() => {
@@ -70,7 +109,7 @@ export function Step1Block({ project, onAction }: Props) {
   }
 
   function undo(removal: Removal) {
-    onAction({ type: 'item/restore', step: 1, collection: removal.collection, item: removal.item, index: removal.index })
+    onAction(removal.undoAction ?? { type: 'item/restore', step: 1, collection: removal.collection, item: removal.item, index: removal.index })
     drop(removal.key)
     focusNext.current = `[data-item-id="${removal.item.id}"] textarea`
   }
@@ -85,13 +124,14 @@ export function Step1Block({ project, onAction }: Props) {
 
   /** The list's rows with the undo lines at the places their rows had. */
   function rows<T extends Item>(collection: ListName, items: T[], render: (item: T, index: number) => ReactNode) {
-    const lines = removals.filter((r) => r.collection === collection)
+    // A line whose row is back (undone from the card) goes.
+    const lines = removals.filter((r) => r.collection === collection && !items.some((i) => i.id === r.item.id))
     const out: ReactNode[] = []
     for (let i = 0; i <= items.length; i++) {
       for (const r of lines.filter((l) => Math.min(l.index, items.length) === i))
         out.push(
           <li key={`undo-${r.key}`} data-undo-key={r.key}>
-            <UndoLine label={r.label} onUndo={() => undo(r)} />
+            <UndoLine label={r.label} onUndo={() => undo(r)} focus={!r.undoAction} />
           </li>,
         )
       if (i < items.length) out.push(<li key={items[i].id}>{render(items[i], i)}</li>)

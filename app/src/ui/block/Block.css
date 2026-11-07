@@ -271,3 +271,37 @@
   font: var(--text-small);
   color: var(--text-muted);
 }
+
+/* "2 offene Änderungen im Chat ▸" at the top of the panel (design §6.2) */
+.bopen {
+  justify-content: flex-start;
+  margin-bottom: var(--space-2);
+  padding-inline: 0;
+}
+
+/* Block items: highlight and outline on a layer that reaches 12 px past the text on either
+   side (the inline fields reach 9 px), inside the item's own height so nothing is clipped. */
+.bitem {
+  position: relative;
+  isolation: isolate;
+}
+
+.bitem::before {
+  content: '';
+  position: absolute;
+  inset: 0 calc(-1 * var(--space-3));
+  z-index: -1;
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.bitem[data-highlight]::before {
+  --highlight-end: transparent;
+  background: var(--accent-soft);
+  animation: highlight-fade 1.5s ease-out forwards; /* keyframes in ProposalCard.css */
+}
+
+/* Hovering or focusing a proposal row outlines the item it changes. */
+.bitem[data-outlined]::before {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}

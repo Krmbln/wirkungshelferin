@@ -10,7 +10,7 @@ import { App } from '../ui/App'
 
 const galleryNow = new Date('2026-11-04T12:00:00')
 
-function filled(): Project {
+export function filled(): Project {
   const p = makeProject({
     steps: {
       0: { status: 'confirmed' },

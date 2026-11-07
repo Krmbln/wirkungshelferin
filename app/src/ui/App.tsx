@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { unanswered } from '../ai/chat'
 import { backupState } from '../domain/backup'
 import type { Action } from '../domain/reducer'
@@ -7,12 +7,13 @@ import type { StepId } from '../domain/types'
 import type { Drafts } from '../storage/drafts'
 import { defaultSettings, type Settings as SettingsValue } from '../storage/settings'
 import { stepIntro } from '../guide/intro'
-import { BlockPanel } from './block/BlockPanel'
+import { BlockPanel, type Applied } from './block/BlockPanel'
 import { Chat } from './chat/Chat'
 import type { ChatControls } from './chat/useChatRunner'
 import { Banner } from './components/Banner'
 import { Button } from './components/Button'
 import { Home } from './frame/Home'
+import { ProposalCard, type TargetHint } from './proposals/ProposalCard'
 import { PageHeader } from './frame/PageHeader'
 import { Settings, type SettingsProps } from './frame/Settings'
 import { Sidebar } from './frame/Sidebar'
@@ -136,27 +137,17 @@ export function App({
           />
         )}
         {view.kind === 'step' && (
-          <StepWorkspace
+          <StepView
             key={view.step}
-            step={steps[view.step]}
-            block={<BlockPanel project={project} step={view.step} onAction={onBlockAction} />}
-            chat={
-              <Chat
-                segments={project.steps[view.step].segments}
-                intro={stepIntro(view.step)}
-                now={now}
-                proposals={project.steps[view.step].proposals}
-                run={chat.runs[view.step]}
-                unanswered={unanswered(project, view.step)}
-                draft={drafts[view.step] ?? ''}
-                onDraftChange={(text) => onDraftChange(view.step, text)}
-                onSend={(text) => chat.send(view.step, text)}
-                onStop={() => chat.stop(view.step)}
-                onRetry={() => chat.retry(view.step)}
-                onOpenSettings={() => setView({ kind: 'settings' })}
-                model={settings.model}
-              />
-            }
+            project={project}
+            step={view.step}
+            now={now}
+            chat={chat}
+            draft={drafts[view.step] ?? ''}
+            onDraftChange={onDraftChange}
+            onBlockAction={onBlockAction}
+            onOpenSettings={() => setView({ kind: 'settings' })}
+            model={settings.model}
           />
         )}
         {view.kind === 'settings' && (
@@ -173,6 +164,73 @@ export function App({
         )}
       </main>
     </div>
+  )
+}
+
+type StepViewProps = {
+  project: Project
+  step: StepId
+  now: Date
+  chat: ChatControls
+  draft: string
+  onDraftChange: (step: StepId, text: string) => void
+  onBlockAction: (action: Action) => void
+  onOpenSettings: () => void
+  model: string
+}
+
+// One step: chat and block, and what links them (outline, highlight, jump). Keyed by step,
+// so that link state starts fresh on every step.
+function StepView({ project, step, now, chat, draft, onDraftChange, onBlockAction, onOpenSettings, model }: StepViewProps) {
+  const [outlined, setOutlined] = useState<TargetHint>()
+  const [applied, setApplied] = useState<Applied>()
+  const [jump, setJump] = useState<{ proposalId: string; n: number }>()
+  const state = project.steps[step]
+  const clearJump = useCallback(() => setJump(undefined), [])
+
+  return (
+    <StepWorkspace
+      step={steps[step]}
+      block={
+        <BlockPanel
+          project={project}
+          step={step}
+          onAction={onBlockAction}
+          outlined={outlined}
+          applied={applied}
+          onShowProposals={(proposalId) => setJump((j) => ({ proposalId, n: (j?.n ?? 0) + 1 }))}
+        />
+      }
+      chat={
+        <Chat
+          segments={state.segments}
+          intro={stepIntro(step)}
+          now={now}
+          proposals={state.proposals}
+          renderProposal={(proposal) => (
+            <ProposalCard
+              project={project}
+              step={step}
+              proposal={proposal}
+              onAction={onBlockAction}
+              onTarget={setOutlined}
+              onApplied={(proposalId, changeIds) => setApplied((a) => ({ proposalId, changeIds, n: (a?.n ?? 0) + 1 }))}
+              jump={jump?.proposalId === proposal.id ? jump.n : undefined}
+              onJumped={clearJump}
+            />
+          )}
+          run={chat.runs[step]}
+          unanswered={unanswered(project, step)}
+          draft={draft}
+          onDraftChange={(text) => onDraftChange(step, text)}
+          onSend={(text) => chat.send(step, text)}
+          onStop={() => chat.stop(step)}
+          onRetry={() => chat.retry(step)}
+          onOpenSettings={onOpenSettings}
+          model={model}
+        />
+      }
+    />
   )
 }
 

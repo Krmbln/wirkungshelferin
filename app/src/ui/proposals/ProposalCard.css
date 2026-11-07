@@ -1,0 +1,198 @@
+/* Proposal card inside an assistant message (design §6.2). The chat column can be ~330 px
+   wide: chip and text on the first line, the buttons on a line below. */
+/* position: relative anchors the hidden status line inside the card; otherwise it sits at
+   the page level, below a long chat, and makes the whole page scrollable. */
+.pcard {
+  position: relative;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.pcard__title {
+  font: var(--text-label);
+}
+
+.pcard__summary {
+  margin: var(--space-1) 0 0;
+}
+
+.prows {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prow {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line);
+}
+
+.prow:last-child {
+  padding-bottom: 0;
+}
+
+.prow__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Chip and noun on the first line; the item's name below at full width (the chat column
+   can be ~330 px, a chip beside the name would squeeze it). */
+.prow__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.prow__noun,
+.prow__meta {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.prow__main {
+  font-weight: 600;
+}
+
+.prow__fields {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.prow__fields[hidden] {
+  display: none;
+}
+
+.prow__field dt {
+  font: 600 13px/18px var(--font);
+  color: var(--text-muted);
+}
+
+.prow__field dd {
+  margin: 0;
+}
+
+.prow__change {
+  display: grid;
+}
+
+/* Short values: "~~indirekt~~ → direkt" on one line */
+.prow__change--inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+}
+
+.prow__change--inline > [aria-hidden] {
+  color: var(--text-muted);
+}
+
+/* The old value struck through (two lines are enough to recognise it), the new one follows. */
+.prow__before {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.prow__before--empty {
+  display: block;
+  font: var(--text-small);
+  line-height: inherit;
+}
+
+.prow__change--inline .prow__before--empty {
+  display: inline;
+}
+
+.prow__after {
+  text-decoration: none;
+}
+
+.prow__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--target-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: 600 13px/18px var(--font);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+/* Inside the 18 px meta line: the 32 px target stays, the line doesn't grow. */
+.prow__meta .prow__toggle {
+  margin-block: calc((18px - var(--target-min)) / 2);
+}
+
+.prow__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.prow__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--target-min);
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+/* A dependent row: [Übernehmen] Ablehnen on one line, the reason on a line below both. */
+.prow__foot .btn-with-reason {
+  display: contents;
+}
+
+.prow__foot .btn-reason {
+  flex-basis: 100%;
+  order: 1;
+}
+
+.prow__undo {
+  font: 600 13px/18px var(--font);
+}
+
+/* Rejected and stale rows step back; stale ones can't be applied any more. */
+.prow--rejected .prow__text,
+.prow--stale .prow__text {
+  color: var(--text-muted);
+}
+
+.pcard__all {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+/* The brief highlight (highlight.ts) on a card after a jump and on block items after applying.
+   Under reduced motion the animation is off and the colour shows still until it goes. */
+@keyframes highlight-fade {
+  to {
+    background-color: var(--highlight-end);
+  }
+}
+
+.pcard[data-highlight] {
+  --highlight-end: var(--surface);
+  background: var(--accent-soft);
+  animation: highlight-fade 1.5s ease-out forwards;
+}

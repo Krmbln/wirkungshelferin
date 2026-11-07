@@ -27,6 +27,8 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
   const { summary, changes } = parsed.data as ProposeInput
   const errors: string[] = []
   const temps = new Set<string>()
+  /** Fields of the items this proposal creates, as its earlier changes leave them. */
+  const created = new Map<string, Record<string, unknown>>()
   const result: ProposalChange[] = []
 
   changes.forEach((change, index) => {
@@ -36,14 +38,20 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
       if (!TEMP_ID.test(change.id)) return void errors.push(`Änderung ${n}: add braucht eine vorläufige ID wie new:1, nicht "${change.id}".`)
       if (temps.has(change.id)) return void errors.push(`Änderung ${n}: die vorläufige ID ${change.id} kommt doppelt vor.`)
       temps.add(change.id)
+      created.set(change.id, change.fields!)
       result.push({ ...base, op: 'add', tempId: change.id, fields: change.fields })
       return
     }
     if (TEMP_ID.test(change.id)) {
-      // A change to an item this proposal creates: there is no seen version to diff against.
+      // A change to an item this proposal creates: diffed against the fields it is created with,
+      // so the tool's required "" values never clear what the add just set.
       if (!temps.has(change.id)) return void errors.push(`Änderung ${n}: ${change.id} wird in diesem Vorschlag nicht vorher angelegt.`)
       if (change.op === 'remove') return void errors.push(`Änderung ${n}: ein neues Element im selben Vorschlag wieder zu entfernen ist nicht nötig.`)
-      result.push({ ...base, op: 'update', targetId: change.id, fields: change.fields })
+      const before = created.get(change.id)!
+      const fields = changedFields(before, change.fields!)
+      if (!Object.keys(fields).length) return
+      created.set(change.id, { ...before, ...fields })
+      result.push({ ...base, op: 'update', targetId: change.id, fields })
       return
     }
     const found = findItem(seen, change.collection, change.id)

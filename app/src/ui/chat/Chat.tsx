@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { problemText } from '../../ai/errors'
 import { lukasText } from '../../ai/prompt'
 import { PROPOSE } from '../../ai/tools'
@@ -22,6 +22,8 @@ export type ChatProps = {
   /** For the "Letzte Sitzung" divider. */
   now: Date
   proposals: Proposal[]
+  /** The card for a proposal of a complete message (App: ProposalCard). */
+  renderProposal: (proposal: Proposal) => ReactNode
   run?: ChatRun
   /** The newest turn is Lukas's and has no answer (e.g. after a reload during a failed turn). */
   unanswered: boolean
@@ -39,7 +41,7 @@ const FOLLOW_SLACK = 80
 
 // The chat column (design §6.2). Lukas's turns right, Claude's left; the stream shows
 // "denkt nach …" until text arrives. Errors stay in the chat, the input is never lost.
-export function Chat({ segments, intro, now, proposals, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model }: ChatProps) {
+export function Chat({ segments, intro, now, proposals, renderProposal, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model }: ChatProps) {
   const log = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const following = useRef(true)
@@ -110,7 +112,7 @@ export function Chat({ segments, intro, now, proposals, run, unanswered, draft, 
       const here = message.role !== 'system' && sessionStart?.index === index++
       if (si > 0 && mi === 0) items.push(<SegmentDivider key={`seg-${segment.id}`} summary={segment.summaryOfPrevious} session={here ? session : undefined} />)
       else if (here) items.push(<SessionDivider key="session" label={session!} />)
-      items.push(<ChatMessage key={message.id} message={message} proposals={proposals} />)
+      items.push(<ChatMessage key={message.id} message={message} proposals={proposals} renderProposal={renderProposal} />)
     })
   })
   // At the end: Lukas is back and hasn't written yet. A summary run shows the new segment's line already.
@@ -197,7 +199,7 @@ export function Chat({ segments, intro, now, proposals, run, unanswered, draft, 
   )
 }
 
-function ChatMessage({ message, proposals }: { message: StoredMessage; proposals: Proposal[] }) {
+function ChatMessage({ message, proposals, renderProposal }: { message: StoredMessage; proposals: Proposal[]; renderProposal: ChatProps['renderProposal'] }) {
   if (message.role === 'system') return null
   if (message.role === 'user') {
     const text = lukasText(message)
@@ -216,11 +218,9 @@ function ChatMessage({ message, proposals }: { message: StoredMessage; proposals
       {messageTexts(message).map((text, i) => (
         <Markdown key={i}>{text}</Markdown>
       ))}
-      {/* Placeholder until the proposal card (step 12). A stopped message shows none. */}
+      {/* Only complete messages carry proposals; a stopped one shows no card (design §6.2). */}
       {shown.map((p) => (
-        <p key={p.id} className="msg__proposal">
-          Vorschlag: {p.summary}
-        </p>
+        <Fragment key={p.id}>{renderProposal(p)}</Fragment>
       ))}
       {message.aborted && <span className="msg__aborted">abgebrochen</span>}
     </li>

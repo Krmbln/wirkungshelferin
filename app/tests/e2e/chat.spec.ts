@@ -29,8 +29,8 @@ test('a recorded answer streams in and is stored; no CSP problems', async ({ pag
   await input(page).fill('Hallo, wir fangen an.')
   await input(page).press('Enter')
   await expect(log(page).getByText('Hallo, wir fangen an.')).toBeVisible()
-  // The opening answer is a proposal: until the card (step 12) its summary shows.
-  await expect(log(page).locator('.msg__proposal')).toBeVisible()
+  // The opening answer is a proposal: its card shows once the message is complete.
+  await expect(log(page).getByRole('article', { name: 'Vorschlag' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Senden' })).toBeVisible()
   expect(requests).toHaveLength(1)
   const body = requests[0].postDataJSON()

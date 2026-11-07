@@ -170,6 +170,8 @@ const screenNames = [
   ...chatScreens,
   'block-empty',
   'block',
+  'proposal',
+  'proposal-opening',
   'home',
   'home-mixed',
   'home-backup-recent',
@@ -554,4 +556,108 @@ test('block step 11: inline fields, "von dir geändert", undo line, dialog for a
 test('block parts: states for the review', async ({ page }) => {
   await openGallery(page)
   await shot(section(page, 'Baustein-Teile'), 'block-parts')
+})
+
+test('proposals step 12: every row state, hover outline, apply highlight, jump, ~330 px chat column', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  // Highlight colours are checked while they stand still (lessons-learned, step 2).
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await openScreen(page, 'proposal')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  const block = page.getByRole('region', { name: 'Baustein' })
+  const log = page.locator('.chat__log')
+  const fitsSideways = () => log.evaluate((el) => el.scrollWidth <= el.clientWidth)
+  // A card taller than the chat column is clipped by its scroll box: shoot it in a tall window.
+  const cardShot = async (name: string) => {
+    const size = page.viewportSize()!
+    await page.setViewportSize({ width: size.width, height: 2400 })
+    await card.scrollIntoViewIfNeeded()
+    await shot(card, name)
+    await page.setViewportSize(size)
+  }
+  expect(await fitsSideways()).toBe(true)
+  await expect(card.getByText('Veraltet')).toBeVisible()
+  await expect(card.getByText('du hast das inzwischen geändert')).toBeVisible()
+  await expect(card.getByText('zuerst ‚Neu: Stammgäste 12–14‘ übernehmen')).toBeVisible()
+  await expect(card.getByText('abgelehnt')).toBeVisible()
+  await expect(card.getByText('übernommen', { exact: true })).toBeVisible()
+  await cardShot('proposal-card')
+
+  // Hover a row → its item is outlined in the block (and visible there).
+  await card.getByRole('button', { name: /^Übernehmen: Ändern – Zielgruppe „Eltern/ }).hover()
+  const parents = block.locator('[data-item-id="tg2"]')
+  await expect(parents).toHaveAttribute('data-outlined', '')
+  expect(await parents.evaluate((el) => getComputedStyle(el, '::before').boxShadow)).toContain('inset')
+  await shotScreen('proposal-hover')
+  // Leaving the row for the block (click, type, Enter) takes the outline away.
+  const why = parents.getByLabel('Warum?')
+  await why.click()
+  await page.keyboard.type(' (Test)')
+  await page.keyboard.press('Enter')
+  await expect(block.locator('[data-outlined]')).toHaveCount(0)
+
+  // Übernehmen → the item scrolls into view in the block and lights up (still, under reduced motion).
+  await page.mouse.move(0, 0)
+  await card.getByRole('button', { name: 'Übernehmen: Neu – Zielgruppe „Stammgäste 12–14“' }).click()
+  const added = block.locator('[data-item-id="tg3"]')
+  await expect(added).toHaveAttribute('data-highlight', '')
+  await expect(added).toBeInViewport()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  const soft = await page.evaluate(() => {
+    const el = document.createElement('span')
+    el.style.color = 'var(--accent-soft)'
+    document.body.append(el)
+    const value = getComputedStyle(el).color
+    el.remove()
+    return value
+  })
+  expect(await added.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe(soft)
+  // The dependent row is open now; focus sits on the applied row's Rückgängig.
+  await expect(card.getByRole('button', { name: /^Übernehmen: Ändern – Zielgruppe „Stammgäste 12–14“/ })).not.toHaveAttribute('aria-disabled')
+  await expect(card.getByRole('button', { name: 'Rückgängig: Neu – Zielgruppe „Stammgäste 12–14“' })).toBeFocused()
+  await shotScreen('proposal-applied')
+  await expect(added).not.toHaveAttribute('data-highlight', '', { timeout: 3_000 })
+
+  // Details of a NEU row.
+  await openScreen(page, 'proposal-opening')
+  await card.getByRole('button', { name: 'Details' }).first().click()
+  await cardShot('proposal-opening-card')
+
+  // The jump line: chat scrolled away from the card → click → card in view, focused, lit.
+  await log.evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await block.getByRole('button', { name: '7 offene Änderungen im Chat' }).click()
+  await expect(card).toBeFocused()
+  await expect(card).toHaveAttribute('data-highlight', '')
+  // The card is taller than the chat, but its first open row fits under the title: the card's
+  // top lands at the top of the chat (not the card's end), the row fully in view.
+  const firstOpen = card.locator('.prow--open').first()
+  await expect
+    .poll(async () => (await card.boundingBox())!.y - (await log.boundingBox())!.y)
+    .toBeLessThan(40)
+  await expect(firstOpen).toBeInViewport({ ratio: 1 })
+  // Only the chat column scrolled, never the window.
+  expect(await page.evaluate(() => [window.scrollY, document.scrollingElement!.scrollTop])).toEqual([0, 0])
+  await shotScreen('proposal-jump')
+
+  // ~330 px chat column (960 px window): nothing sideways, buttons inside the card.
+  await page.setViewportSize({ width: 960, height: 860 })
+  for (const name of ['proposal', 'proposal-opening']) {
+    await openScreen(page, name)
+    const width = await page.locator('.workspace__chat').evaluate((el) => el.getBoundingClientRect().width)
+    expect(width).toBeLessThan(345)
+    expect(await fitsSideways()).toBe(true)
+    const cardBox = (await card.boundingBox())!
+    for (const button of await card.locator('.btn').all()) {
+      const box = (await button.boundingBox())!
+      expect(box.x).toBeGreaterThanOrEqual(cardBox.x)
+      expect(box.x + box.width).toBeLessThanOrEqual(cardBox.x + cardBox.width)
+      expect(box.height).toBeGreaterThanOrEqual(32)
+    }
+    // The page itself never scrolls: nothing inside a column may stick out of the window.
+    expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+    await shotScreen(`${name}-narrow`)
+    await cardShot(`${name}-card-narrow`)
+  }
+  expect(errors).toEqual([])
 })
