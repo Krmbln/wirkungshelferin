@@ -10,7 +10,8 @@ import { highlight, scrollIntoView } from './highlight'
 import './ProposalCard.css'
 
 /** Hover = outline only; keyboard focus also scrolls the item into view. */
-export type TargetHint = { id: string; scroll: boolean }
+/** `fields`: a form's changed fields, outlined instead of the whole form (step 14). */
+export type TargetHint = { id: string; scroll: boolean; fields?: string[] }
 
 type Props = {
   project: Project
@@ -169,9 +170,10 @@ function ProposalRow({ project, step, proposal, row, onApply, onReject, onUndo, 
   const what = text.main ? `${chipLabels[text.kind]} – ${text.noun} „${shorten(text.main)}“` : `${chipLabels[text.kind]} – ${text.noun}`
   const hint = (scroll: boolean) => {
     const id = targetItemId(proposal, change)
-    onTarget(id ? { id, scroll } : undefined)
+    const fields = !text.draft && text.changedFields?.length ? text.changedFields : undefined
+    onTarget(id ? { id, scroll, ...(fields && { fields }) } : undefined)
   }
-  const hasDetails = !stale && change.op === 'add' && text.fields.length > 0
+  const hasDetails = !stale && (change.op === 'add' || text.draft === true) && text.fields.length > 0
 
   function onBlur(event: FocusEvent<HTMLLIElement>) {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onTarget(undefined)
@@ -194,12 +196,12 @@ function ProposalRow({ project, step, proposal, row, onApply, onReject, onUndo, 
           <span className="prow__noun">{text.noun}</span>
         </span>
         {text.main && <span className="prow__main">{text.main}</span>}
-        {(text.meta.length > 0 || hasDetails) && (
+        {(text.meta.length > 0 || (hasDetails && !text.draft)) && (
           // "Details" ends the meta line and opens right under it, above the buttons.
           <span className="prow__meta">
             {text.meta.join(' · ')}
-            {text.meta.length > 0 && hasDetails && ' · '}
-            {hasDetails && (
+            {text.meta.length > 0 && hasDetails && !text.draft && ' · '}
+            {hasDetails && !text.draft && (
               <button type="button" className="prow__toggle" aria-expanded={details} aria-controls={detailsId} onClick={() => setDetails((d) => !d)}>
                 Details
                 <Icon name={details ? 'chevronDown' : 'chevronRight'} size={16} />
@@ -209,21 +211,19 @@ function ProposalRow({ project, step, proposal, row, onApply, onReject, onUndo, 
         )}
       </div>
 
-      {!stale && change.op === 'update' && text.fields.length > 0 && (
+      {!stale && change.op === 'update' && !text.draft && text.fields.length > 0 && (
         <dl className="prow__fields">
-          {text.fields.map((f) => (
-            <ChangedField key={f.label} field={f} hideLabel={f.label === text.noun} />
-          ))}
+          {text.fields.map((f) =>
+            f.before === undefined ? <ListedField key={f.label} field={f} /> : <ChangedField key={f.label} field={f} hideLabel={f.label === text.noun} />,
+          )}
         </dl>
       )}
 
+      {/* A first draft into an empty form shows its fields at once, cut to 2 lines; Details opens them fully. */}
       {hasDetails && (
-        <dl id={detailsId} className="prow__fields" hidden={!details}>
+        <dl id={detailsId} className={`prow__fields${text.draft ? ' prow__fields--draft' : ''}`} hidden={!text.draft && !details} data-open={details || undefined}>
           {text.fields.map((f) => (
-            <div key={f.label} className="prow__field">
-              <dt>{f.label}</dt>
-              <dd>{f.after}</dd>
-            </div>
+            <ListedField key={f.label} field={f} />
           ))}
         </dl>
       )}
@@ -243,6 +243,13 @@ function ProposalRow({ project, step, proposal, row, onApply, onReject, onUndo, 
             <Button variant="text" className="prow__reject" aria-label={`Ablehnen: ${what}`} onClick={onReject}>
               Ablehnen
             </Button>
+            {/* A first draft's list is long: "Details" ends the button line and opens the full values. */}
+            {text.draft && hasDetails && (
+              <button type="button" className="prow__toggle prow__toggle--end" aria-expanded={details} aria-controls={detailsId} onClick={() => setDetails((d) => !d)}>
+                Details
+                <Icon name={details ? 'chevronDown' : 'chevronRight'} size={16} />
+              </button>
+            )}
           </>
         )}
         {(view.kind === 'applied' || view.kind === 'rejected') && (
@@ -269,6 +276,23 @@ function ProposalRow({ project, step, proposal, row, onApply, onReject, onUndo, 
   )
 }
 
+/** "offen" as the neutral chip, anything else as text (design §6.2, step 14). */
+function Value({ field }: { field: FieldLine }) {
+  return field.offen ? <span className="offen-chip">offen</span> : <>{field.after}</>
+}
+
+/** A field with its new value only: a NEU row's field, or a form field that was empty. */
+function ListedField({ field }: { field: FieldLine }) {
+  return (
+    <div className="prow__field">
+      <dt>{field.label}</dt>
+      <dd className="prow__value">
+        <Value field={field} />
+      </dd>
+    </div>
+  )
+}
+
 /** ÄNDERN: the old value struck through, the new one after it; short values on one line. */
 function ChangedField({ field, hideLabel }: { field: FieldLine; hideLabel: boolean }) {
   const short = (field.before ?? '').length <= SHORT && field.after.length <= SHORT
@@ -287,7 +311,7 @@ function ChangedField({ field, hideLabel }: { field: FieldLine; hideLabel: boole
         {short && <span aria-hidden="true">→</span>}
         <ins className="prow__after">
           <span className="visually-hidden">neu: </span>
-          {field.after}
+          <Value field={field} />
         </ins>
       </dd>
     </div>

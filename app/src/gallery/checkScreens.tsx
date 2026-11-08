@@ -76,7 +76,7 @@ function CheckScreen({ start, warn = ['2', '4'], run, delay = 900, chatBusy = fa
       initialView={{ kind: 'step', step: 1 }}
       onBlockAction={(a) => setProject((p) => reducer(p, a))}
       check={check}
-      chat={chatBusy ? { runs: { 1: { kind: 'running', blocks: [] } }, send: () => {}, stop: () => {}, retry: () => {} } : undefined}
+      chat={chatBusy ? { runs: { 1: { kind: 'running', blocks: [] } }, send: () => {}, act: () => {}, stop: () => {}, retry: () => {} } : undefined}
     />
   )
 }

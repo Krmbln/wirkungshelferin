@@ -1,6 +1,6 @@
 import { rubricCriteria } from '../../ai/tools'
 import type { LooseBlock } from '../../domain/block'
-import { checkCurrent, hardIssues, issueKey, sameBlock, type FieldTarget, type HardIssue } from '../../domain/check'
+import { appJudged, checkCurrent, hardIssues, issueKey, sameBlock, type FieldTarget, type HardIssue } from '../../domain/check'
 import type { Project, QualityCheck } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
 
@@ -8,7 +8,8 @@ import type { StepId } from '../../domain/types'
 // Pure, so the state machine is tested without the UI.
 
 export type BlockRow = { key: string; text: string; target: FieldTarget }
-export type JudgedRow = { criterion: string; name: string; note: string; result: 'ok' | 'warn'; confirmedAnyway: boolean }
+/** `target`: an app-judged ⚠ row's "Zum Feld" (step 0 completeness). */
+export type JudgedRow = { criterion: string; name: string; note: string; result: 'ok' | 'warn'; confirmedAnyway: boolean; target?: FieldTarget }
 
 export type GateView = {
   /**
@@ -39,12 +40,17 @@ export function stillOpen(project: Project, step: StepId, live = false): HardIss
   return hardIssues(step, state.block as LooseBlock).filter((i) => found.has(issueKey(i)))
 }
 
-/** ✓/⚠ rows in rubric order; a criterion a hard rule blocks shows only its ⛔ rows. */
-function judged(step: StepId, check: QualityCheck, confirmedWarnings: string[]): Pick<GateView, 'warn' | 'ok'> {
+/**
+ * ✓/⚠ rows in rubric order; a criterion a hard rule blocks shows only its ⛔ rows. App-judged
+ * criteria follow the block as it is now, so their row updates while Lukas fills fields.
+ */
+function judged(step: StepId, check: QualityCheck, block: LooseBlock, confirmedWarnings: string[]): Pick<GateView, 'warn' | 'ok'> {
   const names = new Map(rubricCriteria(step).map((c) => [c.id, c.name]))
   const blocked = new Set(hardIssues(step, check.block as LooseBlock).map((i) => i.criterion))
+  const live = new Map(appJudged(step, block).map((j) => [j.criterion, j]))
   const rows = check.results
     .filter((r) => !blocked.has(r.criterion))
+    .map((r) => ({ ...r, ...live.get(r.criterion) }))
     .map((r) => ({ ...r, name: names.get(r.criterion) ?? `Kriterium ${r.criterion}`, confirmedAnyway: r.result === 'warn' && confirmedWarnings.includes(r.criterion) }))
   return { warn: rows.filter((r) => r.result === 'warn'), ok: rows.filter((r) => r.result === 'ok') }
 }
@@ -54,7 +60,7 @@ export function gateView(project: Project, step: StepId, live = false): GateView
   const state = project.steps[step]
   const check = state.qualityCheck
   const current = checkCurrent(project, step)
-  const rows = check ? judged(step, check, state.status === 'confirmed' ? state.confirmedWarnings : []) : { warn: [], ok: [] }
+  const rows = check ? judged(step, check, state.block as LooseBlock, state.status === 'confirmed' ? state.confirmedWarnings : []) : { warn: [], ok: [] }
   if (state.status === 'confirmed' && state.confirmed && sameBlock(state.confirmed.block, state.block)) {
     return { kind: 'confirmed', blocking: [], ...(current ? rows : { warn: [], ok: [] }), check: current ? check : undefined, confirmedAt: state.confirmed.at }
   }
@@ -68,7 +74,9 @@ export function gateView(project: Project, step: StepId, live = false): GateView
 export function fieldSelector(target: FieldTarget): string {
   if (target.field === 'add' || !target.id) return `[data-add="${CSS.escape(target.collection)}"]`
   const item = `[data-item-id="${CSS.escape(target.id)}"]`
-  return target.field === 'why' ? `${item} [data-field="why"] textarea` : `${item} [data-field="isFocus"]`
+  if (target.field === 'isFocus') return `${item} [data-field="isFocus"]`
+  const field = `${item} [data-field="${CSS.escape(target.field)}"]`
+  return `${field} textarea, ${field} input`
 }
 
 export const blockingText = (n: number) => (n === 1 ? 'Noch 1 Punkt blockiert das Bestätigen' : `Noch ${n} Punkte blockieren das Bestätigen`)

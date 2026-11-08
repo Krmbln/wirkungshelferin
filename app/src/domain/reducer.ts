@@ -1,5 +1,5 @@
-import { confirmStep } from './check'
-import { findItem, isEmptyItem, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
+import { confirmStep, withAppJudged } from './check'
+import { findItem, isEmptyItem, type LooseBlock, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
 import { deleteTargetGroup } from './groups'
 import { applyAll, applyChange, rejectChange, undoChange } from './proposals'
 import { collectionMeta, type Item } from './schemas/blocks'
@@ -41,7 +41,9 @@ export function reducer(project: Project, action: Action): Project {
       const old = project.steps[action.step].qualityCheck
       if (old && old.at > action.check.at) return project
       const next = structuredClone(project)
-      next.steps[action.step].qualityCheck = structuredClone(action.check) as never
+      // What the app judges itself (step 0 completeness) never depends on Claude's reading.
+      const check = { ...structuredClone(action.check), results: withAppJudged(action.step, action.check.block as LooseBlock, action.check.results) }
+      next.steps[action.step].qualityCheck = check as never
       return next
     }
     case 'step/confirm':

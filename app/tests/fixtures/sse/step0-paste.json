@@ -1,0 +1,213 @@
+{
+  "step": 0,
+  "project": {
+    "schemaVersion": 1,
+    "createdAt": "2026-11-02T10:00:00.000Z",
+    "updatedAt": "2026-11-02T10:00:00.000Z",
+    "privacyNoteSeen": true,
+    "steps": {
+      "0": {
+        "status": "in_progress",
+        "block": {
+          "profile": {
+            "id": "profile",
+            "rev": 1,
+            "editedByUser": false,
+            "name": "",
+            "organisation": "",
+            "projectBoundary": "",
+            "location": "",
+            "activities": [],
+            "participants": "",
+            "team": "",
+            "duration": "",
+            "funder": "",
+            "statedGoals": [],
+            "otherOffers": [],
+            "openQuestions": []
+          },
+          "frame": {
+            "id": "frame",
+            "rev": 1,
+            "editedByUser": false,
+            "purpose": "",
+            "audience": "",
+            "requiredFormat": "",
+            "requiredFigures": [],
+            "existingData": []
+          },
+          "sources": [
+            {
+              "id": "src1",
+              "rev": 1,
+              "editedByUser": true,
+              "origin": "paste",
+              "label": "Projektskizze",
+              "text": "Projektskizze „Schraubzeit – offene Fahrradwerkstatt für Jugendliche“\n\nTräger: Nachbarschaftshaus Am Weidengrund e. V. Ort: Weidengrund-Siedlung, Großwohnsiedlung am Stadtrand.\n\nZweimal pro Woche (dienstags und donnerstags, 15–18 Uhr) reparieren Jugendliche ihre eigenen Räder unter Anleitung. Wer 20 Stunden mitarbeitet, darf ein aufbereitetes Spendenrad behalten.\n\nZiele: Die Jugendlichen werden mobiler und kommen auch in andere Stadtteile. Sie können ihr Rad selbst instand halten.\n\nLaufzeit 2026–2027, gefördert von der Stiftung Stadtteil Morgen. Der Sachbericht ist jeweils bis zum 31. März fällig und nennt die Teilnahmen pro Halbjahr.",
+              "at": "2026-11-05T10:00:00.000Z"
+            }
+          ]
+        },
+        "segments": [
+          {
+            "id": "72e59475-0ae1-4eb8-8a4f-e9061a45abb1",
+            "startedAt": "2026-11-05T10:00:00.000Z",
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n## Schritt 1: noch nicht begonnen\n\n## Schritt 2: noch nicht begonnen\n\n## Schritt 3: noch nicht begonnen\n\n## Schritt 4: noch nicht begonnen\n\n## Schritt 5: noch nicht begonnen\n\n## Schritt 6: noch nicht begonnen"
+                  },
+                  {
+                    "type": "text",
+                    "text": "[Quelle src1: „Projektskizze“]\nProjektskizze „Schraubzeit – offene Fahrradwerkstatt für Jugendliche“\n\nTräger: Nachbarschaftshaus Am Weidengrund e. V. Ort: Weidengrund-Siedlung, Großwohnsiedlung am Stadtrand.\n\nZweimal pro Woche (dienstags und donnerstags, 15–18 Uhr) reparieren Jugendliche ihre eigenen Räder unter Anleitung. Wer 20 Stunden mitarbeitet, darf ein aufbereitetes Spendenrad behalten.\n\nZiele: Die Jugendlichen werden mobiler und kommen auch in andere Stadtteile. Sie können ihr Rad selbst instand halten.\n\nLaufzeit 2026–2027, gefördert von der Stiftung Stadtteil Morgen. Der Sachbericht ist jeweils bis zum 31. März fällig und nennt die Teilnahmen pro Halbjahr."
+                  },
+                  {
+                    "type": "text",
+                    "text": "[App] Die Person hat einen Text eingefügt: „Projektskizze“ (src1). Er steht direkt über dieser Zeile."
+                  },
+                  {
+                    "type": "text",
+                    "text": "[Bausteinstand Schritt 0]\nprofile: {\"id\":\"profile\",\"rev\":1,\"editedByUser\":false,\"name\":\"\",\"organisation\":\"\",\"projectBoundary\":\"\",\"location\":\"\",\"activities\":[],\"participants\":\"\",\"team\":\"\",\"duration\":\"\",\"funder\":\"\",\"statedGoals\":[],\"otherOffers\":[],\"openQuestions\":[]}\nframe: {\"id\":\"frame\",\"rev\":1,\"editedByUser\":false,\"purpose\":\"\",\"audience\":\"\",\"requiredFormat\":\"\",\"requiredFigures\":[],\"existingData\":[]}\nsources:\n- {\"id\":\"src1\",\"rev\":1,\"editedByUser\":true,\"origin\":\"paste\",\"label\":\"Projektskizze\",\"chars\":642,\"at\":\"2026-11-05T10:00:00.000Z\"}"
+                  }
+                ],
+                "id": "1558f8e7-f173-43a2-8945-11e0fd1759d0",
+                "at": "2026-11-05T10:00:00.000Z",
+                "act": {
+                  "kind": "paste",
+                  "label": "Projektskizze",
+                  "chars": 642
+                }
+              }
+            ]
+          }
+        ],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "sentBlock": {
+          "profile": {
+            "id": "profile",
+            "rev": 1,
+            "editedByUser": false,
+            "name": "",
+            "organisation": "",
+            "projectBoundary": "",
+            "location": "",
+            "activities": [],
+            "participants": "",
+            "team": "",
+            "duration": "",
+            "funder": "",
+            "statedGoals": [],
+            "otherOffers": [],
+            "openQuestions": []
+          },
+          "frame": {
+            "id": "frame",
+            "rev": 1,
+            "editedByUser": false,
+            "purpose": "",
+            "audience": "",
+            "requiredFormat": "",
+            "requiredFigures": [],
+            "existingData": []
+          },
+          "sources": [
+            {
+              "id": "src1",
+              "rev": 1,
+              "editedByUser": true,
+              "origin": "paste",
+              "label": "Projektskizze",
+              "text": "Projektskizze „Schraubzeit – offene Fahrradwerkstatt für Jugendliche“\n\nTräger: Nachbarschaftshaus Am Weidengrund e. V. Ort: Weidengrund-Siedlung, Großwohnsiedlung am Stadtrand.\n\nZweimal pro Woche (dienstags und donnerstags, 15–18 Uhr) reparieren Jugendliche ihre eigenen Räder unter Anleitung. Wer 20 Stunden mitarbeitet, darf ein aufbereitetes Spendenrad behalten.\n\nZiele: Die Jugendlichen werden mobiler und kommen auch in andere Stadtteile. Sie können ihr Rad selbst instand halten.\n\nLaufzeit 2026–2027, gefördert von der Stiftung Stadtteil Morgen. Der Sachbericht ist jeweils bis zum 31. März fällig und nennt die Teilnahmen pro Halbjahr.",
+              "at": "2026-11-05T10:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "1": {
+        "status": "not_started",
+        "block": {
+          "challenge": {
+            "id": "challenge",
+            "rev": 1,
+            "editedByUser": false,
+            "text": ""
+          },
+          "targetGroups": [],
+          "stakeholders": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "2": {
+        "status": "not_started",
+        "block": {
+          "problems": [],
+          "causes": [],
+          "consequences": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "3": {
+        "status": "not_started",
+        "block": {
+          "goals": [],
+          "levelNotApplicable": [],
+          "level7": {
+            "id": "level7",
+            "rev": 1,
+            "editedByUser": false,
+            "text": ""
+          }
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "4": {
+        "status": "not_started",
+        "block": {
+          "resources": [],
+          "activities": [],
+          "outputs": [],
+          "links": [],
+          "externalFactors": [],
+          "sideEffects": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "5": {
+        "status": "not_started",
+        "block": {
+          "focusQuestions": [],
+          "deferredCandidates": [],
+          "indicators": [],
+          "mandatoryFigures": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "6": {
+        "status": "not_started",
+        "block": {
+          "planRows": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      }
+    },
+    "idCounters": {
+      "src": 1
+    }
+  }
+}

@@ -17,6 +17,7 @@ export function demoProject(): Project {
             projectBoundary: 'Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.',
             location: 'Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)',
             participants: 'Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag',
+            team: 'Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus',
             funder: 'Stiftung Stadtteil Morgen',
             activities: [
               'Offene Werkstatt: eigene Räder reparieren mit Anleitung',
@@ -36,6 +37,7 @@ export function demoProject(): Project {
             purpose: 'beides',
             audience: 'Stiftung Stadtteil Morgen und das Team',
             requiredFormat: 'Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr',
+            requiredFigures: ['Teilnahmen pro Halbjahr'],
             existingData: ['Anwesenheitsliste pro Nachmittag', 'Liste der vergebenen Räder'],
           }),
           sources: [
@@ -43,6 +45,7 @@ export function demoProject(): Project {
               origin: 'paste',
               label: 'Projektskizze (eingefügt)',
               text: 'Schraubzeit ist eine offene Fahrradwerkstatt im Nachbarschaftshaus …',
+              at: '2026-11-01T10:00:00.000Z',
             }),
           ],
         },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { demoProject } from '../../../src/domain/demo'
-import { makeItem, makeProject, makeProposal } from '../../../src/domain/fixtures'
+import { FIXTURE_TIME, makeItem, makeProject, makeProposal } from '../../../src/domain/fixtures'
 import { collections, emptyBlock, itemSchema } from '../../../src/domain/schemas/blocks'
 import { projectSchema, proposalChange, type Project } from '../../../src/domain/schemas/project'
 import { stepIds } from '../../../src/domain/types'
@@ -31,7 +31,8 @@ describe('Schemas: valid documents', () => {
       const block = emptyBlock(step) as Record<string, unknown>
       for (const [name, meta] of Object.entries(collections[step])) {
         if (meta.singleton) continue
-        block[name] = [makeItem(step, name as never)]
+        // A source needs its time; every other field may start empty.
+        block[name] = [makeItem(step, name as never, (name === 'sources' ? { at: FIXTURE_TIME } : {}) as never)]
       }
       const p = makeProject({ steps: { [step]: { block } } })
       expect(projectSchema.safeParse(p).success, `step ${step}`).toBe(true)

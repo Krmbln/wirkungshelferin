@@ -5,7 +5,7 @@ import type { Project, StoredMessage } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import { hardIssues } from '../domain/check'
 import { CHECK_REQUEST, checkEvents, parseCheck } from './check'
-import { contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, systemPrompt, withCacheBreakpoint } from './prompt'
+import { contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, sourceText, sourcesText, systemPrompt, withCacheBreakpoint } from './prompt'
 import { checkErrorToolResult, checkToolResult, errorToolResult, proposalToolResult, toProposal } from './proposal'
 import { MAX_TOKENS, type Call } from './request'
 import { carriedText } from './summarise'
@@ -64,6 +64,10 @@ type TurnMeta = Meta & {
   model?: string
   /** Start a new segment that carries this summary of the old one (summarise.ts); none = it failed. */
   newSegment?: { summary?: string }
+  /** A source's full text, sent before the turn's text (a paste). */
+  source?: string
+  /** The button behind an app turn; stored on the turn so the chat shows an app line. */
+  act?: StoredMessage['act']
 }
 
 /** The answers to the old segment's open tool calls, as app lines: the new segment has no tool_use to answer. */
@@ -73,7 +77,7 @@ function carriedResults(project: Project, step: StepId): string[] {
 }
 
 /** Stores Lukas's turn (pending tool results, context in a segment's first turn, snapshot) and builds the request. */
-export function prepareTurn(project: Project, step: StepId, text: string, { at, newId = defaultId, model, newSegment }: TurnMeta): Prepared {
+export function prepareTurn(project: Project, step: StepId, text: string, { at, newId = defaultId, model, newSegment, source, act }: TurnMeta): Prepared {
   const next = structuredClone(project)
   const state = stepOf(next, step)
   const rolled = Boolean(newSegment && state.segments.length)
@@ -83,12 +87,15 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
   const first = !segment.messages.length
   const pending = pendingToolUses(segment.messages)
   const shown = structuredClone(state.block)
-  const context = rolled ? `${contextText(project, step)}\n\n${carriedText(newSegment?.summary)}` : contextText(project, step)
+  // A new step 0 segment would lose the sources Claude read in the old one.
+  const carried = step === 0 && sourcesText(state.block) ? `\n\n${sourcesText(state.block)}` : ''
+  const context = rolled ? `${contextText(project, step)}${carried}\n\n${carriedText(newSegment?.summary)}` : contextText(project, step)
   const appended = nextTurn({
     pending,
     toolResults: rolled ? [] : toolResultsFor(project, step, pending),
     events,
     context: first ? context : undefined,
+    source,
     text,
     // A new segment always gets the full block.
     snapshot: snapshotText(
@@ -98,10 +105,53 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
       hardIssues(step, shown).map((i) => i.text),
     ),
   })
-  segment.messages.push(...appended.map((m) => ({ ...m, id: newId(), at })))
+  segment.messages.push(...appended.map((m, i) => ({ ...m, id: newId(), at, ...(act && i === appended.length - 1 && { act }) })))
   state.sentBlock = structuredClone(shown) as never
   return { project: next, call: chatCall(next, step), shown }
 }
+
+// ---------------------------------------------------------------- app turns (step 14)
+
+/** Longest text a paste may carry (design §6.2, step 14): ~40k tokens. */
+export const MAX_PASTE = 150_000
+
+/** A button that sends a turn on Lukas's behalf (design §6.2 "App lines"). */
+export type Act = { kind: 'paste'; label: string; text: string } | { kind: 'interview' } | { kind: 'opening' }
+
+/** True when a step's chat has no message yet. */
+export const chatEmpty = (project: Project, step: StepId) => !project.steps[step].segments.some((s) => s.messages.length)
+
+/**
+ * The turn for a button: a paste (step 0) stores the source, then sends it in full once; the
+ * interview (step 0, empty chat) and the opening (step 1 after step 0's confirm, empty chat)
+ * tell Claude how to begin. Undefined when the act doesn't fit the step's state.
+ */
+export function prepareAct(project: Project, step: StepId, act: Act, meta: TurnMeta): Prepared | undefined {
+  if (act.kind === 'opening') {
+    if (step !== 1 || !chatEmpty(project, 1) || project.steps[0].status !== 'confirmed') return undefined
+    return prepareTurn(project, step, `[App] ${OPENING}`, { ...meta, act: { kind: 'opening' } })
+  }
+  if (step !== 0) return undefined
+  if (act.kind === 'interview') {
+    if (!chatEmpty(project, 0)) return undefined
+    return prepareTurn(project, step, `[App] ${INTERVIEW}`, { ...meta, act: { kind: 'interview' } })
+  }
+  const text = act.text.trim()
+  if (!text || text.length > MAX_PASTE) return undefined
+  const label = act.label.trim() || `Eingefügter Text ${(project.idCounters.src ?? 0) + 1}`
+  const added = reducer(project, { type: 'item/add', step: 0, collection: 'sources', fields: { origin: 'paste', label, text, at: meta.at } })
+  if (added === project) return undefined
+  const source = (added.steps[0].block.sources as { id: string }[]).at(-1)!.id
+  return prepareTurn(added, step, `[App] Die Person hat einen Text eingefügt: „${label}“ (${source}). Er steht direkt über dieser Zeile.`, {
+    ...meta,
+    source: sourceText({ id: source, label, text }),
+    act: { kind: 'paste', label, chars: text.length },
+  })
+}
+
+const INTERVIEW = 'Die Person hat nichts Schriftliches und hat das Interview gestartet. Beginne mit dem Interview (Leitfaden Schritt 0, Abschnitt 4.1 „Ohne Dokument“).'
+const OPENING =
+  'Die Person hat Schritt 0 gerade bestätigt und öffnet jetzt Schritt 1. Beginne mit deiner Eröffnung (Leitfaden Schritt 1, Abschnitt 4.1): der erste Entwurf als Vorschlag und eine Frage.'
 
 /**
  * The gate's check request (design §6.2): the stored history plus one more user turn asking for

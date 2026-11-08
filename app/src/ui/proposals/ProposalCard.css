@@ -196,3 +196,22 @@
   background: var(--accent-soft);
   animation: highlight-fade 1.5s ease-out forwards;
 }
+
+/* A first draft into an empty form (step 14): its values cut to 2 lines until Details opens them. */
+.prow__fields--draft:not([data-open]) .prow__value {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* A form's list values: one entry per line (step 14). */
+.prow__value,
+.prow__after,
+.prow__before {
+  white-space: pre-line;
+}
+
+.prow__toggle--end {
+  margin-left: auto;
+}

@@ -1,4 +1,5 @@
 import type { BetaMessage, BetaRawMessageStreamEvent } from '@anthropic-ai/sdk/resources/beta/messages/messages'
+import type { Act } from '../../ai/chat'
 import type { AiProblem } from '../../ai/errors'
 import type { StoredMessage } from '../../domain/schemas/project'
 
@@ -10,8 +11,9 @@ export type StreamBlock = { type: 'text'; text: string } | { type: 'other' }
 
 export type ChatRun =
   | { kind: 'running'; blocks: StreamBlock[] }
-  /** The summary before a new segment (summarise.ts); `text` = Lukas's turn, not stored yet. */
-  | { kind: 'summarising'; text: string }
+  /** The summary before a new segment (summarise.ts); `text` / `act` = Lukas's turn, not stored yet. */
+  | { kind: 'summarising'; text: string; act?: undefined }
+  | { kind: 'summarising'; act: Act; text?: undefined }
   /** `partial`: text that arrived before the stream broke, shown until the next try. */
   | { kind: 'failed'; problem: AiProblem; partial: string }
 

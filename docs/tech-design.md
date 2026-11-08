@@ -208,6 +208,8 @@ The PDF is sent once as a base64 `document` block with an extraction instruction
 
 *As built (step 8):* `extractPdf` uses effort `low` (copying text needs no deep thinking, and thinking counts against `max_tokens`). On a `max_tokens` stop, the full assistant turn goes back unchanged, followed by a user turn quoting the end of the text so far ("mach genau dort weiter"); there is no assistant prefill on this model. At most 4 rounds; then `incomplete` with the text so far.
 
+*As built (step 14, step 0 without PDF):* a paste is Lukas's own material: `sources` items (`userOnly`, never in the tools) {origin, label, text, at}. `ai/chat.ts` `prepareAct` sends a paste's full text **once**, in the turn that adds it (`[Quelle srcN: „…“]` before the "[App] …" line); every snapshot shows a source as label + `chars`, never the text. Step 1's context message appends step 0's sources in full (the opening drafts from them); a new step 0 segment carries them too; steps 2–6 see the profile only. Buttons that start a turn (paste, interview, step 1 opening) store the turn with `act` and show it as an app line. Confirming step 0 while step 1's chat is empty sends step 1's opening at once. Step 0 has no ⛔; rubric criterion 1 (completeness: every form field filled or "offen", except budgetRange / openQuestions) is judged by the app (`withAppJudged` in the reducer and the check runner). Operating rules: in a message with a proposal, text and the one question come **before** the tool call (a tool call ends the turn; found in the step 14 PO run).
+
 ### 6.7 Errors (PRD F1, §5)
 The SDK's typed errors are mapped to plain German messages with what to do:
 
@@ -287,7 +289,7 @@ Settings (separate IndexedDB key, never exported) { apiKey?, model, effort }
 
 | Step | Collections / fields |
 |---|---|
-| 0 | `profile` (name, organisation, projectBoundary, location, participants, funder, activities, duration, budgetRange?, statedGoals, otherOffers, openQuestions; unknown = `"offen"`), `sources[]` (pasted or extracted text, origin label), `measurementFrame` (purpose: funder/learning, audience, requiredFormat?, existingData[]) |
+| 0 | `profile` (name, organisation, projectBoundary, location, activities[], participants, team, duration, funder, budgetRange?, statedGoals[], otherOffers[], openQuestions[]; unknown = `"offen"`), `frame` (purpose '' / geldgeberin / lernen / beides / offen, audience, requiredFormat, requiredFigures[], existingData[]), `sources[]` (origin paste/pdf, label, text, at; Lukas's only) — *as built in step 14* |
 | 1 | `challenge`*; `targetGroups[]`* {name, description, direct/indirect, isFocus, sizeEstimate?}; `stakeholders[]` {role, expectations[], why?} |
 | 2 | per focus group `problems[]` {groupId, coreProblem*}; `causes[]`* {groupId, text, evidence, notInfluenceable}; `consequences[]` {groupId, text}; non-focus groups: coreProblem only |
 | 3 | `goals[]`* {groupId, level 4/5/6, text, causeIds[], timeFrame}; `levelNotApplicable[]` {groupId, level, why}; `level7` {text, why} |

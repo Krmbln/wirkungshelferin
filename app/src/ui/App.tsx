@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { unanswered } from '../ai/chat'
+import { chatEmpty, unanswered } from '../ai/chat'
 import { backupState } from '../domain/backup'
 import type { Action } from '../domain/reducer'
 import type { Project } from '../domain/schemas/project'
@@ -9,9 +9,10 @@ import { defaultSettings, type Settings as SettingsValue } from '../storage/sett
 import { stepIntro } from '../guide/intro'
 import { BlockPanel, type Applied } from './block/BlockPanel'
 import { Chat } from './chat/Chat'
+import type { PasteDraft } from './chat/StartPanel'
 import type { ChatControls } from './chat/useChatRunner'
 import { fieldSelector } from './check/gate'
-import { QualityGate } from './check/QualityGate'
+import { QualityGate, type Handoff } from './check/QualityGate'
 import type { CheckControls } from './check/useCheckRunner'
 import { scrollIntoView } from './proposals/highlight'
 import { Banner } from './components/Banner'
@@ -57,7 +58,7 @@ type Props = {
 const noop = () => {}
 const resolved = async () => {}
 const connected = async () => ({ ok: true }) as const
-const idleChat: ChatControls = { runs: {}, send: noop, stop: noop, retry: noop }
+const idleChat: ChatControls = { runs: {}, send: noop, act: noop, stop: noop, retry: noop }
 const idleCheck: CheckControls = { runs: {}, check: async () => undefined }
 
 // No router (tech design §2): app state decides the view.
@@ -81,6 +82,10 @@ export function App({
   check = idleCheck,
 }: Props) {
   const [view, setView] = useState<View>(initialView)
+  // Kept here, so a step switch doesn't lose a paste being prepared (design §6.2, step 14).
+  const [paste, setPaste] = useState<PasteState>({ open: false, draft: { label: '', text: '' } })
+  // Step 0's confirm started step 1's first draft in this session: step 0 shows the hand-off.
+  const [handoffStarted, setHandoffStarted] = useState(false)
   const now = useNow(fixedNow)
   const backup = backupState(project, now)
   const [backupDownloaded, setBackupDownloaded] = useState(false)
@@ -158,6 +163,11 @@ export function App({
             model={settings.model}
             check={check}
             onSaveBackup={onSaveBackup}
+            paste={paste}
+            onPasteChange={setPaste}
+            handoffStarted={handoffStarted}
+            onHandoffStarted={() => setHandoffStarted(true)}
+            onOpenStep={(step) => setView({ kind: 'step', step })}
           />
         )}
         {view.kind === 'settings' && (
@@ -189,11 +199,26 @@ type StepViewProps = {
   model: string
   check: CheckControls
   onSaveBackup: () => void
+  paste: PasteState
+  onPasteChange: (paste: PasteState) => void
+  handoffStarted: boolean
+  onHandoffStarted: () => void
+  onOpenStep: (step: StepId) => void
+}
+
+type PasteState = { open: boolean; draft: PasteDraft }
+
+/** How step 1's first draft is doing, for step 0's hand-off banner. */
+function handoffStatus(project: Project, chat: ChatControls): Handoff['status'] {
+  const run = chat.runs[1]
+  if (run?.kind === 'failed' || (!run && unanswered(project, 1))) return 'failed'
+  if (!run && project.steps[1].segments.some((s) => s.messages.some((m) => m.role === 'assistant'))) return 'done'
+  return 'writing'
 }
 
 /** "Zum Feld": scrolls the block column to the field and focuses it (design §6.2 state B). */
 function goToField(target: Parameters<typeof fieldSelector>[0]) {
-  const el = document.querySelector<HTMLElement>(`.workspace__block ${fieldSelector(target)}`)
+  const el = document.querySelector('.workspace__block')?.querySelector<HTMLElement>(fieldSelector(target))
   if (!el) return
   scrollIntoView(el)
   el.focus({ preventScroll: true })
@@ -201,18 +226,47 @@ function goToField(target: Parameters<typeof fieldSelector>[0]) {
 
 // One step: chat and block, and what links them (outline, highlight, jump). Keyed by step,
 // so that link state starts fresh on every step.
-function StepView({ project, step, now, chat, draft, onDraftChange, onBlockAction, onOpenSettings, model, check, onSaveBackup }: StepViewProps) {
+function StepView({
+  project,
+  step,
+  now,
+  chat,
+  draft,
+  onDraftChange,
+  onBlockAction,
+  onOpenSettings,
+  model,
+  check,
+  onSaveBackup,
+  paste,
+  onPasteChange,
+  handoffStarted,
+  onHandoffStarted,
+  onOpenStep,
+}: StepViewProps) {
   const [outlined, setOutlined] = useState<TargetHint>()
   const [applied, setApplied] = useState<Applied>()
   const [jump, setJump] = useState<{ proposalId: string; n: number }>()
   const state = project.steps[step]
   const clearJump = useCallback(() => setJump(undefined), [])
+  const openPaste = () => onPasteChange({ ...paste, open: true })
+  // Confirming step 0 while step 1's chat is empty starts its first draft at once (PRD §3).
+  const handoff: Handoff | undefined =
+    step === 0 && (handoffStarted || chatEmpty(project, 1)) ? { status: handoffStatus(project, chat), onContinue: () => onOpenStep(1) } : undefined
+
+  function confirm() {
+    const startDraft = step === 0 && chatEmpty(project, 1)
+    onBlockAction({ type: 'step/confirm', step, at: new Date().toISOString() })
+    if (!startDraft) return
+    onHandoffStarted()
+    chat.act(1, { kind: 'opening' })
+  }
 
   return (
     <StepWorkspace
       step={steps[step]}
       check={
-        step === 1 ? (
+        step <= 1 ? (
           <QualityGate
             project={project}
             step={step}
@@ -221,7 +275,8 @@ function StepView({ project, step, now, chat, draft, onDraftChange, onBlockActio
             run={check.runs[step]}
             chatBusy={!!chat.runs[step] && chat.runs[step]?.kind !== 'failed'}
             onCheck={() => check.check(step)}
-            onConfirm={() => onBlockAction({ type: 'step/confirm', step, at: new Date().toISOString() })}
+            onConfirm={confirm}
+            handoff={handoff}
             onGoToField={goToField}
             onSaveBackup={onSaveBackup}
             onOpenSettings={onOpenSettings}
@@ -237,6 +292,7 @@ function StepView({ project, step, now, chat, draft, onDraftChange, onBlockActio
           applied={applied}
           onShowProposals={(proposalId) => setJump((j) => ({ proposalId, n: (j?.n ?? 0) + 1 }))}
           liveIssues={!!check.runs[step]}
+          onPaste={step === 0 ? openPaste : undefined}
         />
       }
       chat={
@@ -266,6 +322,21 @@ function StepView({ project, step, now, chat, draft, onDraftChange, onBlockActio
           onRetry={() => chat.retry(step)}
           onOpenSettings={onOpenSettings}
           model={model}
+          paste={
+            step === 0
+              ? {
+                  ...paste,
+                  onOpen: openPaste,
+                  onChange: (draft) => onPasteChange({ ...paste, draft }),
+                  onCancel: () => onPasteChange({ ...paste, open: false }),
+                  onSubmit: () => {
+                    chat.act(0, { kind: 'paste', ...paste.draft })
+                    onPasteChange({ open: false, draft: { label: '', text: '' } })
+                  },
+                }
+              : undefined
+          }
+          onInterview={step === 0 ? () => chat.act(0, { kind: 'interview' }) : undefined}
         />
       }
     />

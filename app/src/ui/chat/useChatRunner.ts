@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiClient } from '../../ai/client'
-import { commitAnswer, prepareRetry, prepareTurn, type Prepared } from '../../ai/chat'
+import { commitAnswer, prepareAct, prepareRetry, prepareTurn, type Act, type Prepared } from '../../ai/chat'
 import { rolloverNeeded, summaryCall, summaryFrom } from '../../ai/summarise'
 import type { Project } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
@@ -10,6 +10,8 @@ import { applyEvent, messageTexts, type ChatRun } from './stream'
 export type ChatControls = {
   runs: Partial<Record<StepId, ChatRun>>
   send: (step: StepId, text: string) => void
+  /** A button that sends a turn on Lukas's behalf (paste, interview, step 1 opening). */
+  act: (step: StepId, act: Act) => void
   stop: (step: StepId) => void
   retry: (step: StepId) => void
 }
@@ -110,31 +112,35 @@ export function useChatRunner({ ai, settings, project, change, drafts }: Options
    * without one, since the old history belongs to the old model. Stopp brings his text back.
    */
   const send = useCallback(
-    async (step: StepId, text: string) => {
+    async (step: StepId, input: { text: string } | { act: Act }) => {
       if (controllers.current.has(step)) return
       const { ai, settings, project, drafts } = latest.current
       const current = project()
       const rollover = current ? rolloverNeeded(current, step, settings.model) : undefined
-      const turn = (newSegment?: { summary?: string }) => (p: Project) =>
-        prepareTurn(p, step, text, { at: now(), model: settings.model, newSegment })
+      const turn = (newSegment?: { summary?: string }) => (p: Project) => {
+        const meta = { at: now(), model: settings.model, newSegment }
+        return 'act' in input ? prepareAct(p, step, input.act, meta) : prepareTurn(p, step, input.text, meta)
+      }
       if (!current || !rollover) return run(step, turn())
 
+      // Only typed text waits in the drafts; an app turn has nothing to give back.
+      const text = 'text' in input ? input.text : undefined
       const controller = new AbortController()
       controllers.current.set(step, controller)
-      setRun(step, { kind: 'summarising', text })
-      drafts?.hold(step, text)
+      setRun(step, 'act' in input ? { kind: 'summarising', act: input.act } : { kind: 'summarising', text: input.text })
+      if (text !== undefined) drafts?.hold(step, text)
       const result = await ai.send(settings, summaryCall(current, step), { signal: controller.signal })
       if (result.status === 'aborted') {
         controllers.current.delete(step)
         setRun(step, undefined)
-        drafts?.restore(step, text)
+        if (text !== undefined) drafts?.restore(step, text)
         return
       }
       const summary = result.status === 'done' ? summaryFrom(result.message) : undefined
       const newSegment = summary || rollover === 'model' ? { summary } : undefined
       await run(step, (p) => {
         const prepared = turn(newSegment)(p)
-        drafts?.release()
+        if (text !== undefined) drafts?.release()
         return prepared
       }, controller)
     },
@@ -143,7 +149,8 @@ export function useChatRunner({ ai, settings, project, change, drafts }: Options
 
   return {
     runs,
-    send: useCallback((step, text) => void send(step, text), [send]),
+    send: useCallback((step, text) => void send(step, { text }), [send]),
+    act: useCallback((step, act) => void send(step, { act }), [send]),
     retry: useCallback((step) => {
       if (!controllers.current.has(step)) void run(step, (p) => prepareRetry(p, step))
     }, [run]),

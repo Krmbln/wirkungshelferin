@@ -65,7 +65,7 @@ function ChatScreen({ messages = conversation, segments, run, drafts }: { messag
       now={galleryNow}
       project={project(messages, segments)}
       initialView={{ kind: 'step', step: 1 }}
-      chat={{ runs: run ? { 1: run } : {}, send: noop, stop: noop, retry: noop }}
+      chat={{ runs: run ? { 1: run } : {}, send: noop, act: noop, stop: noop, retry: noop }}
       drafts={drafts}
     />
   )

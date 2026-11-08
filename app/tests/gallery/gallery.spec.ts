@@ -181,6 +181,13 @@ const screenNames = [
   'check-confirmed',
   'check-failed',
   'check-chat-busy',
+  'step0-empty',
+  'step0-draft',
+  'step0-profile',
+  'step0-change',
+  'step0-check',
+  'step0-ready',
+  'step1-handoff',
   'home',
   'home-mixed',
   'home-backup-recent',
@@ -754,5 +761,140 @@ test('quality gate step 13: A, busy, B, C, the question, confirmed + backup prom
   await expect(rows).toHaveAttribute('data-cut', '')
   await rows.evaluate((el) => (el.scrollTop = el.scrollHeight))
   await expect(rows).not.toHaveAttribute('data-cut')
+  expect(errors).toEqual([])
+})
+
+test('step 0 (step 14): start panel, paste form, first draft, form states, field outline, check, hand-off', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const block = page.getByRole('region', { name: 'Baustein' })
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  const log = page.locator('.chat__log')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  /** The block column in a tall window, so the whole form is in one shot. */
+  const blockShot = async (name: string) => {
+    const size = page.viewportSize()!
+    await page.setViewportSize({ width: size.width, height: 2600 })
+    await shot(page.locator('.workspace__block'), name)
+    await page.setViewportSize(size)
+  }
+
+  // Empty: start panel, no "als offen markieren" yet, the lead line.
+  await openScreen(page, 'step0-empty')
+  await expect(page.getByText('Wie willst du anfangen?')).toBeVisible()
+  await expect(block.getByRole('button', { name: /als offen markieren$/ })).toHaveCount(0)
+  await expect(block.getByText(/Füge links einen Text ein/)).toBeVisible()
+  await noPageScroll()
+  await shotScreen('step0-empty')
+  await blockShot('step0-empty-block')
+
+  // Paste form: replaces the composer, the intro folds, at least 120 px of chat stay visible.
+  await page.locator('.start').getByRole('button', { name: 'Text einfügen' }).click()
+  const form = page.getByRole('form', { name: 'Text einfügen' })
+  await expect(form.getByLabel('Text')).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Worum geht es?' })).toHaveAttribute('aria-expanded', 'false')
+  await form.getByLabel('Bezeichnung').fill('Projektskizze Schraubzeit 2026')
+  await form.getByLabel('Text').fill('Projektskizze „Schraubzeit“\n\n'.repeat(40))
+  expect((await log.boundingBox())!.height).toBeGreaterThanOrEqual(120)
+  for (const button of await form.locator('.btn').all()) await expect(button).toBeInViewport({ ratio: 1 })
+  await noPageScroll()
+  await shotScreen('step0-paste')
+
+  // First draft: one NEU row, fields listed and cut to 2 lines; hover outlines the whole profile.
+  await openScreen(page, 'step0-draft')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  await expect(card.getByText('Projektprofil')).toBeVisible()
+  await expect(card.locator('.offen-chip').first()).toBeVisible()
+  const line = page.locator('.chat__act-text').first()
+  await expect(line).toContainText('Text eingefügt: „Projektskizze Schraubzeit 2026“')
+  // One line, never wrapped (UI/UX review): a cut label shows an ellipsis instead.
+  expect((await line.boundingBox())!.height).toBeLessThanOrEqual(24)
+  const apply = card.getByRole('button', { name: 'Übernehmen: Neu – Projektprofil' })
+  // "Details" ends the button line and opens the full values (UI/UX re-review).
+  const details = card.getByRole('button', { name: 'Details' })
+  await expect(details).toHaveAttribute('aria-expanded', 'false')
+  await details.click()
+  await expect(details).toHaveAttribute('aria-expanded', 'true')
+  await details.click()
+  await apply.hover()
+  await expect(block.locator('[data-item-id="profile"]')).toHaveAttribute('data-outlined', '')
+  await noPageScroll()
+  await shotScreen('step0-draft')
+  await apply.click()
+  await expect(block.locator('[data-item-id="profile"]')).toHaveAttribute('data-highlight', '')
+  await expect(block.getByRole('button', { name: /^Team/ })).toBeVisible()
+  await shotScreen('step0-draft-applied')
+
+  // Profile: chips, leer fields with their button, the source.
+  await openScreen(page, 'step0-profile')
+  await expect(block.getByRole('button', { name: 'Laufzeit als offen markieren' })).toBeVisible()
+  await expect(block.locator('.offen-chip')).not.toHaveCount(0)
+  await block.getByRole('button', { name: 'Text ansehen' }).click()
+  const text = block.locator('.bsource__text')
+  await text.focus()
+  // Room for the focus ring inside the panel (lessons-learned, step 13).
+  const room = await text.evaluate((el) => {
+    const b = el.getBoundingClientRect()
+    const p = el.closest('.workspace__scroll')!.getBoundingClientRect()
+    return [b.left - p.left, p.right - b.right]
+  })
+  for (const r of room) expect(r).toBeGreaterThanOrEqual(4)
+  await shotScreen('step0-profile')
+  await blockShot('step0-profile-block')
+
+  // A change once the profile has content: only the changed fields are outlined, then highlighted.
+  await openScreen(page, 'step0-change')
+  const change = page.getByRole('article', { name: 'Vorschlag' }).last()
+  const row = change.getByRole('button', { name: 'Übernehmen: Ändern – Projektprofil' })
+  await row.hover()
+  await expect(block.locator('[data-field="participants"]')).toHaveAttribute('data-outlined', '')
+  await expect(block.locator('[data-field="duration"]')).toHaveAttribute('data-outlined', '')
+  await expect(block.locator('[data-item-id="profile"]')).not.toHaveAttribute('data-outlined')
+  await expect(block.locator('[data-field="name"]')).not.toHaveAttribute('data-outlined')
+  await shotScreen('step0-change')
+  await row.click()
+  await expect(block.locator('[data-field="participants"]')).toHaveAttribute('data-highlight', '')
+  await expect(block.locator('[data-item-id="profile"]')).not.toHaveAttribute('data-highlight')
+
+  // Check: the app's ⚠ with "Zum Feld" → the first leer field.
+  await openScreen(page, 'step0-check')
+  await expect(gate.getByText('Noch leer, nicht als offen markiert: Laufzeit')).toBeVisible()
+  await shotScreen('step0-check')
+  await gate.getByRole('button', { name: /^Zum Feld/ }).click()
+  const laufzeit = block.getByRole('textbox', { name: 'Laufzeit' })
+  await expect(laufzeit).toBeFocused()
+  await expect(laufzeit).toBeInViewport()
+
+  // Hand-off: confirm → banner "schreibt …" with focus on Weiter → "fertig" → step 1.
+  await openScreen(page, 'step0-ready')
+  await gate.getByRole('button', { name: 'Bestätigen' }).click()
+  const next = gate.getByRole('button', { name: 'Weiter zu Schritt 1' })
+  await expect(next).toBeFocused()
+  await expect(gate.getByText(/schreibt den ersten Entwurf für Schritt 1/)).toBeVisible()
+  await noPageScroll()
+  await shotScreen('step0-handoff-writing')
+  await expect(gate.getByText('Schritt 0 bestätigt. Der erste Entwurf für Schritt 1 ist fertig.')).toBeVisible()
+  await shotScreen('step0-handoff-done')
+  await next.click()
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused()
+  await expect(page.getByText('Schritt 0 bestätigt', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Worum geht es?' })).toHaveAttribute('aria-expanded', 'true')
+
+  await openScreen(page, 'step1-handoff')
+  await expect(page.getByRole('article', { name: 'Vorschlag' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /offene Änderungen im Chat/ })).toBeVisible()
+  await shotScreen('step1-handoff')
+
+  // 960 px: the narrowest workspace.
+  await page.setViewportSize({ width: 960, height: 760 })
+  for (const name of ['step0-empty', 'step0-draft', 'step0-change']) {
+    await openScreen(page, name)
+    // The start panel is the one next action: shown from its top, not scrolled away.
+    if (name === 'step0-empty') await expect(page.getByText('Wie willst du anfangen?')).toBeInViewport()
+    expect(await log.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await noPageScroll()
+    await shotScreen(`${name}-narrow`)
+  }
   expect(errors).toEqual([])
 })

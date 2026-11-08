@@ -3,6 +3,7 @@ import { checkCall } from '../../ai/chat'
 import { checkFromAnswer } from '../../ai/check'
 import type { AiClient } from '../../ai/client'
 import type { AiProblem } from '../../ai/errors'
+import { withAppJudged } from '../../domain/check'
 import { reducer } from '../../domain/reducer'
 import type { Project, QualityCheck } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
@@ -83,7 +84,9 @@ export function useCheckRunner({ ai, settings, project, change }: Options): Chec
       }
       // Stamped when it lands: a chat turn sent meanwhile then still hears about it, and an
       // older result never replaces a newer one (reducer).
-      const stored: QualityCheck = { at: now(), source: 'app', block: shown, results }
+      // With the app's own judgement in place already: the gate decides from this result
+      // whether to ask "Trotzdem bestätigen?" (step 0 completeness).
+      const stored: QualityCheck = { at: now(), source: 'app', block: shown, results: withAppJudged(step, shown, results) }
       latest.current.change((p) => reducer(p, { type: 'check/store', step, check: stored }), { now: true })
       setRun(step, undefined)
       return stored

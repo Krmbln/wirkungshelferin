@@ -15,6 +15,8 @@ type Props = {
   strong?: boolean
   small?: boolean
   invalid?: boolean
+  /** Extra description, e.g. "derzeit als offen markiert" (step 0). */
+  describedBy?: string
   /** Gallery: show the hover look without a pointer. */
   forceState?: 'hover'
 }
@@ -22,7 +24,7 @@ type Props = {
 // An always-editable text area styled as plain text (design §6.2, step 11): no edit mode, so a
 // click or Tab is all it takes. The draft is local while focused; the block's value is shown
 // otherwise, so an applied proposal appears at once.
-export function InlineText({ value, onSave, label, id, placeholder, multiline = false, strong, small, invalid, forceState }: Props) {
+export function InlineText({ value, onSave, label, id, placeholder, multiline = false, strong, small, invalid, describedBy, forceState }: Props) {
   const [draft, setDraft] = useState<string | null>(null)
   const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -52,6 +54,7 @@ export function InlineText({ value, onSave, label, id, placeholder, multiline = 
         value={draft ?? value}
         aria-label={label}
         aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
         placeholder={placeholder}
         spellCheck
         onFocus={() => setDraft(value)}

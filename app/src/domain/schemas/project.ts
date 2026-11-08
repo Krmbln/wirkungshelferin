@@ -25,6 +25,14 @@ export const storedMessage = z.strictObject({
   toolErrors: z.record(z.string(), z.array(z.string())).optional(),
   /** Tokens of a complete answer: the whole prompt it read and its output. Decides when a segment rolls over. */
   usage: z.strictObject({ prompt: z.number().int().nonnegative(), output: z.number().int().nonnegative() }).optional(),
+  /** A user turn the app sent for a button Lukas pressed (paste, interview, step 1 opening): shown as an app line. */
+  act: z
+    .strictObject({
+      kind: z.enum(['paste', 'interview', 'opening']),
+      label: z.string().optional(),
+      chars: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
 })
 
 export type StoredMessage = z.infer<typeof storedMessage>

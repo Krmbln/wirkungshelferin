@@ -305,3 +305,129 @@
 .bitem[data-outlined]::before {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
+
+/* Step 0 form pattern (design §6.2, step 14): one field per row, label above, 12 px apart,
+   no lines between fields (the form is one item). */
+.bitem.bform {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.bform__lead {
+  color: var(--text-muted);
+}
+
+.bsection__meta {
+  margin-right: auto;
+}
+
+.bform__field {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Outline and highlight of one changed field, like an item's (reaching 12 px past the text). */
+.bform__field::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-1)) calc(-1 * var(--space-3));
+  z-index: -1;
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.bform__field[data-highlight]::before {
+  --highlight-end: transparent;
+  background: var(--accent-soft);
+  animation: highlight-fade 1.5s ease-out forwards;
+}
+
+.bform__field[data-outlined]::before {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.bform__labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 20px;
+}
+
+.bform__mark {
+  min-height: var(--target-min);
+  margin-block: -6px;
+  color: var(--text-muted);
+  font: 600 13px/18px var(--font);
+}
+
+.bform__mark:hover {
+  color: var(--text);
+}
+
+/* "offen": the chip at rest; focus opens the text area. Same height and inset as an inline field. */
+.bform__offen {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: calc(100% + var(--space-2) + 1px);
+  min-height: var(--target-min);
+  margin-left: calc(-1 * (var(--space-2) + 1px));
+  padding: 3px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  font: var(--text-body);
+  text-align: left;
+  cursor: text;
+}
+
+.bform__offen:hover {
+  background: var(--surface-subtle);
+}
+
+.bform__unknown {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.bform__radios .bcontrols {
+  gap: 0 var(--space-3);
+}
+
+.bform__radios legend {
+  padding: 0;
+}
+
+/* Sources */
+.bsource__meta {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.bsource__toggle {
+  justify-self: start;
+}
+
+/* Read-only text: room inside for the focus ring (lessons-learned, step 13). */
+.bsource__text {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  font: var(--text-small);
+  line-height: 20px;
+}
+
+.bsource__text[hidden] {
+  display: none;
+}

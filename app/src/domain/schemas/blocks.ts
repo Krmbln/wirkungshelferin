@@ -23,29 +23,33 @@ const one = <S extends z.ZodRawShape>(shape: S) => z.strictObject({ ...itemBase,
 /** A list of items. */
 const many = <S extends z.ZodRawShape>(shape: S) => z.array(z.strictObject({ ...itemBase, ...shape }))
 
-// "offen" marks unknown fields in step 0; it is a value, never a guess (PRD F3).
+// "offen" marks unknown fields in step 0; it is a value, never a guess (PRD F3). Order = the
+// form's order (design §6.2, step 14). `sources` are Lukas's own material: no tool proposes them.
 const step0 = z.strictObject({
   profile: one({
     name: text,
     organisation: text,
     projectBoundary: text,
     location: text,
-    participants: text,
-    funder: text,
     activities: texts,
+    participants: text,
+    team: text,
     duration: text,
+    funder: text,
     budgetRange: text.optional(),
     statedGoals: texts,
     otherOffers: texts,
     openQuestions: texts,
   }),
   frame: one({
-    purpose: z.enum(['offen', 'geldgeberin', 'lernen', 'beides']),
+    // '' = nothing chosen yet (leer); "offen" = explicitly unknown.
+    purpose: z.enum(['', 'geldgeberin', 'lernen', 'beides', 'offen']),
     audience: text,
-    requiredFormat: text.optional(),
+    requiredFormat: text,
+    requiredFigures: texts,
     existingData: texts,
   }),
-  sources: many({ origin: z.enum(['paste', 'pdf', 'interview']), label: text, text }),
+  sources: many({ origin: z.enum(['paste', 'pdf']), label: text, text, at: z.iso.datetime() }),
 })
 
 const step1 = z.strictObject({
@@ -135,12 +139,13 @@ export type FieldsOf<S extends StepId, C extends CollectionName<S>> = Omit<ItemO
 
 export type Item = { id: string; rev: number; editedByUser: boolean; why?: string } & Record<string, unknown>
 
-type CollectionMeta = { prefix: string; singleton?: true; why?: true }
+/** `userOnly`: only Lukas adds these (pasted or uploaded material); the tools leave them out. */
+type CollectionMeta = { prefix: string; singleton?: true; why?: true; userOnly?: true }
 
 // Per collection: id prefix (or singleton) and whether it carries a "Why" (PRD F5 *).
 // Prefixes are unique across all steps, so an id is unique in the whole project.
 export const collections: { [S in StepId]: Record<CollectionName<S>, CollectionMeta> } = {
-  0: { profile: { prefix: 'profile', singleton: true }, frame: { prefix: 'frame', singleton: true }, sources: { prefix: 'src' } },
+  0: { profile: { prefix: 'profile', singleton: true }, frame: { prefix: 'frame', singleton: true }, sources: { prefix: 'src', userOnly: true } },
   1: {
     challenge: { prefix: 'challenge', singleton: true, why: true },
     targetGroups: { prefix: 'tg', why: true },
@@ -196,7 +201,7 @@ export function emptyFields(step: StepId, collection: string): Record<string, un
 
 function emptyOf(type: z.ZodType): unknown {
   if (type instanceof z.ZodOptional) return undefined
-  if (type instanceof z.ZodString) return ''
+  if (type instanceof z.ZodString || type instanceof z.ZodISODateTime) return ''
   if (type instanceof z.ZodBoolean) return false
   if (type instanceof z.ZodArray) return []
   if (type instanceof z.ZodEnum) return type.options[0]

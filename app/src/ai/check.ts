@@ -1,6 +1,6 @@
 import type { BetaMessage } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type { LooseBlock } from '../domain/block'
-import { HARD_CRITERIA, hardIssues, sameBlock } from '../domain/check'
+import { appOwned, hardIssues, sameBlock } from '../domain/check'
 import type { Project, QualityCheck } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import { CHECK, checkInput, rubricCriteria } from './tools'
@@ -19,8 +19,9 @@ type Parsed = { ok: true; results: QualityCheck['results'] } | { ok: false; erro
 
 /**
  * A report_quality_check input → results in rubric order. Every criterion must be there exactly
- * once, except those the app's hard rules own: the rules tell Claude the app checks them, so a
- * missing one counts as ✓ from the app (its ⛔ rows still win when they find something).
+ * once, except those the app owns (hard rules, app-judged criteria): the rules tell Claude the
+ * app checks them, so a missing one counts as ✓ from the app (its ⛔ rows still win when they
+ * find something, and the reducer puts the app's own judgement in place).
  */
 export function parseCheck(step: StepId, input: unknown): Parsed {
   const parsed = checkInput(step).safeParse(input)
@@ -31,8 +32,7 @@ export function parseCheck(step: StepId, input: unknown): Parsed {
     if (byId.has(r.criterion)) errors.push(`Kriterium ${r.criterion} kommt mehrfach vor.`)
     byId.set(r.criterion, r)
   }
-  const hard = new Set(Object.values(HARD_CRITERIA[step] ?? {}))
-  for (const id of hard) if (!byId.has(id)) byId.set(id, { criterion: id, result: 'ok', note: APP_CHECKED })
+  for (const id of appOwned(step)) if (!byId.has(id)) byId.set(id, { criterion: id, result: 'ok', note: APP_CHECKED })
   const missing = rubricCriteria(step)
     .map((c) => c.id)
     .filter((id) => !byId.has(id))

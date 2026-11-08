@@ -40,7 +40,7 @@ function everyState(): Proposal {
 }
 
 /** A first draft like the recorded opening answer: one update and six adds. */
-function opening(): Proposal {
+export function opening(): Proposal {
   return makeProposal(
     [
       {

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { BetaMessage, BetaToolResultBlockParam, BetaToolUseBlock } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { sdkAiClient, type SendOptions, type SendResult } from '../../src/ai/client'
+import { commitAnswer, prepareAct } from '../../src/ai/chat'
 import { extractPdf } from '../../src/ai/pdf'
 import {
   MESSAGE_ORDER,
@@ -23,6 +24,8 @@ import { CHECK, PROPOSE, stepTools } from '../../src/ai/tools'
 import { stepOf, type LooseBlock } from '../../src/domain/block'
 import type { Item } from '../../src/domain/schemas/blocks'
 import { demoProject } from '../../src/domain/demo'
+import { makeProject } from '../../src/domain/fixtures'
+import { formFields, isOffen } from '../../src/domain/profile'
 import { reducer } from '../../src/domain/reducer'
 import { changeView } from '../../src/domain/proposals'
 import { projectSchema, type Project, type Proposal, type StoredMessage } from '../../src/domain/schemas/project'
@@ -444,5 +447,69 @@ describe('3 · PDF smoke check (made-up PDF)', () => {
       expect(missing, 'rows missing in the extracted text').toEqual([])
       expect(result.text).toContain(PDF_LAST_LINE)
       return `${result.rounds} rounds, ${result.text.length} characters, all ${PDF_ROWS} rows`
+    }))
+})
+
+// ---------------------------------------------------------------- 4. step 0 (step 14)
+
+describe('4 · step 0: paste and interview (made-up text)', () => {
+  // Made up, unlike the guide's examples and the real case. It leaves the team and similar
+  // offers out (→ "offen") and names a report deadline (never captured, PO 2026-10-10).
+  const SKETCH = [
+    'Projektskizze „Schraubzeit – offene Fahrradwerkstatt für Jugendliche“',
+    'Träger: Nachbarschaftshaus Am Weidengrund e. V. Ort: Weidengrund-Siedlung, Großwohnsiedlung am Stadtrand.',
+    'Zweimal pro Woche (dienstags und donnerstags, 15–18 Uhr) reparieren Jugendliche ihre eigenen Räder unter Anleitung. Wer 20 Stunden mitarbeitet, darf ein aufbereitetes Spendenrad behalten.',
+    'Ziele: Die Jugendlichen werden mobiler und kommen auch in andere Stadtteile. Sie können ihr Rad selbst instand halten.',
+    'Laufzeit 2026–2027, gefördert von der Stiftung Stadtteil Morgen. Der Sachbericht ist jeweils bis zum 31. März fällig und nennt die Teilnahmen pro Halbjahr.',
+  ].join('\n\n')
+
+  it('paste: a valid profile proposal; what the text leaves out is "offen"; no deadline', () =>
+    check('Step 0 paste: profile proposal valid, unknown = "offen", no deadline', async () => {
+      const prepared = prepareAct(makeProject(), 0, { kind: 'paste', label: 'Projektskizze', text: SKETCH }, { at: AT })!
+      rec.recordNext('step0-paste')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}step0-paste.json`, JSON.stringify({ step: 0, project: prepared.project }, null, 2))
+      // Text first, then the card: a tool call ends the turn (rules, step 14 PO test).
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use')
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no text before the proposal').toContain('?')
+      let project = commitAnswer(prepared.project, 0, { status: 'done', message }, prepared.shown, { at: AT })
+      const errors = project.steps[0].segments.at(-1)!.messages.at(-1)!.toolErrors
+      const [proposal] = project.steps[0].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(errors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 0, proposalId: proposal.id })
+      const block = project.steps[0].block
+      expect(block.profile.name).toContain('Schraubzeit')
+      const offen = formFields('profile').filter((f) => isOffen((block.profile as Record<string, unknown>)[f]))
+      expect(offen.length, 'nothing marked "offen"').toBeGreaterThan(0)
+      expect(JSON.stringify([block.profile, block.frame]), 'a deadline went into the block').not.toMatch(/31\. ?März|fällig/)
+      projectSchema.parse(project)
+      return `text first (${textBefore.length} chars), ${proposal.changes.length} change(s); offen: ${offen.join(', ')}; frame purpose "${block.frame.purpose}"`
+    }))
+
+  it('opening (step 1 after step 0\'s confirm): text with one question before the draft card', () =>
+    check('Step 1 opening after the hand-off: text + question first, then the card', async () => {
+      const prepared = prepareAct(demoProject(), 1, { kind: 'opening' }, { at: AT })!
+      rec.recordNext('step1-handoff')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
+      expect(firstTool, 'no draft card').toBeGreaterThan(-1)
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no question before the card').toContain('?')
+      return textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 140)
+    }))
+
+  it('interview: one first question, no proposal yet', () =>
+    check('Step 0 interview: first question', async () => {
+      const prepared = prepareAct(makeProject(), 0, { kind: 'interview' }, { at: AT })!
+      rec.recordNext('step0-interview')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      const text = message.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(text).toContain('?')
+      expect(toolUses(message).filter((u) => u.name === PROPOSE)).toEqual([])
+      return text.split('\n').filter(Boolean).at(-1)!.slice(0, 120)
     }))
 })

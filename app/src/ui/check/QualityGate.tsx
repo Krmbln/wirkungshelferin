@@ -10,6 +10,7 @@ import { Banner } from '../components/Banner'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { StatusIcon } from '../components/StatusIcon'
+import { ThinkingIndicator } from '../components/ThinkingIndicator'
 import { blockingText, gateView, okText, warnConfirmText, type JudgedRow } from './gate'
 import type { CheckProblem, CheckRun } from './useCheckRunner'
 import './QualityGate.css'
@@ -27,6 +28,17 @@ type Props = {
   onGoToField: (target: FieldTarget) => void
   onSaveBackup: () => void
   onOpenSettings: () => void
+  /** Step 0: confirming starts step 1's first draft; this banner replaces the backup question. */
+  handoff?: Handoff
+}
+
+/** Step 1's first draft after step 0's confirm (design §6.2, step 14), live. */
+export type Handoff = { status: 'writing' | 'done' | 'failed'; onContinue: () => void }
+
+const HANDOFF_TEXT: Record<Handoff['status'], string> = {
+  writing: 'Schritt 0 bestätigt. Die Wirkungshelferin schreibt den ersten Entwurf für Schritt 1 …',
+  done: 'Schritt 0 bestätigt. Der erste Entwurf für Schritt 1 ist fertig.',
+  failed: 'Schritt 0 bestätigt. Der Entwurf für Schritt 1 hat nicht geklappt – in Schritt 1 kannst du es erneut versuchen.',
 }
 
 const problemLine = (problem: CheckProblem, model: string) =>
@@ -38,11 +50,11 @@ const confirmedText = (at: string, now: Date) => `Bestätigt ${calendarDaysSince
 // The three-state gate at the bottom of the block panel (design §6.2): A "Prüfen und
 // bestätigen", B blocked with the reason and "Zum Feld", C confirm (with the inline question
 // when ⚠ points stay open). After confirming: the backup prompt.
-export function QualityGate({ project, step, now, model, run, chatBusy = false, onCheck, onConfirm, onGoToField, onSaveBackup, onOpenSettings }: Props) {
+export function QualityGate({ project, step, now, model, run, chatBusy = false, onCheck, onConfirm, onGoToField, onSaveBackup, onOpenSettings, handoff }: Props) {
   // While a check runs or after it failed, the ⛔ rows come from the block now (instantly, offline too).
   const view = gateView(project, step, !!run)
   const [asking, setAsking] = useState(false)
-  const [prompt, setPrompt] = useState<'open' | 'saved' | null>(null)
+  const [prompt, setPrompt] = useState<'open' | 'saved' | 'handoff' | 'handoff-saved' | null>(null)
   const [okOpen, setOkOpen] = useState(false)
   const [announce, setAnnounce] = useState('')
   const root = useRef<HTMLDivElement>(null)
@@ -97,10 +109,12 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
   const warnings = view.check ? openWarnings(step, view.check) : []
 
   function confirm() {
+    // Read before confirming: the hand-off is offered while step 1 is still empty.
+    const handing = !!handoff
     onConfirm()
     setAsking(false)
-    setPrompt('open')
-    focusNext.current = '[data-gate="backup"]'
+    setPrompt(handing ? 'handoff' : 'open')
+    focusNext.current = handing ? '[data-gate="next"]' : '[data-gate="backup"]'
   }
 
   function ask() {
@@ -156,7 +170,7 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
             </li>
           ))}
           {view.warn.map((row) => (
-            <Judged key={row.criterion} row={row} />
+            <Judged key={row.criterion} row={row} onGoToField={onGoToField} />
           ))}
           {okOpen && view.ok.map((row) => <Judged key={row.criterion} row={row} />)}
         </ul>
@@ -215,6 +229,39 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
         >
           Schritt bestätigt. Jetzt Backup speichern?
         </Banner>
+      )}
+      {(prompt === 'handoff' || prompt === 'handoff-saved') && handoff && (
+        <div className="gate__handoff">
+          <Banner
+            tone="neutral"
+            actions={
+              <>
+                <Button variant="primary" data-gate="next" onClick={handoff.onContinue}>
+                  Weiter zu Schritt 1
+                </Button>
+                {prompt === 'handoff' && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      onSaveBackup()
+                      setPrompt('handoff-saved')
+                      focusNext.current = '[data-gate="saved"]'
+                    }}
+                  >
+                    Backup speichern
+                  </Button>
+                )}
+              </>
+            }
+          >
+            {handoff.status === 'writing' ? <ThinkingIndicator announce={false} label={HANDOFF_TEXT.writing} /> : HANDOFF_TEXT[handoff.status]}
+            {prompt === 'handoff-saved' && (
+              <span className="banner__note" data-gate="saved" tabIndex={-1}>
+                Backup ist in deinen Downloads.
+              </span>
+            )}
+          </Banner>
+        </div>
       )}
       {prompt === 'saved' && (
         <p className="gate__lead" data-gate="saved" tabIndex={-1}>
@@ -275,7 +322,8 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
   )
 }
 
-function Judged({ row }: { row: JudgedRow }) {
+function Judged({ row, onGoToField }: { row: JudgedRow; onGoToField?: (target: FieldTarget) => void }) {
+  const target = row.result === 'warn' ? row.target : undefined
   return (
     <li className={`gate__row gate__row--${row.result}`}>
       <StatusIcon status={row.result} size={18} />
@@ -284,6 +332,12 @@ function Judged({ row }: { row: JudgedRow }) {
         {row.confirmedAnyway && <span className="gate__anyway"> · trotzdem bestätigt</span>}
         <span className="gate__note">{row.note}</span>
       </span>
+      {/* An app-judged ⚠ (step 0 completeness) leads to the first field still empty. */}
+      {target && onGoToField && (
+        <Button variant="text" className="gate__field" aria-label={`Zum Feld: ${row.note}`} onClick={() => onGoToField(target)}>
+          Zum Feld
+        </Button>
+      )}
     </li>
   )
 }

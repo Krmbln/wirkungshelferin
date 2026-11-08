@@ -64,8 +64,10 @@ function required(type: z.ZodType, path: string): z.ZodType {
 
 /** Input schema of propose_changes for a step. Also validates what Claude sends. */
 export function proposeInput(step: StepId) {
-  const names = Object.keys(collections[step])
-  const lists = names.filter((c) => !(collections[step] as Record<string, { singleton?: true }>)[c].singleton)
+  const meta = collections[step] as Record<string, { singleton?: true; userOnly?: true }>
+  // Lukas's own material (step 0 sources) is never proposed.
+  const names = Object.keys(meta).filter((c) => !meta[c].userOnly)
+  const lists = names.filter((c) => !meta[c].singleton)
   const variants: z.ZodType[] = names.map((c) => {
     const singleton = !lists.includes(c)
     return z
@@ -79,11 +81,12 @@ export function proposeInput(step: StepId) {
       })
       .describe(labels[c] ?? c)
   })
-  variants.push(
-    z
-      .strictObject({ op: z.literal('remove'), collection: z.enum(lists as [string, ...string[]]), id: z.string() })
-      .describe('Element entfernen'),
-  )
+  if (lists.length)
+    variants.push(
+      z
+        .strictObject({ op: z.literal('remove'), collection: z.enum(lists as [string, ...string[]]), id: z.string() })
+        .describe('Element entfernen'),
+    )
   return z.strictObject({
     summary: z.string().describe('Ein Satz: was sich ändert und warum'),
     changes: z.array(z.union(variants as [z.ZodType, z.ZodType, ...z.ZodType[]])),

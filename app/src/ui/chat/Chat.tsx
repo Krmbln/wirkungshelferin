@@ -9,6 +9,7 @@ import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { ThinkingIndicator } from '../components/ThinkingIndicator'
 import { IntroPanel } from './IntroPanel'
+import { AppLine, PasteForm, StartPanel, type PasteControls } from './StartPanel'
 import { Markdown } from './Markdown'
 import { sessionBreak, sessionLabel } from './sessions'
 import { isThinking, messageTexts, streamTexts, type ChatRun } from './stream'
@@ -34,6 +35,18 @@ export type ChatProps = {
   onRetry: () => void
   onOpenSettings: () => void
   model: string
+  /** Step 0: the start panel, the paste form and "+ Text einfügen" (design §6.2, step 14). */
+  paste?: PasteControls
+  onInterview?: () => void
+}
+
+/**
+ * Lukas has acted in the step: written, pasted, started the interview, or decided on a
+ * change. The intro stays open until then (design §6.2, step 14); the step 1 opening the app
+ * sent and Claude's messages don't count.
+ */
+export function lukasActed(messages: StoredMessage[], proposals: Proposal[]): boolean {
+  return messages.some((m) => m.role === 'user' && m.act?.kind !== 'opening') || proposals.some((p) => p.changes.some((c) => c.state !== 'open'))
 }
 
 /** How close to the bottom still counts as "following" the chat, in px. */
@@ -41,15 +54,23 @@ const FOLLOW_SLACK = 80
 
 // The chat column (design §6.2). Lukas's turns right, Claude's left; the stream shows
 // "denkt nach …" until text arrives. Errors stay in the chat, the input is never lost.
-export function Chat({ segments, intro, now, proposals, renderProposal, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model }: ChatProps) {
+export function Chat({ segments, intro, now, proposals, renderProposal, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model, paste, onInterview }: ChatProps) {
   const log = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const following = useRef(true)
   // Lukas scrolled up to read while an answer comes in: "Zur neuesten Nachricht" shows.
   const [away, setAway] = useState(false)
   const messages = segments.flatMap((s) => s.messages)
-  // Open on a first visit, collapsed once the step has a chat; it never closes under Lukas's hands.
-  const [introOpen, setIntroOpen] = useState(() => !messages.length)
+  // Open until Lukas has acted in the step; then it closes once and never under his hands.
+  const acted = lukasActed(messages, proposals)
+  const [introOpen, setIntroOpen] = useState(() => !acted)
+  const wasActed = useRef(acted)
+  if (acted && !wasActed.current) {
+    wasActed.current = true
+    setIntroOpen(false)
+  }
+  // The paste form needs the room: the intro folds while it is open and comes back as it was.
+  const pasting = !!paste?.open
   const running = run?.kind === 'running' || run?.kind === 'summarising'
   const announcement = useAnnouncement(messages)
   const visible = messages.filter((m) => m.role !== 'system')
@@ -68,7 +89,8 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
   const streamed = run?.kind === 'running' ? streamTexts(run.blocks).join('').length : 0
   useLayoutEffect(() => {
     const el = log.current
-    if (el && following.current) el.scrollTop = el.scrollHeight
+    // An empty chat shows the start panel or the hint from the top (step 0's one next action).
+    if (el && following.current && (messages.length || run)) el.scrollTop = el.scrollHeight
   }, [messages.length, streamed, run?.kind])
 
   const toNewest = () => {
@@ -122,7 +144,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
 
   return (
     <>
-      {intro && <IntroPanel intro={intro} open={introOpen} onToggle={() => setIntroOpen((o) => !o)} />}
+      {intro && <IntroPanel intro={intro} open={introOpen && !pasting} onToggle={() => setIntroOpen((o) => !o)} />}
       <div
         className="workspace__scroll chat__log"
         ref={log}
@@ -132,9 +154,9 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
           setAway(!following.current)
         }}
       >
-        {!messages.length && !run && (
-          <p className="placeholder">Hier sprichst du mit der Wirkungshelferin über diesen Schritt. Schreib einfach los.</p>
-        )}
+        {!messages.length && !run && paste && onInterview
+          ? !pasting && <StartPanel onPaste={paste.onOpen} onInterview={onInterview} />
+          : !messages.length && !run && <p className="placeholder">Hier sprichst du mit der Wirkungshelferin über diesen Schritt. Schreib einfach los.</p>}
         <ol className="chat__messages">
           {items}
           {run && <RunMessage run={run} />}
@@ -159,6 +181,40 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
           </Button>
         </div>
       )}
+      {pasting && paste ? (
+        <PasteForm draft={paste.draft} busy={running} onChange={paste.onChange} onCancel={cancelPaste} onSubmit={submitPaste} />
+      ) : (
+        <>
+          {paste && messages.length > 0 && (
+            <div className="chat__paste-line">
+              <Button variant="text" icon={<Icon name="plus" size={16} />} onClick={paste.onOpen}>
+                Text einfügen
+              </Button>
+            </div>
+          )}
+          {composer()}
+        </>
+      )}
+    </>
+  )
+
+  function cancelPaste() {
+    paste?.onCancel()
+    // Back to the composer, with what was typed there (the draft lives outside the form).
+    setTimeout(() => input.current?.focus())
+  }
+
+  function submitPaste() {
+    following.current = true
+    setAway(false)
+    paste?.onSubmit()
+    setTimeout(() => input.current?.focus())
+  }
+
+  // Called, not rendered as <Composer />: a component defined in here would be a new type on
+  // every render and remount the input while Lukas types.
+  function composer() {
+    return (
       <form
         className="composer"
         onSubmit={(e) => {
@@ -195,12 +251,13 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
           <Button type="submit" variant="text" className="btn--icon composer__send" aria-label="Senden" icon={<Icon name="send" />} />
         )}
       </form>
-    </>
-  )
+    )
+  }
 }
 
 function ChatMessage({ message, proposals, renderProposal }: { message: StoredMessage; proposals: Proposal[]; renderProposal: ChatProps['renderProposal'] }) {
   if (message.role === 'system') return null
+  if (message.act) return <AppLine act={message.act} />
   if (message.role === 'user') {
     const text = lukasText(message)
     if (!text) return null
@@ -268,9 +325,13 @@ function RunMessage({ run }: { run: ChatRun }) {
     // Lukas's turn waits for the summary; it is stored with the new segment's first message.
     return (
       <>
-        <li className="msg msg--user">
-          <p className="msg__plain">{run.text}</p>
-        </li>
+        {run.act ? (
+          <AppLine act={run.act.kind === 'paste' ? { kind: 'paste', label: run.act.label, chars: run.act.text.trim().length } : { kind: run.act.kind }} />
+        ) : (
+          <li className="msg msg--user">
+            <p className="msg__plain">{run.text}</p>
+          </li>
+        )}
         <li className="msg msg--assistant" aria-busy>
           <span className="msg__label">Wirkungshelferin</span>
           <p className="msg__thinking">

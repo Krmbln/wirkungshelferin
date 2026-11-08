@@ -122,3 +122,27 @@
 .gate__ask p {
   margin: 0;
 }
+
+/* Step 0's hand-off (step 14): the sentence changes while step 1's draft is written, so it gets
+   the full width and the buttons go on a line below it. */
+.gate__handoff .banner {
+  display: grid;
+  row-gap: var(--space-3);
+}
+
+.gate__handoff .banner__actions {
+  flex-wrap: wrap;
+}
+
+/* The banner's message stays --text while it is busy (design §3: text on a tint is --text);
+   the dot sits on the first line. */
+.gate__handoff .thinking {
+  align-items: flex-start;
+  color: var(--text);
+}
+
+/* 8 px dot on a 24 px line: 8 px from the top centres it on the first line. */
+.gate__handoff .thinking__dot {
+  flex: none;
+  margin-top: var(--space-2);
+}

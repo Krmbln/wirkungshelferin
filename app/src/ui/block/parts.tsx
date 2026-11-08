@@ -9,6 +9,10 @@ import './Block.css'
 
 type SectionProps = {
   title: string
+  /** The add button's visible text (default "hinzufügen"). */
+  addText?: string
+  /** Beside the heading, e.g. "von dir geändert" of a form (step 14). */
+  meta?: ReactNode
   /** "+ hinzufügen"; lists only (a singleton has no add button). */
   onAdd?: () => void
   addLabel?: string
@@ -20,15 +24,16 @@ type SectionProps = {
   children: ReactNode
 }
 
-export function BlockSection({ title, onAdd, addLabel, addKey, emptyHint, empty = false, children }: SectionProps) {
+export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, children }: SectionProps) {
   const headingId = useId()
   return (
     <section className="bsection" aria-labelledby={headingId}>
       <div className="bsection__head">
         <h3 id={headingId}>{title}</h3>
+        {meta}
         {onAdd && (
           <Button variant="text" className="bsection__add" icon={<Icon name="plus" size={16} />} aria-label={addLabel} data-add={addKey} onClick={onAdd}>
-            hinzufügen
+            {addText}
           </Button>
         )}
       </div>
@@ -126,14 +131,16 @@ export function ReferenceChip({ text }: { text?: string }) {
 }
 
 /** Takes the removed row's place for 10 seconds (design §7.6). */
-export function UndoLine({ label, onUndo, focus = true }: { label: string; onUndo: () => void; focus?: boolean }) {
+export function UndoLine({ label, note, onUndo, focus = true }: { label: string; note?: string; onUndo: () => void; focus?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (focus) ref.current?.querySelector('button')?.focus()
   }, [focus])
   return (
     <p className="undo" role="status">
-      <span>„{label}“ entfernt.</span>
+      <span>
+        „{label}“ entfernt.{note && ` ${note}`}
+      </span>
       <span ref={ref}>
         <Button variant="text" onClick={onUndo}>
           Rückgängig

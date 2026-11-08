@@ -1,4 +1,5 @@
 import type { LooseBlock } from './block'
+import { leerFields } from './profile'
 import type { Item } from './schemas/blocks'
 import type { Project, QualityCheck } from './schemas/project'
 import type { StepId } from './types'
@@ -8,8 +9,8 @@ import type { StepId } from './types'
 // the assistant's rubric judgement (report_quality_check). Steps 0 and 2–6 get theirs in
 // steps 14–20.
 
-/** Where "Zum Feld" goes: a field of an item, or the add button of a list without items. */
-export type FieldTarget = { collection: string; id?: string; field: 'why' | 'isFocus' | 'add' }
+/** Where "Zum Feld" goes: a field of an item (by its `data-field`), or the add button of a list without items. */
+export type FieldTarget = { collection: string; id?: string; field: string }
 
 export type HardIssue = {
   /** The rubric criterion this rule belongs to (the step's rubric table in the guide). */
@@ -22,6 +23,36 @@ export type HardIssue = {
 /** Which rubric criterion each kind of hard rule checks, per step (ids from the guide's rubric). */
 export const HARD_CRITERIA: Partial<Record<StepId, { why: string; focus: string }>> = {
   1: { why: '8', focus: '5' },
+}
+
+/** A rubric criterion the app judges itself from the block (✓ or ⚠, never ⛔), overriding Claude. */
+export type AppJudged = { criterion: string; result: 'ok' | 'warn'; note: string; target?: FieldTarget }
+
+/** Step 0 criterion 1 "Vollständigkeit": every field filled or "offen" (design §6.2, step 14). */
+export function appJudged(step: StepId, block: LooseBlock): AppJudged[] {
+  if (step !== 0) return []
+  const leer = leerFields(block)
+  if (!leer.length) return [{ criterion: '1', result: 'ok', note: 'Jedes Feld ist ausgefüllt oder offen.' }]
+  return [
+    {
+      criterion: '1',
+      result: 'warn',
+      note: `Noch leer, nicht als offen markiert: ${leer.map((f) => f.label).join(', ')}`,
+      target: { collection: leer[0].form, id: leer[0].form, field: leer[0].field },
+    },
+  ]
+}
+
+/** Criteria Claude may leave out because the app owns them (hard rules and app-judged ones). */
+export function appOwned(step: StepId): string[] {
+  const appIds: Partial<Record<StepId, string[]>> = { 0: ['1'] }
+  return [...Object.values(HARD_CRITERIA[step] ?? {}), ...(appIds[step] ?? [])]
+}
+
+/** Claude's results with the app-judged criteria replaced by the app's own judgement of `block`. */
+export function withAppJudged(step: StepId, block: LooseBlock, results: QualityCheck['results']): QualityCheck['results'] {
+  const own = new Map(appJudged(step, block).map((j) => [j.criterion, { criterion: j.criterion, result: j.result, note: j.note }]))
+  return results.map((r) => own.get(r.criterion) ?? r)
 }
 
 const empty = (text: string | undefined) => !text?.trim()

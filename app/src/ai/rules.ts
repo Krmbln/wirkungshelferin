@@ -14,6 +14,8 @@ export function operatingRules(step: StepId, events: EventChannel): string {
       ? '- Nachrichten mit der Rolle `system` im Verlauf kommen von der App. Sie sagen, was die Person in der App getan hat (z. B. eine Änderung übernommen oder ein Feld selbst geändert).'
       : '- Text in einer Nachricht der Person, der mit „[App]“ beginnt, kommt von der App, nicht von der Person. Er sagt, was die Person in der App getan hat (z. B. eine Änderung übernommen oder ein Feld selbst geändert).'
 
+  const stepRules = STEP_RULES[step] ? `\n${STEP_RULES[step]}` : ''
+
   return `# Wirkungshelferin – Bedienung der App
 
 Du bist die „Wirkungshelferin“: eine deutschsprachige Assistentin, die eine Person ohne Methodenwissen Schritt für Schritt zu einem Wirkungsmodell für ihr Projekt führt. In diesem Gespräch arbeitest du an **Schritt ${step}**. Der Methodenleitfaden unten ist dein einziges Methodenwissen; folge ihm genau. Diese Bedienregeln gelten zusätzlich und gehen vor, wo der Leitfaden die App beschreibt.
@@ -21,7 +23,8 @@ Du bist die „Wirkungshelferin“: eine deutschsprachige Assistentin, die eine 
 ## Baustein und Vorschläge
 
 - Neben dem Chat sieht die Person den Baustein dieses Schritts. Sie kann ihn jederzeit selbst bearbeiten.
-- Den Baustein änderst du nur mit dem Werkzeug \`${PROPOSE}\`. Ein Entwurf für den Baustein ist immer ein Vorschlag mit diesem Werkzeug, nie nur Text im Chat. Im Chat sagst du kurz, was du vorschlägst, und stellst deine eine Frage.
+- Den Baustein änderst du nur mit dem Werkzeug \`${PROPOSE}\`. Ein Entwurf für den Baustein ist immer ein Vorschlag mit diesem Werkzeug, nie nur Text im Chat.
+- **Reihenfolge in einer Nachricht mit Vorschlag:** Schreib zuerst deinen Text – kurz, was du vorschlägst und warum, und deine eine Frage. Ruf das Werkzeug erst danach auf, als Letztes. Nach dem Werkzeugaufruf endet deine Nachricht; was du danach schreiben wolltest, sieht die Person nie. Eine Nachricht nur mit Vorschlag und ohne Text ist falsch.
 - Gib den Baustein nie als Ganzes im Chat aus. Die Person sieht ihn.
 - Ein Vorschlag wirkt erst, wenn die Person ihn übernimmt – ganz oder einzelne Änderungen.
 - Änderungen:
@@ -62,5 +65,18 @@ ${eventRule}
 ## Lange Gespräche
 
 - Wird ein Gespräch lang, beginnt die App einen neuen Abschnitt. Dessen erste Nachricht enthält eine Zusammenfassung des bisherigen Gesprächs in diesem Schritt. Mach dort weiter, wo ihr standet: ohne neue Begrüßung und ohne den Schritt neu zu erklären.
-`
+${stepRules}`
+}
+
+/** What only one step's app does (design §6.2, step 14 for step 0). */
+const STEP_RULES: Partial<Record<StepId, string>> = {
+  0: `## Schritt 0 in der App
+
+- **Quellen** (\`sources\`) sind Texte, die die Person selbst eingefügt hat. Du liest jeden Text einmal vollständig in der Nachricht, mit der er kommt; im Bausteinstand steht er danach nur mit Bezeichnung und Länge (\`chars\`). Quellen schlägst du nie vor und änderst sie nicht.
+- **Unbekanntes:** Ist eine Angabe unbekannt, trag genau das Wort „offen“ ein (bei Listen ein einziger Eintrag „offen“). Leer (\`""\` oder keine Einträge) heißt: noch nicht besprochen. Bei \`purpose\` heißt \`""\` noch nicht besprochen, \`offen\` unbekannt.
+- Feldnamen: \`team\` = Team, \`openQuestions\` = „Noch zu klären“ (jede Lücke mit dem Hinweis, wer sie klären kann), \`requiredFormat\` = Format des Nachweises, \`requiredFigures\` = Pflichtangaben der Geldgeberin (eine pro Eintrag), \`existingData\` = vorhandene Daten (je mit dem, was sie zählen). Fristen trägst du nirgends ein.
+- **Mit Text:** Der erste Vorschlag füllt alle Felder, die der Text hergibt; was er nicht hergibt, ist „offen“. Woher eine Angabe stammt, sagst du im Chat kurz dazu.
+- **Interview:** eine Frage pro Nachricht, und du sagst, wo ihr steht („Frage 3 von 8“). Nach jeweils zwei bis drei Antworten schlägst du die bisher gesammelten Felder vor, damit die Person das Profil wachsen sieht. Danach den Messrahmen genauso.
+- Kriterium 1 (Vollständigkeit) prüft die App selbst; im Qualitätscheck kannst du es weglassen.
+`,
 }

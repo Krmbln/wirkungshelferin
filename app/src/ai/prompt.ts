@@ -43,11 +43,20 @@ export function systemPrompt(step: StepId, order: MessageOrder = MESSAGE_ORDER):
 
 // ---------------------------------------------------------------- block text
 
-/** Bookkeeping first, then the fields in schema order, the Why last: stable bytes for the cache. */
+/**
+ * Bookkeeping first, then the fields in schema order, the Why last: stable bytes for the cache.
+ * A source's text is left out (its length instead): Claude read it once in the turn that
+ * brought it, and repeating it in every snapshot would cost its tokens on every turn.
+ */
 function itemLine(step: StepId, collection: string, item: Item): string {
   const keys = Object.keys(itemSchema(step, collection)!.shape).filter((k) => !(k in itemBase))
   const ordered: Record<string, unknown> = { id: item.id, rev: item.rev, editedByUser: item.editedByUser }
-  for (const key of keys) if (item[key] !== undefined) ordered[key] = item[key]
+  const userOnly = (collections[step] as Record<string, { userOnly?: true }>)[collection].userOnly
+  for (const key of keys) {
+    if (item[key] === undefined) continue
+    if (userOnly && key === 'text') ordered.chars = (item.text as string).length
+    else ordered[key] = item[key]
+  }
   if ((collections[step] as Record<string, { why?: true }>)[collection].why) ordered.why = item.why ?? ''
   return JSON.stringify(ordered)
 }
@@ -70,6 +79,21 @@ export function snapshotText(step: StepId, block: LooseBlock, previous?: LooseBl
   return `[Bausteinstand Schritt ${step}]\n${blockText(step, block)}${open}`
 }
 
+/** One source with its full text, as the turn that brings it and step 1's context show it. */
+export function sourceText(source: Pick<Item, 'id'> & { label: string; text: string }): string {
+  return `[Quelle ${source.id}: „${source.label}“]\n${source.text}`
+}
+
+/**
+ * Step 0's sources in full: step 1 drafts from them (guide step 0 §2 "die Quelle für Schritt 1"),
+ * and a new step 0 segment would otherwise lose them. Steps 2–6 see the profile only.
+ */
+export function sourcesText(block: LooseBlock): string {
+  const sources = block.sources as (Item & { label: string; text: string })[]
+  if (!sources.length) return ''
+  return `[Quellen aus Schritt 0, voller Text]\n\n${sources.map(sourceText).join('\n\n')}`
+}
+
 /** The other steps: latest confirmed version, otherwise the draft marked "nicht bestätigt". */
 export function contextText(project: Project, step: StepId): string {
   const parts = stepIds
@@ -83,7 +107,9 @@ export function contextText(project: Project, step: StepId): string {
       if (state.status === 'not_started') return `## Schritt ${s}: noch nicht begonnen`
       return `## Schritt ${s} (nicht bestätigt, Entwurf)\n${blockText(s, state.block)}`
     })
-  return `[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n${parts.join('\n\n')}`
+  const step0 = stepOf(project, 0)
+  const sources = step === 1 ? sourcesText((step0.confirmed?.block ?? step0.block) as LooseBlock) : ''
+  return `[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n${parts.join('\n\n')}${sources && `\n\n${sources}`}`
 }
 
 // ---------------------------------------------------------------- messages
@@ -112,6 +138,8 @@ export type Turn = {
   events?: string[]
   /** The context message: only in the first user turn of a segment. */
   context?: string
+  /** A source Lukas just added (sourceText), in full, before his text. */
+  source?: string
   text: string
   snapshot: string
 }
@@ -133,7 +161,7 @@ export function nextTurn(turn: Turn, order: MessageOrder = MESSAGE_ORDER): NewMe
   }
   const results: BetaContentBlockParam[] = turn.toolResults ?? []
   const events = turn.events ?? []
-  const own = [...(turn.context ? [textBlock(turn.context)] : []), textBlock(turn.text), textBlock(turn.snapshot)]
+  const own = [...(turn.context ? [textBlock(turn.context)] : []), ...(turn.source ? [textBlock(turn.source)] : []), textBlock(turn.text), textBlock(turn.snapshot)]
   const system = (): NewMessage => ({ role: 'system', content: [textBlock(events.join('\n'))] as never })
   const user = (content: BetaContentBlockParam[]): NewMessage => ({ role: 'user', content: content as never })
 

@@ -62,12 +62,24 @@ describe('tool schemas', () => {
     })
   }
 
-  it('has one change variant per collection plus remove', () => {
+  it('has one change variant per collection Claude may change, plus remove when the step has lists', () => {
     for (const step of stepIds) {
       const schema = stepTools(step)[0].input_schema as Node
       const variants = ((schema.properties as Node).changes as Node).items as Node
-      expect((variants.anyOf as Node[]).length).toBe(Object.keys(collections[step]).length + 1)
+      const metas = Object.values(collections[step]) as { singleton?: true; userOnly?: true }[]
+      const open = metas.filter((m) => !m.userOnly)
+      const lists = open.some((m) => !m.singleton) ? 1 : 0
+      expect((variants.anyOf as Node[]).length).toBe(open.length + lists)
     }
+  })
+
+  it('step 0: profile and frame only — sources are Lukas\'s own and never proposed', () => {
+    const schema = proposeInput(0)
+    const profile = { op: 'update', collection: 'profile', id: 'profile', fields: { ...emptyFields(0, 'profile'), budgetRange: '', location: 'offen' } }
+    expect(schema.safeParse({ summary: 's', changes: [profile] }).success).toBe(true)
+    const source = { op: 'add', collection: 'sources', id: 'new:1', fields: { origin: 'paste', label: 'x', text: 'y', at: '2026-11-08T10:00:00.000Z' } }
+    expect(schema.safeParse({ summary: 's', changes: [source] }).success).toBe(false)
+    expect(schema.safeParse({ summary: 's', changes: [{ op: 'remove', collection: 'sources', id: 'src1' }] }).success).toBe(false)
   })
 
   it('accepts a complete add and rejects missing or extra fields', () => {
