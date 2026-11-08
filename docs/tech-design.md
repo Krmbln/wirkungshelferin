@@ -183,6 +183,7 @@ Both tools use `strict: true`, `tool_choice: auto` (forced tool choice isn't sup
 *As built (step 8):* strict mode allows at most 16 union-typed and 24 optional parameters per request, so the schema is flat. Every field is required; optional texts are `""`; `why` only exists on Why-carrying collections. There is one variant per collection (`op` add | update; singletons: update only, under their own id) plus one shared `remove` variant, and this list is the only union. **An update carries the item's complete fields**; the app keeps only the fields that differ from the snapshot it sent and adds `baseRev` itself, so Claude never supplies revs. Both tools set `eager_input_streaming`; every input is validated with the same Zod schema before it becomes a card. All 7 steps passed strict mode live, so none needs the `strict: false` fallback.
 
 **`report_quality_check`** — the assistant's rubric judgement (✓ / ⚠ per criterion + one sentence). Criteria IDs come from the step's rubric table in the guide.
+*As built (step 13):* the gate's "Prüfen" is a request of its own (`ai/chat.ts` `checkCall`): the stored history of the current segment plus one more user turn (pending tool results, "[App] Die Person hat … auf „Prüfen“ geklickt …", snapshot), built with `prepareTurn` on a copy, so nothing is stored. Same tools and system prompt; the cache breakpoint stays on the last *stored* turn (the check turn is never sent again); 8k `max_tokens`, effort from the settings. Claude must name each criterion once; the criteria the hard rules own (`domain/check.ts` `HARD_CRITERIA`, step 1: 8 = Why, 5 = focus groups — a unit test checks they are exactly the rubric rows with ⛔) may be left out and count as ✓ "Von der App geprüft." No usable check or a `max_tokens` stop → "kein Ergebnis". A check Claude reports in a normal chat turn fills the gate too (for the block that turn showed); an invalid or cut-off one is answered with an `is_error` tool_result. A check is stamped when it lands and an older one never replaces a newer one (gate and chat can finish in either order). The next chat turn carries "[App]" lines for a gate check (⛔/⚠/✓ lines; "für einen älteren Stand" when the block changed since) and for a confirm (with `confirmedWarnings`) newer than Lukas's last turn — derived from timestamps, nothing queued. Every snapshot lists the open ⛔ issues ("⛔ offen:").
 
 Because the tool input streams, the app validates each tool input against its Zod schema before showing it. Invalid input → an error `tool_result` back to the assistant, never a broken card.
 
@@ -253,7 +254,7 @@ StepState {
   block: Block<StepId>                    // current working block
   segments: ChatSegment[]                 // append-only chats
   proposals: Proposal[]
-  qualityCheck?: QualityCheck             // last check (AI ✓/⚠ + app ⛔)
+  qualityCheck?: QualityCheck             // last check: { at, source: app|chat, block it judged, results ✓/⚠ } — ⛔ derived from that block (step 13)
   confirmedWarnings: string[]             // criteria confirmed despite ⚠ (shown in copy)
   confirmed?: {                           // snapshot at last confirm (F6)
     at: string

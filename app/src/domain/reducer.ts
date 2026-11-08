@@ -1,8 +1,9 @@
+import { confirmStep } from './check'
 import { findItem, isEmptyItem, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
 import { deleteTargetGroup } from './groups'
 import { applyAll, applyChange, rejectChange, undoChange } from './proposals'
 import { collectionMeta, type Item } from './schemas/blocks'
-import type { Project, Proposal } from './schemas/project'
+import type { Project, Proposal, QualityCheck } from './schemas/project'
 import type { StepId } from './types'
 
 // The one way state changes (tech design §4). Pure: no time, no I/O. An action that
@@ -28,9 +29,23 @@ export type Action =
   | { type: 'change/applyAll'; step: StepId; proposalId: string }
   /** Removes a target group with its step 2–4 items (after the confirm dialog, PRD F5). */
   | { type: 'targetGroup/delete'; id: string }
+  /** The newest quality check of a step (the gate's "Prüfen", or one Claude reported in the chat). */
+  | { type: 'check/store'; step: StepId; check: QualityCheck }
+  /** "Bestätigen": refused while the check is missing or old, or a ⛔ is open (PRD F4). */
+  | { type: 'step/confirm'; step: StepId; at: string }
 
 export function reducer(project: Project, action: Action): Project {
   switch (action.type) {
+    case 'check/store': {
+      // A gate check and a chat turn can finish in either order: the newer result wins.
+      const old = project.steps[action.step].qualityCheck
+      if (old && old.at > action.check.at) return project
+      const next = structuredClone(project)
+      next.steps[action.step].qualityCheck = structuredClone(action.check) as never
+      return next
+    }
+    case 'step/confirm':
+      return confirmStep(project, action.step, action.at)
     case 'targetGroup/delete':
       return deleteTargetGroup(project, action.id)
     case 'change/apply':

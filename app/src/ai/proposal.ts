@@ -135,6 +135,16 @@ export function errorToolResult(toolUseId: string, errors: string[]): BetaToolRe
   }
 }
 
+/** A report_quality_check the app couldn't show. */
+export function checkErrorToolResult(toolUseId: string, errors: string[]): BetaToolResultBlockParam {
+  return {
+    type: 'tool_result',
+    tool_use_id: toolUseId,
+    is_error: true,
+    content: `Qualitätscheck nicht angezeigt. Bitte korrigieren und neu melden:\n${errors.map((e) => `- ${e}`).join('\n')}`,
+  }
+}
+
 /** The answer to report_quality_check. */
 export function checkToolResult(toolUseId: string): BetaToolResultBlockParam {
   return { type: 'tool_result', tool_use_id: toolUseId, content: 'Qualitätscheck wird der Person angezeigt.' }

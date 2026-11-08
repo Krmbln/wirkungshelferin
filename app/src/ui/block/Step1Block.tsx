@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { isEmptyItem } from '../../domain/block'
+import { fieldKey } from '../../domain/check'
 import { groupContent } from '../../domain/groups'
 import type { Action } from '../../domain/reducer'
 import type { Item, ItemOf } from '../../domain/schemas/blocks'
@@ -29,9 +30,11 @@ type Props = {
   onAction: (action: Action) => void
   /** Changes just applied from a proposal: a removal gets the undo line at its place. */
   applied?: Applied
+  /** ⛔ field markers: keys (domain/check issueKey) of what the last check found and is still open. */
+  blocked?: Set<string>
 }
 
-export function Step1Block({ project, onAction, applied }: Props) {
+export function Step1Block({ project, onAction, applied, blocked = new Set() }: Props) {
   const block = project.steps[1].block
   const panel = useRef<HTMLDivElement>(null)
   // Where focus goes after the next render (a new row, a restored row, the add button).
@@ -170,12 +173,12 @@ export function Step1Block({ project, onAction, applied }: Props) {
           ))}
         </fieldset>
         <label className="bcontrol">
-          <input type="checkbox" checked={g.isFocus} onChange={(e) => edit('targetGroups', g.id, { isFocus: e.target.checked })} />
+          <input type="checkbox" data-field="isFocus" checked={g.isFocus} onChange={(e) => edit('targetGroups', g.id, { isFocus: e.target.checked })} />
           Fokusgruppe
         </label>
         <SizeField value={g.sizeEstimate ?? ''} onSave={(size) => edit('targetGroups', g.id, { sizeEstimate: size || undefined })} />
       </div>
-      <WhyField value={g.why ?? ''} onSave={(why) => edit('targetGroups', g.id, { why })} />
+      <WhyField value={g.why ?? ''} blocked={blocked.has(fieldKey('targetGroups', g.id, 'why'))} onSave={(why) => edit('targetGroups', g.id, { why })} />
     </BlockItem>
   ))
   const stakeholders = rows('stakeholders', block.stakeholders, (s, index) => (
@@ -206,7 +209,7 @@ export function Step1Block({ project, onAction, applied }: Props) {
             placeholder="In einem Satz: Welche Herausforderung geht ihr an?"
             onSave={(text) => edit('challenge', challenge.id, { text })}
           />
-          <WhyField value={challenge.why ?? ''} onSave={(why) => edit('challenge', challenge.id, { why })} />
+          <WhyField value={challenge.why ?? ''} blocked={blocked.has(fieldKey('challenge', challenge.id, 'why'))} onSave={(why) => edit('challenge', challenge.id, { why })} />
         </BlockItem>
       </BlockSection>
 

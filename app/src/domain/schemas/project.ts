@@ -40,10 +40,19 @@ const chatSegment = z.strictObject({
 
 export type ChatSegment = z.infer<typeof chatSegment>
 
-const qualityCheck = z.strictObject({
-  at: iso,
-  results: z.array(z.strictObject({ criterion: z.string(), result: z.enum(['ok', 'warn', 'block']), note: z.string() })),
-})
+/**
+ * The assistant's rubric judgement (✓/⚠ per criterion) and the block it judged. The ⛔ rows are
+ * not stored: they are derived from that block (domain/check.ts), so they can't drift.
+ * `source`: the gate's "Prüfen" (app) or a check Claude reported on its own in the chat.
+ */
+function qualityCheck<B extends z.ZodType>(block: B) {
+  return z.strictObject({
+    at: iso,
+    source: z.enum(['app', 'chat']),
+    block,
+    results: z.array(z.strictObject({ criterion: z.string(), result: z.enum(['ok', 'warn']), note: z.string() })),
+  })
+}
 
 // "veraltet" is not stored: it is derived from the block (proposals.ts), so it can't drift.
 export const proposalChange = z
@@ -98,7 +107,7 @@ function stepState<B extends z.ZodType>(block: B) {
     block,
     segments: z.array(chatSegment),
     proposals: z.array(proposal),
-    qualityCheck: qualityCheck.optional(),
+    qualityCheck: qualityCheck(block).optional(),
     confirmedWarnings: z.array(z.string()),
     confirmed: z
       .strictObject({ at: iso, block, basis: z.partialRecord(stepKey, iso) })
@@ -158,3 +167,5 @@ export type Project = z.infer<typeof projectSchema>
 export type StepState<S extends StepId = StepId> = Omit<Project['steps'][S], 'block'> & { block: Block<S> }
 export type Proposal = z.infer<typeof proposal>
 export type ProposalChange = z.infer<typeof proposalChange>
+/** A step's quality check with its block untyped (any step). */
+export type QualityCheck = Omit<NonNullable<Project['steps'][StepId]['qualityCheck']>, 'block'> & { block: Record<string, unknown> }

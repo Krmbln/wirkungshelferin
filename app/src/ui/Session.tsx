@@ -14,6 +14,7 @@ import { requestPersistence, type Store } from '../storage/store'
 import { holdTabLock } from '../storage/tabLock'
 import { App } from './App'
 import { useChatRunner, type DraftKeeper } from './chat/useChatRunner'
+import { useCheckRunner } from './check/useCheckRunner'
 import { EmptyState } from './screens/EmptyState'
 import { LoadError } from './screens/LoadError'
 import { SecondTab } from './screens/SecondTab'
@@ -202,6 +203,7 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
   // An edit is a deliberate act like a chat turn: saved at once (lessons-learned, step 9).
   const editBlock = useCallback((action: Action) => change((p) => reducer(p, action), { now: true }), [change])
   const chat = useChatRunner({ ai, settings, project: readProject, change, drafts: draftKeeper })
+  const check = useCheckRunner({ ai, settings, project: readProject, change })
 
   // Starting or loading a project is a deliberate act: saved at once, not after the pause.
   const start = useCallback(
@@ -293,6 +295,7 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
       drafts={drafts}
       onDraftChange={changeDraft}
       onBlockAction={editBlock}
+      check={check}
     />
   )
 }

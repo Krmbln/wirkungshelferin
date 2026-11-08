@@ -26,6 +26,7 @@ import { statusesOf } from '../ui/steps'
 import { chatScreens } from './chatScreens'
 import { blockScreens } from './blockScreens'
 import { proposalScreens } from './proposalScreens'
+import { checkScreens } from './checkScreens'
 import { InlineText } from '../ui/block/InlineText'
 import { ReferenceChip, UndoLine, WhyField } from '../ui/block/parts'
 import './Gallery.css'
@@ -172,6 +173,7 @@ export const screens: Record<string, { caption: string; render: () => ReactNode 
   ...chatScreens,
   ...blockScreens,
   ...proposalScreens,
+  ...checkScreens,
   'setup-key-only': {
     caption: 'Einrichtung nach „Backup laden“ in einem neuen Chrome: nur der Schlüssel',
     render: () => <GallerySetup project={backedUp} />,

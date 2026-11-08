@@ -1,0 +1,124 @@
+/* Quality gate at the bottom of the block panel (design §6.2). The check area is at most half
+   of the panel; only the result list scrolls, so the buttons always stay in view.
+   position: relative anchors the hidden status line inside the area (lessons-learned, step 12). */
+.gate {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.gate__lead {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.gate__confirmed:focus,
+.gate__lead:focus {
+  outline: none;
+}
+
+.gate__hint {
+  margin-top: var(--space-1);
+  font: var(--text-small);
+}
+
+.gate__confirmed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font: var(--text-label);
+}
+
+.gate__rows {
+  min-height: 0;
+  /* Room for the 2 px focus ring + 2 px offset: the scroll box would clip it otherwise. */
+  margin: -4px;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+/* More rows below the visible part: a 1 px line says the cut is deliberate (design §2: no shadow). */
+.gate__rows[data-cut] {
+  border-bottom: 1px solid var(--line);
+}
+
+.gate__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+
+/* 18 px icon on a 24 px first line. */
+.gate__row > .tooltip,
+.gate__row > .status-icon {
+  flex: none;
+  margin-top: 3px;
+}
+
+.gate__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gate__name {
+  font: var(--text-label);
+}
+
+.gate__anyway {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.gate__note {
+  display: block;
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.gate__field {
+  flex: none;
+  /* 32 px target (design §10) without making the row taller. */
+  margin-block: -4px;
+  padding-block: 0;
+}
+
+/* The old result after an edit: greyed, still readable (design §6.2 state A). */
+.gate__rows--old .gate__row--ok,
+.gate__rows--old .gate__row--warn,
+.gate__toggle--old {
+  opacity: 0.7;
+}
+
+/* Outside the scrolling list, so it never scrolls out of sight. */
+.gate__toggle {
+  flex: none;
+  align-self: flex-start;
+  margin-top: calc(-1 * var(--space-2));
+  padding-inline: 0;
+  color: var(--text-muted);
+}
+
+.gate__actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.gate__ask {
+  display: grid;
+  flex: none;
+  gap: var(--space-2);
+}
+
+.gate__ask p {
+  margin: 0;
+}

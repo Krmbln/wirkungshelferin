@@ -10,6 +10,10 @@ import { stepIntro } from '../guide/intro'
 import { BlockPanel, type Applied } from './block/BlockPanel'
 import { Chat } from './chat/Chat'
 import type { ChatControls } from './chat/useChatRunner'
+import { fieldSelector } from './check/gate'
+import { QualityGate } from './check/QualityGate'
+import type { CheckControls } from './check/useCheckRunner'
+import { scrollIntoView } from './proposals/highlight'
 import { Banner } from './components/Banner'
 import { Button } from './components/Button'
 import { Home } from './frame/Home'
@@ -46,12 +50,15 @@ type Props = {
   onDraftChange?: (step: StepId, text: string) => void
   /** Lukas's edits in the block panel (Session: reducer + save at once). */
   onBlockAction?: (action: Action) => void
+  /** The gate's checks (Session's runner); the gallery passes a fake. */
+  check?: CheckControls
 }
 
 const noop = () => {}
 const resolved = async () => {}
 const connected = async () => ({ ok: true }) as const
 const idleChat: ChatControls = { runs: {}, send: noop, stop: noop, retry: noop }
+const idleCheck: CheckControls = { runs: {}, check: async () => undefined }
 
 // No router (tech design §2): app state decides the view.
 export function App({
@@ -71,6 +78,7 @@ export function App({
   drafts = {},
   onDraftChange = noop,
   onBlockAction = noop,
+  check = idleCheck,
 }: Props) {
   const [view, setView] = useState<View>(initialView)
   const now = useNow(fixedNow)
@@ -148,6 +156,8 @@ export function App({
             onBlockAction={onBlockAction}
             onOpenSettings={() => setView({ kind: 'settings' })}
             model={settings.model}
+            check={check}
+            onSaveBackup={onSaveBackup}
           />
         )}
         {view.kind === 'settings' && (
@@ -177,11 +187,21 @@ type StepViewProps = {
   onBlockAction: (action: Action) => void
   onOpenSettings: () => void
   model: string
+  check: CheckControls
+  onSaveBackup: () => void
+}
+
+/** "Zum Feld": scrolls the block column to the field and focuses it (design §6.2 state B). */
+function goToField(target: Parameters<typeof fieldSelector>[0]) {
+  const el = document.querySelector<HTMLElement>(`.workspace__block ${fieldSelector(target)}`)
+  if (!el) return
+  scrollIntoView(el)
+  el.focus({ preventScroll: true })
 }
 
 // One step: chat and block, and what links them (outline, highlight, jump). Keyed by step,
 // so that link state starts fresh on every step.
-function StepView({ project, step, now, chat, draft, onDraftChange, onBlockAction, onOpenSettings, model }: StepViewProps) {
+function StepView({ project, step, now, chat, draft, onDraftChange, onBlockAction, onOpenSettings, model, check, onSaveBackup }: StepViewProps) {
   const [outlined, setOutlined] = useState<TargetHint>()
   const [applied, setApplied] = useState<Applied>()
   const [jump, setJump] = useState<{ proposalId: string; n: number }>()
@@ -191,6 +211,23 @@ function StepView({ project, step, now, chat, draft, onDraftChange, onBlockActio
   return (
     <StepWorkspace
       step={steps[step]}
+      check={
+        step === 1 ? (
+          <QualityGate
+            project={project}
+            step={step}
+            now={now}
+            model={model}
+            run={check.runs[step]}
+            chatBusy={!!chat.runs[step] && chat.runs[step]?.kind !== 'failed'}
+            onCheck={() => check.check(step)}
+            onConfirm={() => onBlockAction({ type: 'step/confirm', step, at: new Date().toISOString() })}
+            onGoToField={goToField}
+            onSaveBackup={onSaveBackup}
+            onOpenSettings={onOpenSettings}
+          />
+        ) : undefined
+      }
       block={
         <BlockPanel
           project={project}
@@ -199,6 +236,7 @@ function StepView({ project, step, now, chat, draft, onDraftChange, onBlockActio
           outlined={outlined}
           applied={applied}
           onShowProposals={(proposalId) => setJump((j) => ({ proposalId, n: (j?.n ?? 0) + 1 }))}
+          liveIssues={!!check.runs[step]}
         />
       }
       chat={

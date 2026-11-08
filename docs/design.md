@@ -194,13 +194,14 @@ Spacious, not sparse. Lists in the block panel are compact rows (16 px text, 12 
 - **Herausforderung:** a single field with placeholder "In einem Satz: Welche Herausforderung geht ihr an?", its "Warum?" under it.
 - *UI/UX review (8/10, 0 Critical / 1 High / 6 Medium / 4 Low), fixed:* **an empty field has a resting look**, `--surface-subtle` fill + the pencil, so it never looks like the muted hint sentences (High; filled text stays plain, hover shows the pencil); the target-group dialog stacks its three buttons full width, safe choice on top (they don't fit side by side in 480 px; `Dialog stacked`); a filled size shows a muted "Größe:" before it; a blocked "Warum?" says "fehlt" next to the ⛔; "von dir geändert" only once a row has content; "Warum?" label in `--text` (it is needed to confirm); "Rückgängig" 13/600; sections 24 px apart as specified. "von dir geändert" + ✕ sit beside the row's first field only, so the lines below use the full width. Accepted as is: filled text shows it is editable only on hover (desktop convention, the pencil and background appear).
 
-**Quality check & confirm** (bottom of the block panel, sticky, at most ~40 % of the panel height; the result list scrolls inside it)
+**Quality check & confirm** (bottom of the block panel, sticky, at most **50 %** of the panel height — was ~40 %, raised after the step 13 PO test: at a ~880 px high window 40 % showed 1½ result rows; the result list scrolls inside it, a 1 px line marks it when cut off)
 
 One primary button that changes with the state:
 
 | State | Primary button | What Lukas sees |
 |---|---|---|
 | **A · Not checked yet** (or block changed since the last check) | **"Prüfen und bestätigen"** (enabled) | Nothing yet, or the old result greyed with "Geändert seit der Prüfung – erneut prüfen" |
+| **D · Confirmed, unchanged** (step 13) | none | "✓ Bestätigt heute", "Wenn du etwas änderst, prüfst du neu.", ⚠ rows "trotzdem bestätigt" |
 | **B · Checked, ⛔ present** | "Bestätigen" **disabled**, reason next to it: "Noch 2 Punkte blockieren das Bestätigen" | ⛔ rows on top, each with "Zum Feld" (scrolls to and focuses the field; the field marker shows); ⚠ rows; ✓ collapsed to "7 Punkte erfüllt ▸" |
 | **C · Checked, only ⚠ or ✓** | "Bestätigen" (enabled) | ⚠ rows; clicking shows one inline line: "2 offene Punkte werden mit gespeichert. Trotzdem bestätigen?" [Bestätigen] [Abbrechen] — no modal |
 
@@ -208,6 +209,16 @@ One primary button that changes with the state:
 - Any edit or applied change after a check moves the panel back to A.
 - A secondary text button "Nur prüfen" runs the check without confirming.
 - After confirm: status ✓ in the sidebar, then the backup prompt as an inline banner: "Schritt bestätigt. Jetzt Backup speichern?" [Backup speichern] [Später].
+
+*Step 13 build (PO decisions 2026-11-08: check as its own request, question opens at once, check waits for the chat; UI/UX review 8/10):*
+- **D · Confirmed, unchanged since** (fourth state): "✓ Bestätigt heute / gestern / am 05.11." (15/600, ✓ in `--ok`), under it muted 13 px "Wenn du etwas änderst, prüfst du neu."; the last result stays (⚠ rows marked "· trotzdem bestätigt", ✓ collapsed); no buttons. Any edit or applied change → A.
+- **⛔ instantly:** while "prüft …" runs and after a failed check, the ⛔ rows (with "Zum Feld") and the field markers come straight from the block; ✓/⚠ follow with Claude's answer. After a result, ⛔ rows show what the check found; in A after an edit only those still open stay, live (not greyed), with "Zum Feld"; old ⚠/✓ rows at 70 % opacity. Lead in A without a result: muted "Bevor du bestätigst, prüft die Wirkungshelferin den Baustein." (stays during the check, so nothing jumps).
+- **Rows:** 18 px status icon on the first line; ⛔ = the issue in words ("Warum fehlt: Zielgruppe „…“", "Noch keine Fokusgruppe gewählt (1 oder 2)", "3 Fokusgruppen gewählt – höchstens 2") + text button "Zum Feld" (32 px target, accessible name "Zum Feld: …"); ⚠/✓ = rubric criterion name 15/600 + Claude's sentence 13 px muted. Only the result list scrolls; the "N Punkte erfüllt ▸" toggle sits below it (never scrolls away; opening brings the first ✓ row into view), the buttons below that.
+- **Buttons:** A = [Prüfen und bestätigen] + text "Nur prüfen" (only in A); B = "Bestätigen" disabled with "Noch N Punkte blockieren das Bestätigen" beside it; C = [Bestätigen]. While a chat answer runs: the primary is disabled with "Warte, bis die Antwort im Chat fertig ist.", "Nur prüfen" hidden. Busy label "prüft …"; a second click does nothing.
+- **Question:** after "Prüfen und bestätigen" with ⚠ points it opens at once (PO decision; from C via "Bestätigen"): "N offene Punkte werden mit gespeichert. Trotzdem bestätigen?" [Bestätigen] (focused) Abbrechen (focus back to "Bestätigen"). Without ⚠ it confirms directly.
+- **Focus:** after a check with ⛔ → the first "Zum Feld" (visible ring); after "Nur prüfen" without ⛔ → "Bestätigen"; after confirming → "Backup speichern"; after saving → the muted line "Backup ist in deinen Downloads." (as on home); after "Später" → the "Bestätigt …" line. A visually hidden status line announces "Der Baustein wird geprüft …" and the result ("Geprüft. Noch 1 Punkt blockiert das Bestätigen.").
+- **Failure:** ⛔ banner with the plain problem text above the buttons (no own retry: the primary button tries again); key/model problems get [Zu den Einstellungen]; no usable result → "Die Prüfung hat kein Ergebnis gebracht. Versuch es noch einmal."
+- *Not done (Low):* the check has no Stopp; no divider line above the ✓ toggle when the list is cut off.
 
 **"Vielleicht veraltet" step:** a ⚠ banner at the top of the workspace: "Ein früherer Schritt hat sich geändert. Lass die Wirkungshelferin prüfen, was das für diesen Schritt bedeutet." [Prüfen lassen].
 

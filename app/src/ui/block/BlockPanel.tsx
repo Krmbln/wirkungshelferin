@@ -9,6 +9,8 @@ import { highlight, scrollIntoView } from '../proposals/highlight'
 import type { TargetHint } from '../proposals/ProposalCard'
 import { prefersReducedMotion } from '../motion'
 import { Step1Block } from './Step1Block'
+import { issueKey } from '../../domain/check'
+import { stillOpen } from '../check/gate'
 
 /** Changes just applied from a card; `n` makes a repeat count as new. */
 export type Applied = { proposalId: string; changeIds: string[]; n: number }
@@ -22,6 +24,8 @@ type Props = {
   applied?: Applied
   /** "offene Änderungen im Chat ▸": jump to this proposal's card. */
   onShowProposals?: (proposalId: string) => void
+  /** A check runs or failed: every ⛔ field shows its marker now (gate.ts stillOpen). */
+  liveIssues?: boolean
 }
 
 /** About how long a smooth scroll into view takes. */
@@ -31,7 +35,7 @@ const itemEl = (panel: HTMLElement | null, id: string) => panel?.querySelector(`
 
 // The step's block, editable (design §6.2). Steps 0 and 2–6 follow in steps 14–20.
 // Outline and highlight are set on the item's element by id, so every block gets them.
-export function BlockPanel({ project, step, onAction, outlined, applied, onShowProposals }: Props) {
+export function BlockPanel({ project, step, onAction, outlined, applied, onShowProposals, liveIssues = false }: Props) {
   const panel = useRef<HTMLDivElement>(null)
   const open = openProposals(project, step)
 
@@ -70,7 +74,7 @@ export function BlockPanel({ project, step, onAction, outlined, applied, onShowP
           <Icon name="chevronRight" size={16} />
         </Button>
       )}
-      {step === 1 ? <Step1Block project={project} onAction={onAction} applied={applied} /> : <p className="placeholder">Noch leer – hier entsteht der Baustein für diesen Schritt.</p>}
+      {step === 1 ? <Step1Block project={project} onAction={onAction} applied={applied} blocked={new Set(stillOpen(project, 1, liveIssues).map(issueKey))} /> : <p className="placeholder">Noch leer – hier entsteht der Baustein für diesen Schritt.</p>}
     </div>
   )
 }

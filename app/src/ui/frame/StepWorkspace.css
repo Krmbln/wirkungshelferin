@@ -30,15 +30,20 @@
   margin-bottom: var(--space-3);
 }
 
-/* Sticky at the bottom of the block panel, at most ~40 % of its height (design §6.2). */
+/* Sticky at the bottom of the block panel, at most half its height (design §6.2). */
+/* Only the gate's result list scrolls (QualityGate.css), so its buttons stay in view. */
 .workspace__check {
+  display: flex;
   flex: none;
-  max-height: 40%;
+  flex-direction: column;
+  /* 50 %, not ~40 %: at Karim's window height 40 % showed 1½ result rows (PO test 2026-11-08). */
+  max-height: 50%;
   padding: var(--space-4) var(--space-6) var(--space-6);
-  overflow-y: auto;
+  overflow: hidden;
   border-top: 1px solid var(--line);
 }
 
 .workspace__check-heading {
+  flex: none;
   margin-bottom: var(--space-2);
 }

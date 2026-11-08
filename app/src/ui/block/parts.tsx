@@ -84,7 +84,7 @@ type WhyProps = {
 export function WhyField({ value, onSave, blocked = false, forceState }: WhyProps) {
   const id = useId()
   return (
-    <div className="why">
+    <div className="why" data-field="why">
       <label className="why__label" htmlFor={id}>
         Warum?
         {blocked && (

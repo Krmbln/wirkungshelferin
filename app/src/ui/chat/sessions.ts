@@ -22,16 +22,15 @@ export function sessionBreak(times: string[], now: Date): { index: number; last:
   return undefined
 }
 
-/** "Letzte Sitzung: heute" / "gestern" / "05.11." (with the year when it isn't this year's). */
-export function sessionLabel(last: string, now: Date): string {
-  const days = calendarDaysSince(last, now)
-  const then = new Date(last)
+/** "heute" / "gestern" / "05.11." (with the year when it isn't this year's). */
+export function dayText(at: string, now: Date): string {
+  const days = calendarDaysSince(at, now)
+  const then = new Date(at)
   const two = (n: number) => String(n).padStart(2, '0')
-  const date =
-    days === 0
-      ? 'heute'
-      : days === 1
-        ? 'gestern'
-        : `${two(then.getDate())}.${two(then.getMonth() + 1)}.${then.getFullYear() === now.getFullYear() ? '' : then.getFullYear()}`
-  return `Letzte Sitzung: ${date}`
+  if (days === 0) return 'heute'
+  if (days === 1) return 'gestern'
+  return `${two(then.getDate())}.${two(then.getMonth() + 1)}.${then.getFullYear() === now.getFullYear() ? '' : then.getFullYear()}`
 }
+
+/** "Letzte Sitzung: heute" / "gestern" / "05.11.". */
+export const sessionLabel = (last: string, now: Date) => `Letzte Sitzung: ${dayText(last, now)}`

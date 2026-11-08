@@ -172,6 +172,15 @@ const screenNames = [
   'block',
   'proposal',
   'proposal-opening',
+  'check-unchecked',
+  'check-busy',
+  'check-blocked',
+  'check-ready',
+  'check-ready-clean',
+  'check-changed',
+  'check-confirmed',
+  'check-failed',
+  'check-chat-busy',
   'home',
   'home-mixed',
   'home-backup-recent',
@@ -659,5 +668,91 @@ test('proposals step 12: every row state, hover outline, apply highlight, jump, 
     await shotScreen(`${name}-narrow`)
     await cardShot(`${name}-card-narrow`)
   }
+  expect(errors).toEqual([])
+})
+
+test('quality gate step 13: A, busy, B, C, the question, confirmed + backup prompt, ≤ 50 % of the panel', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  /** The gate stays within half of the block column, its buttons in view, and the page never scrolls. */
+  const fits = async () => {
+    const column = (await page.locator('.workspace__block').boundingBox())!
+    const area = (await gate.boundingBox())!
+    expect(area.height).toBeLessThanOrEqual(column.height * 0.5 + 1)
+    for (const button of await gate.locator('.gate__actions .btn').all()) await expect(button).toBeInViewport({ ratio: 1 })
+    expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  }
+
+  await openScreen(page, 'check-unchecked')
+  await shotScreen('check-unchecked')
+  await gate.getByRole('button', { name: 'Prüfen und bestätigen' }).click()
+  await expect(gate.getByText('prüft …', { exact: true })).toBeVisible()
+  // Code knows the ⛔ points at once (design §6.2): they show while Claude still checks.
+  await expect(gate.getByRole('button', { name: /^Zum Feld: Warum fehlt: Zielgruppe „Eltern/ })).toBeVisible()
+  await shotScreen('check-busy')
+  // filled() leaves the parents' Why empty → B, focus on the first "Zum Feld".
+  const toField = gate.getByRole('button', { name: /^Zum Feld: Warum fehlt: Zielgruppe „Eltern/ })
+  await expect(toField).toBeFocused()
+  await expect(page.locator('[data-item-id="tg2"] [data-field="why"]')).toContainText('fehlt')
+  await fits()
+  // The focus ring isn't clipped by the scrolling list (PO test 2026-11-08): the list's box
+  // leaves room for ring + offset on every side of the button.
+  const ring = await toField.evaluate((el) => {
+    const b = el.getBoundingClientRect()
+    const l = el.closest('.gate__rows')!.getBoundingClientRect()
+    return [b.left - l.left, l.right - b.right, b.top - l.top]
+  })
+  for (const room of ring) expect(room).toBeGreaterThanOrEqual(4)
+  await shotScreen('check-blocked-after')
+  await page.keyboard.press('Enter')
+  const why = page.locator('[data-item-id="tg2"] [data-field="why"] textarea')
+  await expect(why).toBeFocused()
+  await expect(why).toBeInViewport()
+  await shotScreen('check-to-field')
+
+  await openScreen(page, 'check-blocked')
+  await fits()
+  await shotScreen('check-blocked')
+  const okToggle = gate.getByRole('button', { name: '5 Punkte erfüllt' })
+  await expect(okToggle).toBeInViewport({ ratio: 1 })
+  await okToggle.click()
+  // Opened, the first ✓ row is brought into view inside the list.
+  await expect(gate.locator('.gate__row--ok').first()).toBeInViewport({ ratio: 0.95 })
+  await fits()
+  await shotScreen('check-blocked-ok-open')
+
+  await openScreen(page, 'check-ready')
+  await fits()
+  await shotScreen('check-ready')
+  await gate.getByRole('button', { name: 'Bestätigen' }).click()
+  await expect(gate.getByRole('group', { name: 'Trotzdem bestätigen?' }).getByRole('button', { name: 'Bestätigen' })).toBeFocused()
+  await fits()
+  await shotScreen('check-asking')
+  await page.keyboard.press('Enter')
+  await expect(gate.getByRole('button', { name: 'Backup speichern' })).toBeFocused()
+  await expect(page.getByRole('button', { name: '1 Gruppen, bestätigt' })).toBeVisible()
+  await fits()
+  await shotScreen('check-confirmed-prompt')
+
+  for (const name of ['check-ready-clean', 'check-changed', 'check-confirmed', 'check-failed', 'check-chat-busy']) {
+    await openScreen(page, name)
+    await fits()
+    await shotScreen(name)
+  }
+
+  // 960 px window: the narrowest workspace.
+  await page.setViewportSize({ width: 960, height: 760 })
+  for (const name of ['check-blocked', 'check-ready']) {
+    await openScreen(page, name)
+    await fits()
+    await shotScreen(`${name}-narrow`)
+  }
+  // At 960 × 760 the blocked list is cut off at the bottom → the 1 px line; scrolled to the end → gone.
+  await openScreen(page, 'check-blocked')
+  const rows = gate.locator('.gate__rows')
+  await expect(rows).toHaveAttribute('data-cut', '')
+  await rows.evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await expect(rows).not.toHaveAttribute('data-cut')
   expect(errors).toEqual([])
 })

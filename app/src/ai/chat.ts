@@ -3,8 +3,10 @@ import { stepOf, type LooseBlock } from '../domain/block'
 import { reducer } from '../domain/reducer'
 import type { Project, StoredMessage } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
+import { hardIssues } from '../domain/check'
+import { CHECK_REQUEST, checkEvents, parseCheck } from './check'
 import { contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, systemPrompt, withCacheBreakpoint } from './prompt'
-import { checkToolResult, errorToolResult, proposalToolResult, toProposal } from './proposal'
+import { checkErrorToolResult, checkToolResult, errorToolResult, proposalToolResult, toProposal } from './proposal'
 import { MAX_TOKENS, type Call } from './request'
 import { carriedText } from './summarise'
 import { CHECK, PROPOSE, stepTools } from './tools'
@@ -51,7 +53,8 @@ export function toolResultsFor(project: Project, step: StepId, pending: string[]
     const proposal = project.steps[step].proposals.find((p) => p.toolUseId === id)
     if (proposal) return proposalToolResult(project, step, proposal)
     const use = lastAnswer?.content.find((b) => b.type === 'tool_use' && b.id === id)
-    if (use?.name === CHECK) return checkToolResult(id)
+    const errors = lastAnswer?.toolErrors?.[id]
+    if (use?.name === CHECK) return errors ? checkErrorToolResult(id, errors) : checkToolResult(id)
     return errorToolResult(id, lastAnswer?.toolErrors?.[id] ?? ['Unbekannter Werkzeugaufruf.'])
   })
 }
@@ -74,7 +77,7 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
   const next = structuredClone(project)
   const state = stepOf(next, step)
   const rolled = Boolean(newSegment && state.segments.length)
-  const events = rolled ? carriedResults(project, step) : []
+  const events = [...(rolled ? carriedResults(project, step) : []), ...checkEvents(project, step)]
   if (rolled) state.segments.push({ id: newId(), startedAt: at, ...(model && { model }), ...(newSegment?.summary && { summaryOfPrevious: newSegment.summary }), messages: [] })
   const segment = currentSegment(next, step, at, newId, model)
   const first = !segment.messages.length
@@ -88,11 +91,30 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
     context: first ? context : undefined,
     text,
     // A new segment always gets the full block.
-    snapshot: snapshotText(step, shown, first ? undefined : (state.sentBlock as LooseBlock | undefined)),
+    snapshot: snapshotText(
+      step,
+      shown,
+      first ? undefined : (state.sentBlock as LooseBlock | undefined),
+      hardIssues(step, shown).map((i) => i.text),
+    ),
   })
   segment.messages.push(...appended.map((m) => ({ ...m, id: newId(), at })))
   state.sentBlock = structuredClone(shown) as never
   return { project: next, call: chatCall(next, step), shown }
+}
+
+/**
+ * The gate's check request (design §6.2): the stored history plus one more user turn asking for
+ * report_quality_check, so it reads the cached prefix. Nothing of it is stored; `shown` is the
+ * block it judges.
+ */
+export function checkCall(project: Project, step: StepId, at: string): { call: Call; shown: LooseBlock } {
+  const prepared = prepareTurn(project, step, `[App] ${CHECK_REQUEST}`, { at })
+  // The breakpoint stays on the last stored turn: the check turn is never sent again, so
+  // caching it would only pay for a write nothing reads.
+  const history = historyMessages(storedOf(prepared.project, step))
+  const messages = [...withCacheBreakpoint(history.slice(0, -1)), ...history.slice(-1)]
+  return { call: { ...prepared.call, messages, maxTokens: MAX_TOKENS.check }, shown: prepared.shown }
 }
 
 /** The newest stored turn is Lukas's and has no answer yet (failed, or the tab closed while it ran). */
@@ -127,7 +149,14 @@ export function commitAnswer(project: Project, step: StepId, answer: Answer, sho
   const toolErrors: Record<string, string[]> = {}
   for (const block of answer.message.content) {
     if (block.type !== 'tool_use') continue
-    if (block.name === CHECK) continue
+    if (block.name === CHECK) {
+      // Claude checked on its own in the chat: the gate shows it for the block this turn showed.
+      const check: ReturnType<typeof parseCheck> =
+        answer.message.stop_reason === 'max_tokens' ? { ok: false, errors: ['Die Antwort wurde abgeschnitten.'] } : parseCheck(step, block.input)
+      if (check.ok) next = reducer(next, { type: 'check/store', step, check: { at, source: 'chat', block: structuredClone(shown), results: check.results } as never })
+      else toolErrors[block.id] = check.errors
+      continue
+    }
     if (block.name !== PROPOSE) {
       toolErrors[block.id] = [`Das Werkzeug ${block.name} gibt es hier nicht.`]
       continue
