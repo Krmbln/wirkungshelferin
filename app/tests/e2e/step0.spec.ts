@@ -56,6 +56,8 @@ test('paste → draft → apply → reload → check → confirm → step 1 open
   await page.getByLabel('Text', { exact: true }).focus()
   await page.keyboard.press('Meta+Enter')
   await expect(page.getByText('Text eingefügt: „Projektskizze 2026“', { exact: false })).toBeVisible()
+  // The app line shows when the turn is stored; the request reaches the route only after the preflight.
+  await expect.poll(() => requests.length).toBe(1)
   const body = requests[0].postDataJSON() as { messages: { content: { text?: string }[] }[] }
   expect(body.messages[0].content[1].text).toContain('[Quelle src1: „Projektskizze 2026“]')
 
