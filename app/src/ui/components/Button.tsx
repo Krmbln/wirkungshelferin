@@ -3,7 +3,7 @@ import './Button.css'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'text'
 
-type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'disabled' | 'onClick'> & {
+export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'disabled' | 'onClick'> & {
   variant?: ButtonVariant
   /** Disables the button. Required as text: a disabled button always says why (design §3). */
   disabledReason?: string
@@ -29,7 +29,7 @@ export function Button({
   className,
   type = 'button',
   ...rest
-}: Props) {
+}: ButtonProps) {
   const reasonId = useId()
   const [pending, setPending] = useState(false)
   // The ref closes the gap between a click and the re-render that shows busy.

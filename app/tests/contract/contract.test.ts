@@ -513,3 +513,46 @@ describe('4 · step 0: paste and interview (made-up text)', () => {
       return text.split('\n').filter(Boolean).at(-1)!.slice(0, 120)
     }))
 })
+
+// ---------------------------------------------------------------- 5. step 0 PDF (step 15)
+
+describe('5 · step 0: PDF upload (made-up PDF)', () => {
+  it('reads the PDF with a live count, then the PDF turn drafts the profile (text first, unknown = "offen")', () =>
+    check('Step 0 PDF: read → PDF source → profile proposal valid', async () => {
+      const counts: number[] = []
+      const recording: typeof ai = {
+        ...ai,
+        async send(s, call, o) {
+          rec.recordNext('pdf-full')
+          const result = await ai.send(s, call, o)
+          await rec.flushed()
+          if (result.status === 'done') count(result.message)
+          return result
+        },
+      }
+      const read = await extractPdf(recording, settings, madeUpPdfBase64(), { onProgress: (n) => counts.push(n) })
+      if (read.status !== 'done') throw new Error(`PDF: ${read.status} ${rec.lastError() ?? ''}`)
+      expect(counts.length, 'no live count while the text streamed').toBeGreaterThan(1)
+      expect(counts.at(-1)).toBe(read.text.length)
+
+      const prepared = prepareAct(makeProject(), 0, { kind: 'pdf', label: 'Sachbericht Schraubzeit', text: read.text.trim() }, { at: AT })!
+      rec.recordNext('step0-pdf')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}step0-pdf.json`, JSON.stringify({ step: 0, project: prepared.project }, null, 2))
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use')
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no text with a question before the proposal').toContain('?')
+      let project = commitAnswer(prepared.project, 0, { status: 'done', message }, prepared.shown, { at: AT })
+      const errors = project.steps[0].segments.at(-1)!.messages.at(-1)!.toolErrors
+      const [proposal] = project.steps[0].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(errors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 0, proposalId: proposal.id })
+      const block = project.steps[0].block
+      expect(block.profile.name).toContain('Schraubzeit')
+      const offen = formFields('profile').filter((f) => isOffen((block.profile as Record<string, unknown>)[f]))
+      expect(offen.length, 'nothing marked "offen"').toBeGreaterThan(0)
+      projectSchema.parse(project)
+      return `${read.text.length} chars in ${counts.length} updates; text first; offen: ${offen.join(', ')}`
+    }))
+})

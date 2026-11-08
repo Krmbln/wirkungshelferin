@@ -9,6 +9,7 @@ import { defaultSettings, type Settings as SettingsValue } from '../storage/sett
 import { stepIntro } from '../guide/intro'
 import { BlockPanel, type Applied } from './block/BlockPanel'
 import { Chat } from './chat/Chat'
+import { PDF_WAIT, usePdfImport, type PdfControls, type ReadPdf } from './chat/PdfImport'
 import type { PasteDraft } from './chat/StartPanel'
 import type { ChatControls } from './chat/useChatRunner'
 import { fieldSelector } from './check/gate'
@@ -53,6 +54,8 @@ type Props = {
   onBlockAction?: (action: Action) => void
   /** The gate's checks (Session's runner); the gallery passes a fake. */
   check?: CheckControls
+  /** Reads a PDF's text (Session: extractPdf); without it step 0 offers no PDF upload. */
+  readPdf?: ReadPdf
 }
 
 const noop = () => {}
@@ -80,12 +83,22 @@ export function App({
   onDraftChange = noop,
   onBlockAction = noop,
   check = idleCheck,
+  readPdf,
 }: Props) {
   const [view, setView] = useState<View>(initialView)
   // Kept here, so a step switch doesn't lose a paste being prepared (design §6.2, step 14).
   const [paste, setPaste] = useState<PasteState>({ open: false, draft: { label: '', text: '' } })
   // Step 0's confirm started step 1's first draft in this session: step 0 shows the hand-off.
   const [handoffStarted, setHandoffStarted] = useState(false)
+  // Here too, so a PDF being read survives a step switch (design §6.2, step 15).
+  const pdf = usePdfImport(
+    readPdf,
+    {
+      onText: (label, text) => chat.act(0, { kind: 'pdf', label, text }),
+      onPartial: (label, text, note) => setPaste({ open: true, draft: { label, text, fromPdf: true }, note }),
+    },
+    !!chat.runs[0] && chat.runs[0].kind !== 'failed',
+  )
   const now = useNow(fixedNow)
   const backup = backupState(project, now)
   const [backupDownloaded, setBackupDownloaded] = useState(false)
@@ -165,6 +178,7 @@ export function App({
             onSaveBackup={onSaveBackup}
             paste={paste}
             onPasteChange={setPaste}
+            pdf={pdf}
             handoffStarted={handoffStarted}
             onHandoffStarted={() => setHandoffStarted(true)}
             onOpenStep={(step) => setView({ kind: 'step', step })}
@@ -201,12 +215,13 @@ type StepViewProps = {
   onSaveBackup: () => void
   paste: PasteState
   onPasteChange: (paste: PasteState) => void
+  pdf?: PdfControls
   handoffStarted: boolean
   onHandoffStarted: () => void
   onOpenStep: (step: StepId) => void
 }
 
-type PasteState = { open: boolean; draft: PasteDraft }
+type PasteState = { open: boolean; draft: PasteDraft; note?: string }
 
 /** How step 1's first draft is doing, for step 0's hand-off banner. */
 function handoffStatus(project: Project, chat: ChatControls): Handoff['status'] {
@@ -240,6 +255,7 @@ function StepView({
   onSaveBackup,
   paste,
   onPasteChange,
+  pdf,
   handoffStarted,
   onHandoffStarted,
   onOpenStep,
@@ -293,6 +309,7 @@ function StepView({
           onShowProposals={(proposalId) => setJump((j) => ({ proposalId, n: (j?.n ?? 0) + 1 }))}
           liveIssues={!!check.runs[step]}
           onPaste={step === 0 ? openPaste : undefined}
+          pdf={step === 0 ? pdf : undefined}
         />
       }
       chat={
@@ -326,17 +343,20 @@ function StepView({
             step === 0
               ? {
                   ...paste,
+                  wait: pdf?.state?.kind === 'reading' ? PDF_WAIT : undefined,
                   onOpen: openPaste,
                   onChange: (draft) => onPasteChange({ ...paste, draft }),
                   onCancel: () => onPasteChange({ ...paste, open: false }),
                   onSubmit: () => {
-                    chat.act(0, { kind: 'paste', ...paste.draft })
+                    const { label, text, fromPdf } = paste.draft
+                    chat.act(0, { kind: fromPdf ? 'pdf' : 'paste', label, text })
                     onPasteChange({ open: false, draft: { label: '', text: '' } })
                   },
                 }
               : undefined
           }
           onInterview={step === 0 ? () => chat.act(0, { kind: 'interview' }) : undefined}
+          pdf={step === 0 ? pdf : undefined}
         />
       }
     />

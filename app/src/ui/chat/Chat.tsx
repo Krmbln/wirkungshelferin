@@ -11,6 +11,7 @@ import { ThinkingIndicator } from '../components/ThinkingIndicator'
 import { IntroPanel } from './IntroPanel'
 import { AppLine, PasteForm, StartPanel, type PasteControls } from './StartPanel'
 import { Markdown } from './Markdown'
+import { PDF_WAIT, PdfButton, PdfPanel, type PdfControls } from './PdfImport'
 import { sessionBreak, sessionLabel } from './sessions'
 import { isThinking, messageTexts, streamTexts, type ChatRun } from './stream'
 import './Chat.css'
@@ -38,6 +39,8 @@ export type ChatProps = {
   /** Step 0: the start panel, the paste form and "+ Text einfügen" (design §6.2, step 14). */
   paste?: PasteControls
   onInterview?: () => void
+  /** Step 0's PDF upload (step 15); undefined where it isn't offered. */
+  pdf?: PdfControls
 }
 
 /**
@@ -54,7 +57,7 @@ const FOLLOW_SLACK = 80
 
 // The chat column (design §6.2). Lukas's turns right, Claude's left; the stream shows
 // "denkt nach …" until text arrives. Errors stay in the chat, the input is never lost.
-export function Chat({ segments, intro, now, proposals, renderProposal, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model, paste, onInterview }: ChatProps) {
+export function Chat({ segments, intro, now, proposals, renderProposal, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model, paste, onInterview, pdf }: ChatProps) {
   const log = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const following = useRef(true)
@@ -69,9 +72,11 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
     wasActed.current = true
     setIntroOpen(false)
   }
-  // The paste form needs the room: the intro folds while it is open and comes back as it was.
+  // The paste form and a PDF's panel need the room: the intro folds while they show and comes back as it was.
   const pasting = !!paste?.open
+  const roomNeeded = pasting || !!pdf?.state
   const running = run?.kind === 'running' || run?.kind === 'summarising'
+  const reading = pdf?.state?.kind === 'reading'
   const announcement = useAnnouncement(messages)
   const visible = messages.filter((m) => m.role !== 'system')
   const sessionStart = sessionBreak(visible.map((m) => m.at), now)
@@ -90,8 +95,23 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
   useLayoutEffect(() => {
     const el = log.current
     // An empty chat shows the start panel or the hint from the top (step 0's one next action).
-    if (el && following.current && (messages.length || run)) el.scrollTop = el.scrollHeight
-  }, [messages.length, streamed, run?.kind])
+    if (el && following.current && (messages.length || run || pdf?.state)) el.scrollTop = el.scrollHeight
+  }, [messages.length, streamed, run?.kind, pdf?.state?.kind])
+
+  // Marks a log cut off at the bottom, e.g. the start panel's last option under the composer
+  // (macOS hides scrollbars; the gate's list does the same, step 13).
+  useEffect(() => {
+    const box = log.current
+    if (!box) return
+    const mark = () => box.toggleAttribute('data-cut', box.scrollTop + box.clientHeight < box.scrollHeight - 1)
+    mark()
+    box.addEventListener('scroll', mark)
+    window.addEventListener('resize', mark)
+    return () => {
+      box.removeEventListener('scroll', mark)
+      window.removeEventListener('resize', mark)
+    }
+  })
 
   const toNewest = () => {
     const el = log.current
@@ -103,7 +123,8 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
 
   function send() {
     const text = draft.trim()
-    if (!text || running) return
+    // The text stays in the input while a PDF is read; the panel above says why (step 15).
+    if (!text || running || reading) return
     onDraftChange('')
     following.current = true
     setAway(false)
@@ -144,7 +165,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
 
   return (
     <>
-      {intro && <IntroPanel intro={intro} open={introOpen && !pasting} onToggle={() => setIntroOpen((o) => !o)} />}
+      {intro && <IntroPanel intro={intro} open={introOpen && !roomNeeded} onToggle={() => setIntroOpen((o) => !o)} />}
       <div
         className="workspace__scroll chat__log"
         ref={log}
@@ -155,12 +176,15 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
         }}
       >
         {!messages.length && !run && paste && onInterview
-          ? !pasting && <StartPanel onPaste={paste.onOpen} onInterview={onInterview} />
+          ? !roomNeeded && <StartPanel onPaste={paste.onOpen} onInterview={onInterview} pdf={pdf} />
           : !messages.length && !run && <p className="placeholder">Hier sprichst du mit der Wirkungshelferin über diesen Schritt. Schreib einfach los.</p>}
         <ol className="chat__messages">
           {items}
           {run && <RunMessage run={run} />}
         </ol>
+        {pdf && paste && (
+          <PdfPanel pdf={pdf} model={model} onPaste={paste.onOpen} onOpenSettings={onOpenSettings} onStopped={() => setTimeout(() => input.current?.focus())} />
+        )}
         {run?.kind === 'failed' && <RunError run={run} model={model} onRetry={retry} onOpenSettings={onOpenSettings} />}
         {!run && unanswered && (
           <p className="chat__no-answer">
@@ -182,11 +206,28 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
         </div>
       )}
       {pasting && paste ? (
-        <PasteForm draft={paste.draft} busy={running} onChange={paste.onChange} onCancel={cancelPaste} onSubmit={submitPaste} />
+        <PasteForm
+          draft={paste.draft}
+          busy={running}
+          note={paste.note}
+          wait={paste.wait}
+          onChange={paste.onChange}
+          onCancel={cancelPaste}
+          onSubmit={submitPaste}
+        />
       ) : (
         <>
-          {paste && messages.length > 0 && (
+          {reading ? (
+            <p className="chat__paste-line chat__wait" id="chat-wait">
+              {PDF_WAIT}
+            </p>
+          ) : paste && messages.length > 0 && (
             <div className="chat__paste-line">
+              {pdf && (
+                <PdfButton pdf={pdf} variant="text" icon={<Icon name="plus" size={16} />}>
+                  PDF hochladen
+                </PdfButton>
+              )}
               <Button variant="text" icon={<Icon name="plus" size={16} />} onClick={paste.onOpen}>
                 Text einfügen
               </Button>
@@ -228,6 +269,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
         <textarea
           id="chat-input"
           ref={input}
+          aria-describedby={reading ? 'chat-wait' : undefined}
           className="composer__input"
           placeholder="Schreib deine Antwort …"
           rows={2}
@@ -326,7 +368,7 @@ function RunMessage({ run }: { run: ChatRun }) {
     return (
       <>
         {run.act ? (
-          <AppLine act={run.act.kind === 'paste' ? { kind: 'paste', label: run.act.label, chars: run.act.text.trim().length } : { kind: run.act.kind }} />
+          <AppLine act={run.act.kind === 'paste' || run.act.kind === 'pdf' ? { kind: run.act.kind, label: run.act.label, chars: run.act.text.trim().length } : { kind: run.act.kind }} />
         ) : (
           <li className="msg msg--user">
             <p className="msg__plain">{run.text}</p>

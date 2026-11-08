@@ -384,10 +384,12 @@ span.intro__label {
   border-radius: var(--radius-panel);
 }
 
-/* "+ Text einfügen" on a line directly above the composer */
+/* "+ PDF hochladen" and "+ Text einfügen" on a line directly above the composer */
 .chat__paste-line {
   display: flex;
   flex: none;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
   justify-content: flex-end;
   margin: 0 var(--space-6) var(--space-1);
 }
@@ -416,6 +418,17 @@ span.intro__label {
   max-height: 40vh;
   resize: none;
   field-sizing: content;
+}
+
+/* It says the text is incomplete: body text, no status colour. */
+.pform__note {
+  color: var(--text);
+}
+
+/* With a note (a PDF read only in part) the text area gives up room, so 120 px of chat stay. */
+.pform:has(.pform__note) .pform__text {
+  min-height: 120px;
+  max-height: 24vh;
 }
 
 .pform__count {
@@ -453,4 +466,67 @@ span.intro__label {
 
 .chat__act-text > svg {
   flex: none;
+}
+
+/* More below the visible part: a 1 px line says the cut is deliberate (as the gate's list, step 13). */
+.chat__log[data-cut] {
+  border-bottom: 1px solid var(--line);
+}
+
+/* While a PDF is read, in the slot of "+ PDF hochladen" above the composer: why sending waits. */
+.chat__wait {
+  color: var(--text-muted);
+  font: var(--text-small);
+  min-height: var(--target-min);
+  align-items: center;
+}
+
+/* Step 15: a PDF being read, at the end of the log where an answer would stream. */
+.pdfread {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-6);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+}
+
+.pdfread__text {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.pdfread__title {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+/* The document icon of the "PDF gelesen" line: a file is read, not "denkt nach". 16 px on a 24 px line. */
+.pdfread__title > svg {
+  flex: none;
+  margin-top: var(--space-1);
+}
+
+.pdfread__title .thinking {
+  align-items: flex-start;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 8 px dot on a 24 px line: 8 px from the top centres it on the first line (as in the hand-off). */
+.pdfread__title .thinking__dot {
+  flex: none;
+  margin-top: var(--space-2);
+}
+
+.pdfread__note,
+.pdfread__count {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.pdfread__count {
+  font-variant-numeric: tabular-nums;
 }

@@ -28,7 +28,7 @@ export const storedMessage = z.strictObject({
   /** A user turn the app sent for a button Lukas pressed (paste, interview, step 1 opening): shown as an app line. */
   act: z
     .strictObject({
-      kind: z.enum(['paste', 'interview', 'opening']),
+      kind: z.enum(['paste', 'pdf', 'interview', 'opening']),
       label: z.string().optional(),
       chars: z.number().int().nonnegative().optional(),
     })

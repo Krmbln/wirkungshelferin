@@ -13,6 +13,13 @@
   min-height: var(--target-min);
 }
 
+.bsection__adds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 var(--space-3);
+}
+
 .bsection__head h3 {
   font: var(--text-label);
 }

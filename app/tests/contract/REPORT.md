@@ -39,3 +39,11 @@ Usage: 18 calls · input 3471 · output 8075 · cache read 180131 · cache write
 | ✓ | Step 0 interview: first question | **Frage 1 von 8:** Wie heißt dein Projekt? |
 
 - The first paste run (18:16 UTC, $0.20) passed but Claude sent the card with no text: a tool call ends the turn. The rules now say text and the one question come first; the paste and opening cases assert it (≈ $0.21 + $0.20).
+
+## Step 15 add-on (run alone: `npx vitest run --project contract -t "5 · step 0"`, 2026-11-08)
+
+| | Check | Note |
+|---|---|---|
+| ✓ | Step 0 PDF: read → PDF source → profile proposal valid | 3145 chars in 244 updates; text first; offen: organisation, team, duration, funder, statedGoals, otherOffers |
+
+Usage: 2 calls · output 5483 · cache write 1 h 19854 / 5 min 5253 · **≈ $0.29**

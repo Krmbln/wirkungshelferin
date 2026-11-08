@@ -3,29 +3,45 @@ import { MAX_PASTE } from '../../ai/chat'
 import type { StoredMessage } from '../../domain/schemas/project'
 import { Button } from '../components/Button'
 import { Icon, type IconName } from '../components/Icon'
+import { PdfButton, type PdfControls } from './PdfImport'
 import '../components/Field.css'
 
 // Step 0's ways in (design §6.2, step 14): the start panel while the chat is empty, the paste
 // form in place of the composer, and the app lines for turns the app sends on Lukas's behalf.
 
-/** The paste form's content lives in App, so it survives a step switch (not a reload). */
-export type PasteDraft = { label: string; text: string }
+/**
+ * The paste form's content lives in App, so it survives a step switch (not a reload).
+ * `fromPdf`: the text came from a PDF that was only partly read (step 15); it is sent as a PDF source.
+ */
+export type PasteDraft = { label: string; text: string; fromPdf?: boolean }
 
 export type PasteControls = {
   open: boolean
   draft: PasteDraft
+  /** Above the fields, e.g. why a PDF's text came only in part (step 15). */
+  note?: string
+  /** Why it can't send now besides the form's own reasons, e.g. a PDF being read. */
+  wait?: string
   onOpen: () => void
   onChange: (draft: PasteDraft) => void
   onCancel: () => void
   onSubmit: () => void
 }
 
-export function StartPanel({ onPaste, onInterview }: { onPaste: () => void; onInterview: () => void }) {
+export function StartPanel({ onPaste, onInterview, pdf }: { onPaste: () => void; onInterview: () => void; pdf?: PdfControls }) {
   return (
     <div className="start">
       <p className="start__lead">Wie willst du anfangen?</p>
+      {pdf && (
+        <div className="start__option">
+          <p>Antrag oder Konzept als PDF? Lade es hoch – die Wirkungshelferin liest den Text heraus.</p>
+          <PdfButton pdf={pdf} variant="secondary">
+            PDF hochladen
+          </PdfButton>
+        </div>
+      )}
       <div className="start__option">
-        <p>Du hast einen Antrag, ein Konzept oder einen Bericht? Kopier den Text hier hinein.</p>
+        <p>{pdf ? 'Oder als Text? Kopier ihn hier hinein.' : 'Du hast einen Antrag, ein Konzept oder einen Bericht? Kopier den Text hier hinein.'}</p>
         <Button variant="secondary" onClick={onPaste}>
           Text einfügen
         </Button>
@@ -41,22 +57,31 @@ export function StartPanel({ onPaste, onInterview }: { onPaste: () => void; onIn
 }
 
 /** Why "Einfügen und senden" can't act now, or undefined when it can. */
-export function pasteBlocked(draft: PasteDraft, busy: boolean): string | undefined {
+export function pasteBlocked(draft: PasteDraft, busy: boolean, wait?: string): string | undefined {
   if (busy) return 'Warte, bis die Antwort im Chat fertig ist.'
+  if (wait) return wait
   if (!draft.text.trim()) return 'Füge zuerst einen Text ein.'
   if (draft.text.trim().length > MAX_PASTE) return `Der Text ist zu lang. Füge den wichtigsten Teil ein (höchstens ${MAX_PASTE.toLocaleString('de-DE')} Zeichen).`
   return undefined
 }
 
-type FormProps = { draft: PasteDraft; busy: boolean; onChange: (draft: PasteDraft) => void; onCancel: () => void; onSubmit: () => void }
+type FormProps = {
+  draft: PasteDraft
+  busy: boolean
+  note?: string
+  wait?: string
+  onChange: (draft: PasteDraft) => void
+  onCancel: () => void
+  onSubmit: () => void
+}
 
 /** In place of the composer. Enter makes a new line, Cmd+Enter sends; Esc does nothing (a big paste must not vanish). */
-export function PasteForm({ draft, busy, onChange, onCancel, onSubmit }: FormProps) {
+export function PasteForm({ draft, busy, note, wait, onChange, onCancel, onSubmit }: FormProps) {
   const titleId = useId()
   const labelId = useId()
   const textId = useId()
   const area = useRef<HTMLTextAreaElement>(null)
-  const blocked = pasteBlocked(draft, busy)
+  const blocked = pasteBlocked(draft, busy, wait)
   const chars = draft.text.trim().length
 
   useEffect(() => {
@@ -86,6 +111,7 @@ export function PasteForm({ draft, busy, onChange, onCancel, onSubmit }: FormPro
       <h2 id={titleId} className="pform__title">
         Text einfügen
       </h2>
+      {note && <p className="pform__note">{note}</p>}
       <div className="pform__field">
         <label className="field__label" htmlFor={labelId}>
           Bezeichnung
@@ -119,11 +145,13 @@ export function PasteForm({ draft, busy, onChange, onCancel, onSubmit }: FormPro
   )
 }
 
-const ACT_ICON: Record<NonNullable<StoredMessage['act']>['kind'], IconName> = { paste: 'document', interview: 'speech', opening: 'statusOk' }
+const ACT_ICON: Record<NonNullable<StoredMessage['act']>['kind'], IconName> = { paste: 'document', pdf: 'document', interview: 'speech', opening: 'statusOk' }
 
-/** "Text eingefügt: „Antrag 2026“ · 12.300 Zeichen" */
+/** "Text eingefügt: „Antrag 2026“ · 12.300 Zeichen", "PDF gelesen: „Projektantrag“ · 34.500 Zeichen" */
 export function actText(act: NonNullable<StoredMessage['act']>): string {
-  if (act.kind === 'paste') return `Text eingefügt: „${act.label ?? ''}“ · ${(act.chars ?? 0).toLocaleString('de-DE')} Zeichen`
+  const what = `„${act.label ?? ''}“ · ${(act.chars ?? 0).toLocaleString('de-DE')} Zeichen`
+  if (act.kind === 'paste') return `Text eingefügt: ${what}`
+  if (act.kind === 'pdf') return `PDF gelesen: ${what}`
   return act.kind === 'interview' ? 'Interview gestartet' : 'Schritt 0 bestätigt'
 }
 

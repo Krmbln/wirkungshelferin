@@ -21,25 +21,39 @@ type SectionProps = {
   /** Muted sentence instead of rows while the list is empty (design §6.2 "Empty block"). */
   emptyHint?: string
   empty?: boolean
+  /** More buttons before the add button, e.g. "+ PDF hochladen" in Quellen (step 15). */
+  actions?: ReactNode
   children: ReactNode
 }
 
-export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, children }: SectionProps) {
+export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, actions, children }: SectionProps) {
   const headingId = useId()
   return (
     <section className="bsection" aria-labelledby={headingId}>
       <div className="bsection__head">
         <h3 id={headingId}>{title}</h3>
         {meta}
-        {onAdd && (
-          <Button variant="text" className="bsection__add" icon={<Icon name="plus" size={16} />} aria-label={addLabel} data-add={addKey} onClick={onAdd}>
-            {addText}
-          </Button>
+        {actions ? (
+          <span className="bsection__adds">
+            {actions}
+            {add()}
+          </span>
+        ) : (
+          add()
         )}
       </div>
       {empty && emptyHint ? <p className="bsection__empty">{emptyHint}</p> : children}
     </section>
   )
+
+  function add() {
+    if (!onAdd) return null
+    return (
+      <Button variant="text" className="bsection__add" icon={<Icon name="plus" size={16} />} aria-label={addLabel} data-add={addKey} onClick={onAdd}>
+        {addText}
+      </Button>
+    )
+  }
 }
 
 type ItemProps = {

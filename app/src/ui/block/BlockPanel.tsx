@@ -1,3 +1,4 @@
+import type { PdfControls } from '../chat/PdfImport'
 import { useEffect, useRef } from 'react'
 import type { Action } from '../../domain/reducer'
 import type { Project } from '../../domain/schemas/project'
@@ -32,6 +33,8 @@ type Props = {
   liveIssues?: boolean
   /** Step 0 "+ Text einfügen": opens the paste form in the chat. */
   onPaste?: () => void
+  /** "+ PDF hochladen" in step 0's Quellen (step 15). */
+  pdf?: PdfControls
 }
 
 /** About how long a smooth scroll into view takes. */
@@ -59,7 +62,7 @@ function changedFormFields(step: StepId, change: ProposalChange): string[] | und
 
 // The step's block, editable (design §6.2). Steps 2–6 follow in steps 16–20.
 // Outline and highlight are set on the item's element by id, so every block gets them.
-export function BlockPanel({ project, step, onAction, outlined, applied, onShowProposals, liveIssues = false, onPaste }: Props) {
+export function BlockPanel({ project, step, onAction, outlined, applied, onShowProposals, liveIssues = false, onPaste, pdf }: Props) {
   const panel = useRef<HTMLDivElement>(null)
   const open = openProposals(project, step)
 
@@ -100,7 +103,7 @@ export function BlockPanel({ project, step, onAction, outlined, applied, onShowP
         </Button>
       )}
       {step === 0 ? (
-        <Step0Block project={project} onAction={onAction} onPaste={onPaste} />
+        <Step0Block project={project} onAction={onAction} onPaste={onPaste} pdf={pdf} />
       ) : step === 1 ? (
         <Step1Block project={project} onAction={onAction} applied={applied} blocked={new Set(stillOpen(project, 1, liveIssues).map(issueKey))} />
       ) : (

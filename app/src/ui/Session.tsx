@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { sdkAiClient, type AiClient } from '../ai/client'
+import { extractPdf } from '../ai/pdf'
 import { withBackupTime } from '../domain/backup'
 import { newProject } from '../domain/document'
 import { reducer, type Action } from '../domain/reducer'
@@ -13,6 +14,7 @@ import { defaultSettings, loadSettings, saveSettings, type Settings } from '../s
 import { requestPersistence, type Store } from '../storage/store'
 import { holdTabLock } from '../storage/tabLock'
 import { App } from './App'
+import type { ReadPdf } from './chat/PdfImport'
 import { useChatRunner, type DraftKeeper } from './chat/useChatRunner'
 import { useCheckRunner } from './check/useCheckRunner'
 import { EmptyState } from './screens/EmptyState'
@@ -204,6 +206,7 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
   const editBlock = useCallback((action: Action) => change((p) => reducer(p, action), { now: true }), [change])
   const chat = useChatRunner({ ai, settings, project: readProject, change, drafts: draftKeeper })
   const check = useCheckRunner({ ai, settings, project: readProject, change })
+  const readPdf = useCallback<ReadPdf>((base64, options) => extractPdf(ai, settings, base64, options), [ai, settings])
 
   // Starting or loading a project is a deliberate act: saved at once, not after the pause.
   const start = useCallback(
@@ -296,6 +299,7 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
       onDraftChange={changeDraft}
       onBlockAction={editBlock}
       check={check}
+      readPdf={readPdf}
     />
   )
 }

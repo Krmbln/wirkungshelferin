@@ -1,0 +1,213 @@
+{
+  "step": 0,
+  "project": {
+    "schemaVersion": 1,
+    "createdAt": "2026-11-02T10:00:00.000Z",
+    "updatedAt": "2026-11-02T10:00:00.000Z",
+    "privacyNoteSeen": true,
+    "steps": {
+      "0": {
+        "status": "in_progress",
+        "block": {
+          "profile": {
+            "id": "profile",
+            "rev": 1,
+            "editedByUser": false,
+            "name": "",
+            "organisation": "",
+            "projectBoundary": "",
+            "location": "",
+            "activities": [],
+            "participants": "",
+            "team": "",
+            "duration": "",
+            "funder": "",
+            "statedGoals": [],
+            "otherOffers": [],
+            "openQuestions": []
+          },
+          "frame": {
+            "id": "frame",
+            "rev": 1,
+            "editedByUser": false,
+            "purpose": "",
+            "audience": "",
+            "requiredFormat": "",
+            "requiredFigures": [],
+            "existingData": []
+          },
+          "sources": [
+            {
+              "id": "src1",
+              "rev": 1,
+              "editedByUser": true,
+              "origin": "pdf",
+              "label": "Sachbericht Schraubzeit",
+              "text": "Sachbericht Schraubzeit - Testdokument\n\nOffene Fahrradwerkstatt im Nachbarschaftshaus Am Weidengrund.\nAnwesenheit pro Nachmittag:\n\n- Nachmittag 1: 10 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 2: 17 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 3: 15 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 4: 13 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 5: 11 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 6: 18 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 7: 16 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 8: 14 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 9: 12 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 10: 10 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 11: 17 Jugendliche, 2 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 12: 15 Jugendliche, 3 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 13: 13 Jugendliche, 4 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 14: 11 Jugendliche, 5 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 15: 18 Jugendliche, 6 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 16: 16 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 17: 14 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 18: 12 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 19: 10 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 20: 17 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 21: 15 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 22: 13 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 23: 11 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 24: 18 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 25: 16 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 26: 14 Jugendliche, 2 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 27: 12 Jugendliche, 3 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 28: 10 Jugendliche, 4 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 29: 17 Jugendliche, 5 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 30: 15 Jugendliche, 6 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 31: 13 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 32: 11 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 33: 18 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 34: 16 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 35: 14 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 36: 12 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 37: 10 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 38: 17 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 39: 15 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 40: 13 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n\nDie Zahlen sind Schaetzungen des Teams.\nENDE DES TESTDOKUMENTS",
+              "at": "2026-11-05T10:00:00.000Z"
+            }
+          ]
+        },
+        "segments": [
+          {
+            "id": "b1d69f65-235e-43d0-aad1-e4a433384478",
+            "startedAt": "2026-11-05T10:00:00.000Z",
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n## Schritt 1: noch nicht begonnen\n\n## Schritt 2: noch nicht begonnen\n\n## Schritt 3: noch nicht begonnen\n\n## Schritt 4: noch nicht begonnen\n\n## Schritt 5: noch nicht begonnen\n\n## Schritt 6: noch nicht begonnen"
+                  },
+                  {
+                    "type": "text",
+                    "text": "[Quelle src1: „Sachbericht Schraubzeit“]\nSachbericht Schraubzeit - Testdokument\n\nOffene Fahrradwerkstatt im Nachbarschaftshaus Am Weidengrund.\nAnwesenheit pro Nachmittag:\n\n- Nachmittag 1: 10 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 2: 17 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 3: 15 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 4: 13 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 5: 11 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 6: 18 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 7: 16 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 8: 14 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 9: 12 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 10: 10 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 11: 17 Jugendliche, 2 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 12: 15 Jugendliche, 3 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 13: 13 Jugendliche, 4 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 14: 11 Jugendliche, 5 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 15: 18 Jugendliche, 6 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 16: 16 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 17: 14 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 18: 12 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 19: 10 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 20: 17 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 21: 15 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 22: 13 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 23: 11 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 24: 18 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 25: 16 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 26: 14 Jugendliche, 2 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 27: 12 Jugendliche, 3 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 28: 10 Jugendliche, 4 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 29: 17 Jugendliche, 5 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 30: 15 Jugendliche, 6 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 31: 13 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 32: 11 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 33: 18 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 34: 16 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 35: 14 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 36: 12 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 37: 10 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 38: 17 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 39: 15 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 40: 13 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n\nDie Zahlen sind Schaetzungen des Teams.\nENDE DES TESTDOKUMENTS"
+                  },
+                  {
+                    "type": "text",
+                    "text": "[App] Die Person hat ein PDF hochgeladen: „Sachbericht Schraubzeit“ (src1). Die App hat seinen Text ausgelesen; er steht direkt über dieser Zeile."
+                  },
+                  {
+                    "type": "text",
+                    "text": "[Bausteinstand Schritt 0]\nprofile: {\"id\":\"profile\",\"rev\":1,\"editedByUser\":false,\"name\":\"\",\"organisation\":\"\",\"projectBoundary\":\"\",\"location\":\"\",\"activities\":[],\"participants\":\"\",\"team\":\"\",\"duration\":\"\",\"funder\":\"\",\"statedGoals\":[],\"otherOffers\":[],\"openQuestions\":[]}\nframe: {\"id\":\"frame\",\"rev\":1,\"editedByUser\":false,\"purpose\":\"\",\"audience\":\"\",\"requiredFormat\":\"\",\"requiredFigures\":[],\"existingData\":[]}\nsources:\n- {\"id\":\"src1\",\"rev\":1,\"editedByUser\":true,\"origin\":\"pdf\",\"label\":\"Sachbericht Schraubzeit\",\"chars\":3145,\"at\":\"2026-11-05T10:00:00.000Z\"}"
+                  }
+                ],
+                "id": "0c66d35c-d565-4d8f-a428-3a97aa07ac16",
+                "at": "2026-11-05T10:00:00.000Z",
+                "act": {
+                  "kind": "pdf",
+                  "label": "Sachbericht Schraubzeit",
+                  "chars": 3145
+                }
+              }
+            ]
+          }
+        ],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "sentBlock": {
+          "profile": {
+            "id": "profile",
+            "rev": 1,
+            "editedByUser": false,
+            "name": "",
+            "organisation": "",
+            "projectBoundary": "",
+            "location": "",
+            "activities": [],
+            "participants": "",
+            "team": "",
+            "duration": "",
+            "funder": "",
+            "statedGoals": [],
+            "otherOffers": [],
+            "openQuestions": []
+          },
+          "frame": {
+            "id": "frame",
+            "rev": 1,
+            "editedByUser": false,
+            "purpose": "",
+            "audience": "",
+            "requiredFormat": "",
+            "requiredFigures": [],
+            "existingData": []
+          },
+          "sources": [
+            {
+              "id": "src1",
+              "rev": 1,
+              "editedByUser": true,
+              "origin": "pdf",
+              "label": "Sachbericht Schraubzeit",
+              "text": "Sachbericht Schraubzeit - Testdokument\n\nOffene Fahrradwerkstatt im Nachbarschaftshaus Am Weidengrund.\nAnwesenheit pro Nachmittag:\n\n- Nachmittag 1: 10 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 2: 17 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 3: 15 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 4: 13 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 5: 11 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 6: 18 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 7: 16 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 8: 14 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 9: 12 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 10: 10 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 11: 17 Jugendliche, 2 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 12: 15 Jugendliche, 3 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 13: 13 Jugendliche, 4 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 14: 11 Jugendliche, 5 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 15: 18 Jugendliche, 6 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 16: 16 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 17: 14 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 18: 12 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 19: 10 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 20: 17 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 21: 15 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 22: 13 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 23: 11 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 24: 18 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 25: 16 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 26: 14 Jugendliche, 2 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 27: 12 Jugendliche, 3 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 28: 10 Jugendliche, 4 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 29: 17 Jugendliche, 5 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 30: 15 Jugendliche, 6 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 31: 13 Jugendliche, 2 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 32: 11 Jugendliche, 3 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 33: 18 Jugendliche, 4 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 34: 16 Jugendliche, 5 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 35: 14 Jugendliche, 6 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 36: 12 Jugendliche, 2 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 37: 10 Jugendliche, 3 Raeder repariert, 0 Raeder ausgegeben.\n- Nachmittag 38: 17 Jugendliche, 4 Raeder repariert, 1 Raeder ausgegeben.\n- Nachmittag 39: 15 Jugendliche, 5 Raeder repariert, 2 Raeder ausgegeben.\n- Nachmittag 40: 13 Jugendliche, 6 Raeder repariert, 0 Raeder ausgegeben.\n\nDie Zahlen sind Schaetzungen des Teams.\nENDE DES TESTDOKUMENTS",
+              "at": "2026-11-05T10:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "1": {
+        "status": "not_started",
+        "block": {
+          "challenge": {
+            "id": "challenge",
+            "rev": 1,
+            "editedByUser": false,
+            "text": ""
+          },
+          "targetGroups": [],
+          "stakeholders": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "2": {
+        "status": "not_started",
+        "block": {
+          "problems": [],
+          "causes": [],
+          "consequences": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "3": {
+        "status": "not_started",
+        "block": {
+          "goals": [],
+          "levelNotApplicable": [],
+          "level7": {
+            "id": "level7",
+            "rev": 1,
+            "editedByUser": false,
+            "text": ""
+          }
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "4": {
+        "status": "not_started",
+        "block": {
+          "resources": [],
+          "activities": [],
+          "outputs": [],
+          "links": [],
+          "externalFactors": [],
+          "sideEffects": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "5": {
+        "status": "not_started",
+        "block": {
+          "focusQuestions": [],
+          "deferredCandidates": [],
+          "indicators": [],
+          "mandatoryFigures": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "6": {
+        "status": "not_started",
+        "block": {
+          "planRows": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      }
+    },
+    "idCounters": {
+      "src": 1
+    }
+  }
+}

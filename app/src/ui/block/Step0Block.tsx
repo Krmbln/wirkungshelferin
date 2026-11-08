@@ -3,6 +3,7 @@ import { FORM_LABELS, MAY_BE_EMPTY, OFFEN, formEmpty, formFields, isBlank, isOff
 import type { Action } from '../../domain/reducer'
 import type { Item, ItemOf } from '../../domain/schemas/blocks'
 import type { Project } from '../../domain/schemas/project'
+import { PdfButton, type PdfControls } from '../chat/PdfImport'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import '../components/Chip.css'
@@ -60,9 +61,11 @@ type Props = {
   onAction: (action: Action) => void
   /** "+ Text einfügen": opens the paste form in the chat column. */
   onPaste?: () => void
+  /** "+ PDF hochladen" (step 15). */
+  pdf?: PdfControls
 }
 
-export function Step0Block({ project, onAction, onPaste }: Props) {
+export function Step0Block({ project, onAction, onPaste, pdf }: Props) {
   const block = project.steps[0].block
   const panel = useRef<HTMLDivElement>(null)
   const focusNext = useRef<string | null>(null)
@@ -135,7 +138,8 @@ export function Step0Block({ project, onAction, onPaste }: Props) {
       <Form form="profile" item={block.profile as Item} onEdit={(f) => edit('profile', 'profile', f)} onMarkOffen={(f) => markOffen('profile', f)}>
         {profileEmpty && (
           <p className="bform__lead">
-            Füge links einen Text ein oder lass dich interviewen – die Wirkungshelferin schlägt dann ein Profil vor. Du kannst auch selbst schreiben.
+            {pdf ? 'Lade links ein PDF hoch, füge einen Text ein' : 'Füge links einen Text ein'} oder lass dich interviewen – die Wirkungshelferin schlägt dann ein
+            Profil vor. Du kannst auch selbst schreiben.
           </p>
         )}
       </Form>
@@ -147,7 +151,14 @@ export function Step0Block({ project, onAction, onPaste }: Props) {
         addKey="sources"
         onAdd={onPaste}
         empty={!rows.length}
-        emptyHint="Noch keine Quelle – füge deinen Antrag oder ein Konzept als Text ein."
+        emptyHint={pdf ? 'Noch keine Quelle – lade deinen Antrag als PDF hoch oder füge einen Text ein.' : 'Noch keine Quelle – füge deinen Antrag oder ein Konzept als Text ein.'}
+        actions={
+          pdf && (
+            <PdfButton pdf={pdf} variant="text" icon={<Icon name="plus" size={16} />}>
+              PDF hochladen
+            </PdfButton>
+          )
+        }
       >
         <ul className="blist">{rows}</ul>
       </BlockSection>

@@ -187,6 +187,9 @@ const screenNames = [
   'step0-change',
   'step0-check',
   'step0-ready',
+  'step0-pdf-failed',
+  'step0-pdf-partial',
+  'step0-pdf-draft',
   'step1-handoff',
   'home',
   'home-mixed',
@@ -784,7 +787,7 @@ test('step 0 (step 14): start panel, paste form, first draft, form states, field
   await openScreen(page, 'step0-empty')
   await expect(page.getByText('Wie willst du anfangen?')).toBeVisible()
   await expect(block.getByRole('button', { name: /als offen markieren$/ })).toHaveCount(0)
-  await expect(block.getByText(/Füge links einen Text ein/)).toBeVisible()
+  await expect(block.getByText(/Lade links ein PDF hoch, füge einen Text ein/)).toBeVisible()
   await noPageScroll()
   await shotScreen('step0-empty')
   await blockShot('step0-empty-block')
@@ -895,6 +898,91 @@ test('step 0 (step 14): start panel, paste form, first draft, form states, field
     expect(await log.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
     await noPageScroll()
     await shotScreen(`${name}-narrow`)
+  }
+  expect(errors).toEqual([])
+})
+
+test('PDF upload (step 15): start panel, reading, failures, too long, after the draft, the later buttons', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const block = page.getByRole('region', { name: 'Baustein' })
+  const log = page.locator('.chat__log')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  const pdf = { name: 'Projektantrag Schraubzeit 2026.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') }
+
+  for (const [width, height, suffix] of [[1280, 860, ''], [1390, 880, '-1390'], [960, 760, '-narrow']] as const) {
+    await page.setViewportSize({ width, height })
+
+    // The start panel: PDF first, all three options and their buttons in view.
+    await openScreen(page, 'step0-empty')
+    const options = page.locator('.start__option')
+    await expect(options).toHaveCount(3)
+    await expect(options.first().getByRole('button', { name: 'PDF hochladen' })).toBeVisible()
+    await expect(block.getByText('Noch keine Quelle – lade deinen Antrag als PDF hoch oder füge einen Text ein.')).toBeVisible()
+    await noPageScroll()
+    await shotScreen(`step0-pdf-start${suffix}`)
+
+    // Reading: the panel at the end of the log, the start panel gone, Stopp in view.
+    await page.locator('.start [data-pdf-input]').setInputFiles(pdf)
+    await expect(page.getByText('„Projektantrag Schraubzeit 2026“ wird gelesen …')).toBeVisible()
+    await expect(page.getByText('12.400 Zeichen gelesen')).toBeVisible()
+    await expect(page.locator('.start')).toHaveCount(0)
+    // The panel needs the room: the intro folds, like for the paste form.
+    await expect(page.getByRole('button', { name: 'Worum geht es?' })).toHaveAttribute('aria-expanded', 'false')
+    await expect(page.getByRole('button', { name: 'Stopp' })).toBeInViewport({ ratio: 1 })
+    // Why sending waits, right above the composer (UI/UX review, step 15).
+    await expect(page.locator('.chat__wait')).toHaveText('Warte, bis das PDF gelesen ist.')
+    expect(await log.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await noPageScroll()
+    await shotScreen(`step0-pdf-reading${suffix}`)
+    await page.getByRole('button', { name: 'Stopp' }).click()
+    await expect(page.getByLabel('Deine Nachricht')).toBeFocused()
+    await expect(page.getByText('Wie willst du anfangen?')).toBeVisible()
+
+    // A file that isn't a PDF: the reason, "Anderes PDF wählen", "Text einfügen".
+    await page.locator('.start [data-pdf-input]').setInputFiles({ ...pdf, name: 'Antrag (Scan vom 12.03.).pdf', buffer: Buffer.from('kein PDF') })
+    const alert = page.getByRole('alert')
+    await expect(alert).toContainText('ist keine echte PDF-Datei')
+    await page.mouse.move(0, 0)
+    for (const button of await alert.locator('.btn').all()) await expect(button).toBeInViewport({ ratio: 1 })
+    await shotScreen(`step0-pdf-file-problem${suffix}`)
+
+    // The API couldn't read it: "Erneut versuchen".
+    await openScreen(page, 'step0-pdf-failed')
+    await page.locator('.start [data-pdf-input]').setInputFiles(pdf)
+    await expect(page.getByRole('alert')).toContainText('vielleicht ist es geschützt')
+    await expect(page.getByRole('alert').getByRole('button', { name: 'Erneut versuchen' })).toBeInViewport({ ratio: 1 })
+    await shotScreen(`step0-pdf-failed${suffix}`)
+
+    // Too long: the paste form with the note, the text and the file's name.
+    await openScreen(page, 'step0-pdf-partial')
+    await page.locator('.start [data-pdf-input]').setInputFiles(pdf)
+    const form = page.getByRole('form', { name: 'Text einfügen' })
+    await expect(form.getByText(/Das PDF war zu lang/)).toBeVisible()
+    await expect(form.getByLabel('Bezeichnung')).toHaveValue('Projektantrag Schraubzeit 2026')
+    expect((await log.boundingBox())!.height).toBeGreaterThanOrEqual(120)
+    for (const button of await form.locator('.btn').all()) await expect(button).toBeInViewport({ ratio: 1 })
+    await noPageScroll()
+    await shotScreen(`step0-pdf-partial${suffix}`)
+
+    // After a PDF: the app line, the source's meta, both buttons above the composer and in Quellen.
+    await openScreen(page, 'step0-pdf-draft')
+    const line = page.locator('.chat__act-text').first()
+    await expect(line).toContainText('PDF gelesen: „Projektantrag Schraubzeit 2026“')
+    expect((await line.boundingBox())!.height).toBeLessThanOrEqual(24)
+    const pasteLine = page.locator('.chat__paste-line')
+    await expect(pasteLine.getByRole('button', { name: 'PDF hochladen' })).toBeVisible()
+    await expect(pasteLine.getByRole('button', { name: 'Text einfügen' })).toBeVisible()
+    expect((await pasteLine.boundingBox())!.height).toBeLessThanOrEqual(40)
+    await expect(block.getByText(/^aus PDF am /)).toBeVisible()
+    await block.getByRole('button', { name: 'PDF hochladen' }).scrollIntoViewIfNeeded()
+    await expect(block.getByRole('button', { name: 'Text einfügen' })).toBeVisible()
+    await noPageScroll()
+    await shotScreen(`step0-pdf-draft${suffix}`)
+    // The start of the turn: the app line with its icon (UI/UX review, step 15).
+    await log.evaluate((el) => (el.scrollTop = 0))
+    await shotScreen(`step0-pdf-draft-top${suffix}`)
   }
   expect(errors).toEqual([])
 })

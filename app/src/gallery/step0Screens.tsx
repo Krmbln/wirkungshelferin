@@ -4,6 +4,7 @@ import { makeItem, makeProject, makeProposal } from '../domain/fixtures'
 import { reducer } from '../domain/reducer'
 import type { Project, Proposal, StoredMessage } from '../domain/schemas/project'
 import { App } from '../ui/App'
+import type { ReadPdf } from '../ui/chat/PdfImport'
 import type { ChatControls } from '../ui/chat/useChatRunner'
 import type { CheckControls } from '../ui/check/useCheckRunner'
 import { opening as openingDraft } from './proposalScreens'
@@ -132,7 +133,27 @@ function withCheck(full = false): Project {
 
 const opening = (): StoredMessage => ({ id: 'o1', at, role: 'user', act: { kind: 'opening' }, content: [{ type: 'text', text: '[App] …' }, { type: 'text', text: '[Bausteinstand Schritt 1]' }] })
 
-function Step0Screen({ start, step = 0, draftMs = 1500 }: { start: () => Project; step?: 0 | 1; draftMs?: number }) {
+/** Step 15: the PDF reader's outcomes. The gallery spec picks a file to start one. */
+const readers: Record<'reading' | 'failed' | 'partial', ReadPdf> = {
+  // Reads "forever" (until Stopp), with a count already shown.
+  reading: (_base64, { signal, onProgress }) => {
+    onProgress(12_400)
+    return new Promise((resolve) => signal.addEventListener('abort', () => resolve({ status: 'aborted', text: '', rounds: 0 })))
+  },
+  failed: async () => ({ status: 'failed', problem: 'other', text: '', rounds: 0 }),
+  partial: async () => ({ status: 'incomplete', text: APPLICATION.repeat(6), rounds: 4 }),
+}
+
+/** Step 0 after a PDF: the app line and the source say so. */
+function withPdfDraft(): Project {
+  const p = withDraft()
+  const label = 'Projektantrag Schraubzeit 2026'
+  ;(p.steps[0].block.sources as { origin: string; label: string }[])[0] = { ...p.steps[0].block.sources[0], origin: 'pdf', label } as never
+  p.steps[0].segments[0].messages[0].act = { kind: 'pdf', label, chars: APPLICATION.length }
+  return p
+}
+
+function Step0Screen({ start, step = 0, draftMs = 1500, pdf = 'reading' }: { start: () => Project; step?: 0 | 1; draftMs?: number; pdf?: keyof typeof readers }) {
   const [project, setProject] = useState(start)
   const [runs, setRuns] = useState<ChatControls['runs']>({})
   const current = useRef(project)
@@ -170,7 +191,17 @@ function Step0Screen({ start, step = 0, draftMs = 1500 }: { start: () => Project
       return next.steps[0].qualityCheck
     },
   }
-  return <App now={galleryNow} project={project} initialView={{ kind: 'step', step }} onBlockAction={(a) => setProject((p) => reducer(p, a))} chat={chat} check={check} />
+  return (
+    <App
+      now={galleryNow}
+      project={project}
+      initialView={{ kind: 'step', step }}
+      onBlockAction={(a) => setProject((p) => reducer(p, a))}
+      chat={chat}
+      check={check}
+      readPdf={readers[pdf]}
+    />
+  )
 }
 
 function afterHandoff(): Project {
@@ -210,5 +241,8 @@ export const step0Screens: Record<string, { caption: string; render: () => React
   'step0-change': { caption: 'Schritt 0: ÄNDERN, sobald das Profil Inhalt hat', render: () => <Step0Screen start={withChange} /> },
   'step0-check': { caption: 'Schritt 0: Qualitätscheck, Vollständigkeit ⚠ mit „Zum Feld“', render: () => <Step0Screen start={() => withCheck()} /> },
   'step0-ready': { caption: 'Schritt 0: geprüft, alles erfüllt – Bestätigen startet Schritt 1', render: () => <Step0Screen start={() => withCheck(true)} /> },
+  'step0-pdf-failed': { caption: 'Schritt 0: PDF ließ sich nicht lesen (nach dem Hochladen)', render: () => <Step0Screen start={() => makeProject()} pdf="failed" /> },
+  'step0-pdf-partial': { caption: 'Schritt 0: PDF nur zum Teil gelesen – Einfügeformular mit Hinweis', render: () => <Step0Screen start={() => makeProject()} pdf="partial" /> },
+  'step0-pdf-draft': { caption: 'Schritt 0: PDF gelesen, erster Entwurf', render: () => <Step0Screen start={withPdfDraft} /> },
   'step1-handoff': { caption: 'Schritt 1 nach der Übergabe: App-Zeile, Entwurf, Intro offen', render: () => <Step0Screen start={afterHandoff} step={1} /> },
 }

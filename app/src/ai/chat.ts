@@ -4,6 +4,7 @@ import { reducer } from '../domain/reducer'
 import type { Project, StoredMessage } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import { hardIssues } from '../domain/check'
+import { scrubContacts } from '../domain/contacts'
 import { CHECK_REQUEST, checkEvents, parseCheck } from './check'
 import { contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, sourceText, sourcesText, systemPrompt, withCacheBreakpoint } from './prompt'
 import { checkErrorToolResult, checkToolResult, errorToolResult, proposalToolResult, toProposal } from './proposal'
@@ -116,13 +117,13 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
 export const MAX_PASTE = 150_000
 
 /** A button that sends a turn on Lukas's behalf (design §6.2 "App lines"). */
-export type Act = { kind: 'paste'; label: string; text: string } | { kind: 'interview' } | { kind: 'opening' }
+export type Act = { kind: 'paste' | 'pdf'; label: string; text: string } | { kind: 'interview' } | { kind: 'opening' }
 
 /** True when a step's chat has no message yet. */
 export const chatEmpty = (project: Project, step: StepId) => !project.steps[step].segments.some((s) => s.messages.length)
 
 /**
- * The turn for a button: a paste (step 0) stores the source, then sends it in full once; the
+ * The turn for a button: a paste or a read PDF (step 0) stores the source, then sends it in full once; the
  * interview (step 0, empty chat) and the opening (step 1 after step 0's confirm, empty chat)
  * tell Claude how to begin. Undefined when the act doesn't fit the step's state.
  */
@@ -136,16 +137,23 @@ export function prepareAct(project: Project, step: StepId, act: Act, meta: TurnM
     if (!chatEmpty(project, 0)) return undefined
     return prepareTurn(project, step, `[App] ${INTERVIEW}`, { ...meta, act: { kind: 'interview' } })
   }
-  const text = act.text.trim()
-  if (!text || text.length > MAX_PASTE) return undefined
-  const label = act.label.trim() || `Eingefügter Text ${(project.idCounters.src ?? 0) + 1}`
-  const added = reducer(project, { type: 'item/add', step: 0, collection: 'sources', fields: { origin: 'paste', label, text, at: meta.at } })
+  if (act.text.trim().length > MAX_PASTE) return undefined
+  // Contact data never reaches the store or a later request (PO 2026-11-08).
+  const text = scrubContacts(act.text.trim()).text
+  if (!text) return undefined
+  const n = (project.idCounters.src ?? 0) + 1
+  const label = act.label.trim() || (act.kind === 'pdf' ? `PDF ${n}` : `Eingefügter Text ${n}`)
+  const added = reducer(project, { type: 'item/add', step: 0, collection: 'sources', fields: { origin: act.kind, label, text, at: meta.at } })
   if (added === project) return undefined
   const source = (added.steps[0].block.sources as { id: string }[]).at(-1)!.id
-  return prepareTurn(added, step, `[App] Die Person hat einen Text eingefügt: „${label}“ (${source}). Er steht direkt über dieser Zeile.`, {
+  const what =
+    act.kind === 'pdf'
+      ? `Die Person hat ein PDF hochgeladen: „${label}“ (${source}). Die App hat seinen Text ausgelesen; er steht direkt über dieser Zeile.`
+      : `Die Person hat einen Text eingefügt: „${label}“ (${source}). Er steht direkt über dieser Zeile.`
+  return prepareTurn(added, step, `[App] ${what}`, {
     ...meta,
     source: sourceText({ id: source, label, text }),
-    act: { kind: 'paste', label, chars: text.length },
+    act: { kind: act.kind, label, chars: text.length },
   })
 }
 

@@ -2,8 +2,8 @@
 
 const event = (type: string, data: object) => `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`
 
-/** A complete streamed answer "OK" with the given stop reason. */
-export function sseAnswer(stopReason: 'end_turn' | 'max_tokens' | 'refusal' = 'end_turn'): string {
+/** A complete streamed answer ("OK" unless given) with the given stop reason. */
+export function sseAnswer(stopReason: 'end_turn' | 'max_tokens' | 'refusal' = 'end_turn', text = 'OK'): string {
   return [
     event('message_start', {
       type: 'message_start',
@@ -19,7 +19,7 @@ export function sseAnswer(stopReason: 'end_turn' | 'max_tokens' | 'refusal' = 'e
       },
     }),
     event('content_block_start', { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } }),
-    event('content_block_delta', { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'OK' } }),
+    event('content_block_delta', { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } }),
     event('content_block_stop', { type: 'content_block_stop', index: 0 }),
     event('message_delta', { type: 'message_delta', delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: 2 } }),
     event('message_stop', { type: 'message_stop' }),

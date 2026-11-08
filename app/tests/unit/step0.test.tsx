@@ -181,7 +181,7 @@ describe('the form', () => {
     const start = makeProject({ steps: { 0: { status: 'in_progress' } } })
     const { user, block, stored } = await open(start)
     expect(block.queryAllByRole('button', { name: /als offen markieren$/ })).toHaveLength(0)
-    block.getByText(/Füge links einen Text ein oder lass dich interviewen/)
+    block.getByText(/Lade links ein PDF hoch, füge einen Text ein oder lass dich interviewen/)
     await user.type(block.getByRole('textbox', { name: 'Name des Projekts' }), 'Schraubzeit{Enter}')
     await user.click(await block.findByRole('button', { name: 'Träger als offen markieren' }))
     await waitFor(async () => expect((await stored()).steps[0].block.profile.organisation).toBe('offen'))
