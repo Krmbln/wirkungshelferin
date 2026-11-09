@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
+import { panelGroupOf } from '../domain/tree'
+import type { FieldTarget } from '../domain/check'
 import { chatEmpty, unanswered } from '../ai/chat'
 import { backupState } from '../domain/backup'
 import type { Action } from '../domain/reducer'
@@ -90,6 +93,8 @@ export function App({
   const [paste, setPaste] = useState<PasteState>({ open: false, draft: { label: '', text: '' } })
   // Step 0's confirm started step 1's first draft in this session: step 0 shows the hand-off.
   const [handoffStarted, setHandoffStarted] = useState(false)
+  // Collapsed groups of steps 2–4: screen state, kept per step while the app is open.
+  const [collapsed, setCollapsed] = useState<Partial<Record<StepId, string[]>>>({})
   // Here too, so a PDF being read survives a step switch (design §6.2, step 15).
   const pdf = usePdfImport(
     readPdf,
@@ -182,6 +187,8 @@ export function App({
             handoffStarted={handoffStarted}
             onHandoffStarted={() => setHandoffStarted(true)}
             onOpenStep={(step) => setView({ kind: 'step', step })}
+            collapsed={collapsed[view.step] ?? []}
+            onCollapsedChange={(keys) => setCollapsed((c) => ({ ...c, [view.step]: keys }))}
           />
         )}
         {view.kind === 'settings' && (
@@ -219,6 +226,8 @@ type StepViewProps = {
   handoffStarted: boolean
   onHandoffStarted: () => void
   onOpenStep: (step: StepId) => void
+  collapsed: string[]
+  onCollapsedChange: (keys: string[]) => void
 }
 
 type PasteState = { open: boolean; draft: PasteDraft; note?: string }
@@ -232,7 +241,7 @@ function handoffStatus(project: Project, chat: ChatControls): Handoff['status'] 
 }
 
 /** "Zum Feld": scrolls the block column to the field and focuses it (design §6.2 state B). */
-function goToField(target: Parameters<typeof fieldSelector>[0]) {
+function focusField(target: Parameters<typeof fieldSelector>[0]) {
   const el = document.querySelector('.workspace__block')?.querySelector<HTMLElement>(fieldSelector(target))
   if (!el) return
   scrollIntoView(el)
@@ -259,6 +268,8 @@ function StepView({
   handoffStarted,
   onHandoffStarted,
   onOpenStep,
+  collapsed,
+  onCollapsedChange,
 }: StepViewProps) {
   const [outlined, setOutlined] = useState<TargetHint>()
   const [applied, setApplied] = useState<Applied>()
@@ -269,6 +280,14 @@ function StepView({
   // Confirming step 0 while step 1's chat is empty starts its first draft at once (PRD §3).
   const handoff: Handoff | undefined =
     step === 0 && (handoffStarted || chatEmpty(project, 1)) ? { status: handoffStatus(project, chat), onContinue: () => onOpenStep(1) } : undefined
+
+  /** "Zum Feld" (or "Zu Schritt 1" when the fix lies there); a collapsed group opens first. */
+  function goToField(target: FieldTarget) {
+    if (target.step !== undefined && target.step !== step) return onOpenStep(target.step)
+    const group = target.id ? panelGroupOf(project, step, target.id) : undefined
+    if (group && collapsed.includes(group)) flushSync(() => onCollapsedChange(collapsed.filter((k) => k !== group)))
+    focusField(target)
+  }
 
   function confirm() {
     const startDraft = step === 0 && chatEmpty(project, 1)
@@ -282,7 +301,7 @@ function StepView({
     <StepWorkspace
       step={steps[step]}
       check={
-        step <= 1 ? (
+        step <= 2 ? (
           <QualityGate
             project={project}
             step={step}
@@ -310,6 +329,9 @@ function StepView({
           liveIssues={!!check.runs[step]}
           onPaste={step === 0 ? openPaste : undefined}
           pdf={step === 0 ? pdf : undefined}
+          collapsed={collapsed}
+          onCollapsedChange={onCollapsedChange}
+          onOpenStep={onOpenStep}
         />
       }
       chat={

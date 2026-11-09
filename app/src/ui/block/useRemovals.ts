@@ -15,6 +15,12 @@ export type Removal = {
   label: string
   /** Removed by "Übernehmen" in a proposal: undo through the proposal, so card and block agree. */
   undoAction?: Action
+  /** Tree lists (step 2): children that moved one level up; the undo puts them back. */
+  children?: string[]
+  /** Tree lists: the place among the row's siblings (index is the place in the whole list). */
+  slot?: number
+  /** Said after "„…“ entfernt." */
+  note?: string
 }
 
 export function useRemovals(onExpire?: (removal: Removal) => void) {

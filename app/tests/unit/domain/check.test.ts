@@ -76,7 +76,7 @@ describe('hardIssues (step 1)', () => {
   })
 
   it('steps without rules yet have none', () => {
-    expect(hardIssues(2, {} as LooseBlock)).toEqual([])
+    expect(hardIssues(3, {} as LooseBlock)).toEqual([])
   })
 })
 

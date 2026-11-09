@@ -1,5 +1,6 @@
 import type { PdfControls } from '../chat/PdfImport'
 import { useEffect, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import type { Action } from '../../domain/reducer'
 import type { Project } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
@@ -11,6 +12,8 @@ import type { TargetHint } from '../proposals/ProposalCard'
 import { prefersReducedMotion } from '../motion'
 import { Step0Block } from './Step0Block'
 import { Step1Block } from './Step1Block'
+import { Step2Block } from './Step2Block'
+import { panelGroupOf } from '../../domain/tree'
 import { FORMS, formEmpty, type FormName } from '../../domain/profile'
 import type { Item } from '../../domain/schemas/blocks'
 import type { ProposalChange } from '../../domain/schemas/project'
@@ -35,6 +38,10 @@ type Props = {
   onPaste?: () => void
   /** "+ PDF hochladen" in step 0's Quellen (step 15). */
   pdf?: PdfControls
+  /** Steps 2–4: collapsed group keys (App keeps them per step) and how to change them. */
+  collapsed?: string[]
+  onCollapsedChange?: (keys: string[]) => void
+  onOpenStep?: (step: StepId) => void
 }
 
 /** About how long a smooth scroll into view takes. */
@@ -62,18 +69,46 @@ function changedFormFields(step: StepId, change: ProposalChange): string[] | und
 
 // The step's block, editable (design §6.2). Steps 2–6 follow in steps 16–20.
 // Outline and highlight are set on the item's element by id, so every block gets them.
-export function BlockPanel({ project, step, onAction, outlined, applied, onShowProposals, liveIssues = false, onPaste, pdf }: Props) {
+export function BlockPanel({
+  project,
+  step,
+  onAction,
+  outlined,
+  applied,
+  onShowProposals,
+  liveIssues = false,
+  onPaste,
+  pdf,
+  collapsed = [],
+  onCollapsedChange,
+  onOpenStep,
+}: Props) {
   const panel = useRef<HTMLDivElement>(null)
   const open = openProposals(project, step)
+  const latest = useRef(collapsed)
+  latest.current = collapsed
+
+  /** Opens the collapsed group an item sits in, at once, so the item is in the DOM right after. */
+  function reveal(id: string) {
+    const group = panelGroupOf(project, step, id)
+    if (!group || !latest.current.includes(group) || !onCollapsedChange) return
+    const next = latest.current.filter((k) => k !== group)
+    latest.current = next
+    flushSync(() => onCollapsedChange(next))
+  }
 
   useEffect(() => {
     if (!outlined) return
-    const els = targetEls(panel.current, outlined.id, outlined.fields)
+    // Hovering a row for an item in a collapsed group outlines the group's header and opens nothing.
+    const group = panelGroupOf(project, step, outlined.id)
+    const header = group && collapsed.includes(group) ? panel.current?.querySelector(`[data-group-header="${CSS.escape(group)}"]`) : null
+    const els = header ? [header] : targetEls(panel.current, outlined.id, outlined.fields)
     els.forEach((el) => el.setAttribute('data-outlined', ''))
     return () => els.forEach((el) => el.removeAttribute('data-outlined'))
-  }, [outlined, project])
+  }, [outlined, project, collapsed])
 
   useEffect(() => {
+    if (outlined?.scroll) reveal(outlined.id)
     const el = outlined?.scroll ? targetEls(panel.current, outlined.id, outlined.fields)[0] : undefined
     if (el) scrollIntoView(scrollTarget(el))
   }, [outlined])
@@ -81,6 +116,11 @@ export function BlockPanel({ project, step, onAction, outlined, applied, onShowP
   useEffect(() => {
     if (!applied) return
     const proposal = project.steps[step].proposals.find((p) => p.id === applied.proposalId)
+    for (const id of applied.changeIds) {
+      const change = proposal?.changes.find((c) => c.id === id)
+      const target = proposal && change?.state === 'applied' ? targetItemId(proposal, change) : undefined
+      if (target) reveal(target)
+    }
     const els = applied.changeIds
       .map((id) => proposal?.changes.find((c) => c.id === id))
       .flatMap((change) => {
@@ -106,6 +146,16 @@ export function BlockPanel({ project, step, onAction, outlined, applied, onShowP
         <Step0Block project={project} onAction={onAction} onPaste={onPaste} pdf={pdf} />
       ) : step === 1 ? (
         <Step1Block project={project} onAction={onAction} applied={applied} blocked={new Set(stillOpen(project, 1, liveIssues).map(issueKey))} />
+      ) : step === 2 ? (
+        <Step2Block
+          project={project}
+          onAction={onAction}
+          applied={applied}
+          issues={stillOpen(project, 2, liveIssues)}
+          collapsed={collapsed}
+          onToggle={(key) => onCollapsedChange?.(collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key])}
+          onOpenStep={(s) => onOpenStep?.(s)}
+        />
       ) : (
         <p className="placeholder">Noch leer – hier entsteht der Baustein für diesen Schritt.</p>
       )}

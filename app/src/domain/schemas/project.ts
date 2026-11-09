@@ -82,6 +82,8 @@ export const proposalChange = z
         before: z.record(z.string(), z.unknown()).nullable(),
         index: z.number().int().min(0),
         afterRev: z.number().int().min(1),
+        /** remove from a tree list: children that moved one level up (domain/tree.ts). */
+        children: z.array(z.string()).optional(),
       })
       .optional(),
   })

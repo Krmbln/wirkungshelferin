@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { problemText } from '../../ai/errors'
 import { calendarDaysSince } from '../../domain/backup'
-import { hardIssues, openWarnings, type FieldTarget } from '../../domain/check'
+import { groupsOf, hardIssues, openWarnings, type FieldTarget } from '../../domain/check'
 import type { LooseBlock } from '../../domain/block'
 import type { Project, QualityCheck } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
@@ -106,7 +106,7 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
   if (prompt && view.kind !== 'confirmed') setPrompt(null)
 
   const running = run?.kind === 'running'
-  const warnings = view.check ? openWarnings(step, view.check) : []
+  const warnings = view.check ? openWarnings(step, view.check, groupsOf(project)) : []
 
   function confirm() {
     // Read before confirming: the hand-off is offered while step 1 is still empty.
@@ -128,8 +128,8 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
     const result = await onCheck()
     if (!alive.current) return
     if (!result) return setAnnounce('')
-    const blocking = hardIssues(step, result.block as LooseBlock).length
-    const open = openWarnings(step, result).length
+    const blocking = hardIssues(step, result.block as LooseBlock, groupsOf(project)).length
+    const open = openWarnings(step, result, groupsOf(project)).length
     setAnnounce(blocking ? `Geprüft. ${blockingText(blocking)}.` : open ? `Geprüft. ${open === 1 ? '1 offener Punkt' : `${open} offene Punkte`}.` : 'Geprüft. Alles erfüllt.')
     if (blocking) focusNext.current = '[data-gate="field"]'
     else if (!confirmAfter) focusNext.current = '[data-gate="primary"]'
@@ -164,8 +164,15 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
             <li key={row.key} className="gate__row gate__row--block">
               <StatusIcon status="block" size={18} />
               <span className="gate__text">{row.text}</span>
-              <Button variant="text" className="gate__field" data-gate={i === 0 ? 'field' : undefined} aria-label={`Zum Feld: ${row.text}`} onClick={() => onGoToField(row.target)}>
-                Zum Feld
+              {/* The fix lies in another step (step 2 without focus groups): go there instead. */}
+              <Button
+                variant="text"
+                className="gate__field"
+                data-gate={i === 0 ? 'field' : undefined}
+                aria-label={row.target.step !== undefined && row.target.step !== step ? undefined : `Zum Feld: ${row.text}`}
+                onClick={() => onGoToField(row.target)}
+              >
+                {row.target.step !== undefined && row.target.step !== step ? `Zu Schritt ${row.target.step}` : 'Zum Feld'}
               </Button>
             </li>
           ))}

@@ -1,5 +1,6 @@
 import { existedBefore, findItem, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
 import { collectionMeta, type Item } from './schemas/blocks'
+import { detachChildren, isHidden, isTree, reattachChildren, targetGroups } from './tree'
 import { TEMP_ID, type Project, type Proposal, type ProposalChange } from './schemas/project'
 import type { StepId } from './types'
 
@@ -13,6 +14,7 @@ export type StaleReason =
   | 'unknown_target' // the id never existed (or an unknown temp id)
   | 'creator_unavailable' // the change that creates a referenced item was rejected or is stale
   | 'invalid' // fields don't fit the collection, or the change can't apply to it
+  | 'hidden' // belongs to a group that is no longer a focus group (steps 2–4)
 
 export type ChangeView =
   | { kind: 'open' }
@@ -98,7 +100,14 @@ function view(project: Project, step: StepId, proposal: Proposal, change: Propos
   const block = stepOf(project, step).block
   const fields = resolve(change.fields ?? {}, map)
 
+  // A parent that is gone (or never existed) would leave the item hanging nowhere.
+  const parent = fields.parentId
+  if (isTree(step, change.collection) && typeof parent === 'string' && parent && !findItem(block, change.collection, parent)) {
+    return { kind: 'stale', reason: 'invalid' }
+  }
+
   if (change.op === 'add') {
+    if (isHidden(targetGroups(project), step, change.collection, fields)) return { kind: 'stale', reason: 'hidden' }
     // Validate with a placeholder id; the real one is handed out on apply.
     return newItem(step, change.collection, `${meta.prefix}0`, fields, false) ? { kind: 'open' } : { kind: 'stale', reason: 'invalid' }
   }
@@ -108,6 +117,7 @@ function view(project: Project, step: StepId, proposal: Proposal, change: Propos
   if (!found) {
     return { kind: 'stale', reason: existedBefore(project, step, change.collection, target) ? 'removed' : 'unknown_target' }
   }
+  if (isHidden(targetGroups(project), step, change.collection, { ...found.item, ...fields })) return { kind: 'stale', reason: 'hidden' }
   if (found.item.rev !== expectedRev(proposal, change, target, map)) return { kind: 'stale', reason: 'edited' }
   if (change.op === 'update' && !validItem(step, change.collection, { ...found.item, ...fields })) {
     return { kind: 'stale', reason: 'invalid' }
@@ -149,8 +159,10 @@ export function applyChange(project: Project, step: StepId, proposalId: string, 
       putItem(block, change.collection, updated, index)
       change.undo = { before: item, index: Math.max(index, 0), afterRev: updated.rev }
     } else {
-      ;(block[change.collection] as Item[]).splice(index, 1)
-      change.undo = { before: item, index, afterRev: item.rev }
+      const list = block[change.collection] as Item[]
+      list.splice(index, 1)
+      const children = isTree(step, change.collection) ? detachChildren(list, item) : []
+      change.undo = { before: item, index, afterRev: item.rev, ...(children.length ? { children } : {}) }
     }
   }
   change.state = 'applied'
@@ -223,6 +235,7 @@ export function undoChange(project: Project, step: StepId, proposalId: string, c
     } else {
       const list = block[change.collection] as Item[]
       list.splice(Math.min(index, list.length), 0, before as Item)
+      if (change.undo!.children) reattachChildren(list, before as Item, change.undo!.children)
     }
     delete change.undo
   }

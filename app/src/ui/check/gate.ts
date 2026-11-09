@@ -1,6 +1,7 @@
 import { rubricCriteria } from '../../ai/tools'
 import type { LooseBlock } from '../../domain/block'
-import { appJudged, checkCurrent, hardIssues, issueKey, sameBlock, type FieldTarget, type HardIssue } from '../../domain/check'
+import { appJudged, checkCurrent, groupsOf, hardIssues, issueKey, sameBlock, type FieldTarget, type HardIssue } from '../../domain/check'
+import type { Item } from '../../domain/schemas/blocks'
 import type { Project, QualityCheck } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
 
@@ -34,19 +35,20 @@ const toRow = (issue: HardIssue): BlockRow => ({ key: issueKey(issue), text: iss
  */
 export function stillOpen(project: Project, step: StepId, live = false): HardIssue[] {
   const state = project.steps[step]
-  if (live && !checkCurrent(project, step)) return hardIssues(step, state.block as LooseBlock)
+  const groups = groupsOf(project)
+  if (live && !checkCurrent(project, step)) return hardIssues(step, state.block as LooseBlock, groups)
   if (!state.qualityCheck) return []
-  const found = new Set(hardIssues(step, state.qualityCheck.block as LooseBlock).map(issueKey))
-  return hardIssues(step, state.block as LooseBlock).filter((i) => found.has(issueKey(i)))
+  const found = new Set(hardIssues(step, state.qualityCheck.block as LooseBlock, groups).map(issueKey))
+  return hardIssues(step, state.block as LooseBlock, groups).filter((i) => found.has(issueKey(i)))
 }
 
 /**
  * ✓/⚠ rows in rubric order; a criterion a hard rule blocks shows only its ⛔ rows. App-judged
  * criteria follow the block as it is now, so their row updates while Lukas fills fields.
  */
-function judged(step: StepId, check: QualityCheck, block: LooseBlock, confirmedWarnings: string[]): Pick<GateView, 'warn' | 'ok'> {
+function judged(step: StepId, check: QualityCheck, block: LooseBlock, confirmedWarnings: string[], groups: Item[]): Pick<GateView, 'warn' | 'ok'> {
   const names = new Map(rubricCriteria(step).map((c) => [c.id, c.name]))
-  const blocked = new Set(hardIssues(step, check.block as LooseBlock).map((i) => i.criterion))
+  const blocked = new Set(hardIssues(step, check.block as LooseBlock, groups).map((i) => i.criterion))
   const live = new Map(appJudged(step, block).map((j) => [j.criterion, j]))
   const rows = check.results
     .filter((r) => !blocked.has(r.criterion))
@@ -60,13 +62,13 @@ export function gateView(project: Project, step: StepId, live = false): GateView
   const state = project.steps[step]
   const check = state.qualityCheck
   const current = checkCurrent(project, step)
-  const rows = check ? judged(step, check, state.block as LooseBlock, state.status === 'confirmed' ? state.confirmedWarnings : []) : { warn: [], ok: [] }
+  const rows = check ? judged(step, check, state.block as LooseBlock, state.status === 'confirmed' ? state.confirmedWarnings : [], groupsOf(project)) : { warn: [], ok: [] }
   if (state.status === 'confirmed' && state.confirmed && sameBlock(state.confirmed.block, state.block)) {
     return { kind: 'confirmed', blocking: [], ...(current ? rows : { warn: [], ok: [] }), check: current ? check : undefined, confirmedAt: state.confirmed.at }
   }
   if (!check) return { kind: 'unchecked', blocking: stillOpen(project, step, live).map(toRow), warn: [], ok: [] }
   if (!current) return { kind: 'changed', blocking: stillOpen(project, step, live).map(toRow), ...rows, check }
-  const blocking = hardIssues(step, check.block as LooseBlock).map(toRow)
+  const blocking = hardIssues(step, check.block as LooseBlock, groupsOf(project)).map(toRow)
   return { kind: blocking.length ? 'blocked' : 'ready', blocking, ...rows, check }
 }
 

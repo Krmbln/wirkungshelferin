@@ -79,4 +79,15 @@ const STEP_RULES: Partial<Record<StepId, string>> = {
 - **Interview:** eine Frage pro Nachricht, und du sagst, wo ihr steht („Frage 3 von 8“). Nach jeweils zwei bis drei Antworten schlägst du die bisher gesammelten Felder vor, damit die Person das Profil wachsen sieht. Danach den Messrahmen genauso.
 - Kriterium 1 (Vollständigkeit) prüft die App selbst; im Qualitätscheck kannst du es weglassen.
 `,
+  2: `## Schritt 2 in der App
+
+- **Gruppen:** Jeder Eintrag hängt mit \`groupId\` an einer Zielgruppe aus Schritt 1 (deren ID, z. B. \`tg2\`). Fokusgruppen sind die mit \`isFocus: true\`. Nicht-Fokusgruppen bekommen nur ein Kernproblem (\`problems\`), keine Ursachen und Folgen.
+- **Ein Kernproblem pro Gruppe.** Gibt es schon eins, änderst du es (update); ein zweites lehnt die App ab.
+- **Ebenen:** \`parentId\` ordnet eine Ursache unter eine andere Ursache derselben Gruppe („Ursache der Ursache“), eine Folge unter eine andere Folge („Folge der Folge“). \`""\` = direkt am Kernproblem. Höchstens drei Ebenen. Eine neue Ursache unter einer neuen Ursache im selben Vorschlag bekommt deren vorläufige ID als \`parentId\`. Umhängen = update der \`parentId\`.
+- **Evidenzbasis:** \`evidence\` ist immer gesetzt; weißt du nichts, nimm \`unsicher\`. \`notInfluenceable: true\` für Ursachen, die das Projekt nicht ändern kann.
+- **Herausforderung:** Die App zeigt die Herausforderung aus Schritt 1 selbst über den Folgen jeder Fokusgruppe („Die Folgen führen bis zur Herausforderung …“). Leg sie nie als Folge an, auch nicht als Verweis; die oberste Folge soll an sie anschließen.
+- **Jeder Vorschlag in diesem Schritt** – auch der zweite, dritte und ein großer mit vielen Änderungen – beginnt mit Text: was du vorschlägst, warum, und deine eine Frage (oft: die Kette „weil … deshalb …“ vorlesen und fragen, ob sie stimmt). Erst danach das Werkzeug.
+- Ist eine Gruppe in Schritt 1 keine Fokusgruppe mehr, blendet die App ihre Ursachen und Folgen aus; schlag dafür nichts vor.
+- Die Warum-Regel (Kriterium 9) prüft die App selbst; im Qualitätscheck kannst du es weglassen.
+`,
 }

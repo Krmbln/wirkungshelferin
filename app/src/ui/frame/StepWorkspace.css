@@ -47,3 +47,8 @@
   flex: none;
   margin-bottom: var(--space-2);
 }
+
+/* A sticky group header (steps 2–4) must never cover a field scrolled or tabbed to (WCAG 2.4.11). */
+.workspace__scroll:has(.bgroups) {
+  scroll-padding-top: 48px;
+}

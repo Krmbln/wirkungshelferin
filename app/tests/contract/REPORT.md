@@ -47,3 +47,22 @@ Usage: 18 calls · input 3471 · output 8075 · cache read 180131 · cache write
 | ✓ | Step 0 PDF: read → PDF source → profile proposal valid | 3145 chars in 244 updates; text first; offen: organisation, team, duration, funder, statedGoals, otherOffers |
 
 Usage: 2 calls · output 5483 · cache write 1 h 19854 / 5 min 5253 · **≈ $0.29**
+
+## Step 16 add-on (run alone: `npx vitest run --project contract -t "6 · step 2"`, 2026-11-09)
+
+| | Check | Note |
+|---|---|---|
+| ✓ | Step 2: problem tree proposal valid (groupId, parentId, ≤ 3 levels), text + question first | 5 changes; 4 causes (2 nested), 0 consequences; evidence eigene_erfahrung/unsicher; question: „Trifft das Kernproblem den Kern – oder ist das Problem der Jugendlichen eigentlich ein anderes?“ |
+
+Usage: 1 call · output 2932 · cache write 1 h 18695 · **≈ $0.21**
+
+## Step 16 PO-run fix (run alone: `-t "6 · step 2"`, 2026-11-09)
+
+The PO run's second proposal (13 changes) came as thinking → tool call with no text, and added the challenge as a consequence. Reproduced once in the contract (follow-up ✗, ≈ $0.35). Fix: the text-first rule in the propose_changes description, step 2 rules for the challenge and every proposal. Re-run:
+
+| | Check | Note |
+|---|---|---|
+| ✓ | Step 2: problem tree proposal valid (groupId, parentId, ≤ 3 levels), text + question first | 6 changes; 5 causes (2 nested), 0 consequences; evidence eigene_erfahrung/unsicher; question: Trifft das den Kern – oder ist das Problem der Jugendlichen eigentlich ein anderes? |
+| ✓ | Step 2 follow-up: second group + consequences, text first, no challenge as a consequence | 13 changes; 6 consequences; text first (2047 chars): Meine Frage: Trifft das Kernproblem der Mädchen den Kern – oder ist ihr eigentliches Probl |
+
+Usage: 2 calls · output 8394 · cache write 1 h 23597 · **≈ $0.36**

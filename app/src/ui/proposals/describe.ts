@@ -15,11 +15,24 @@ type FieldInfo = {
   values?: Record<string, string>
   /** Short field shown on a NEU row's meta line: an enum's value, a true boolean's label. */
   short?: true
+  /** A reference the row says in its own words (group in the noun, parent in the meta), never as a field. */
+  ref?: true
 }
 
 type CollectionInfo = { noun: string; main: string; fields?: Record<string, FieldInfo> }
 
 const why: FieldInfo = { label: 'Warum?' }
+
+/** Evidence labels in words (PRD F5), shared with the block's select. */
+export const EVIDENCE: Record<string, string> = {
+  unsicher: 'unsicher',
+  eigene_erfahrung: 'eigene Erfahrung',
+  eigene_daten: 'eigene Daten',
+  forschung: 'Forschung/andere Projekte',
+}
+
+const group: FieldInfo = { label: 'Zielgruppe', ref: true }
+const parent: FieldInfo = { label: 'Einordnung', ref: true }
 
 /** "Wofür?" in words (design §6.2, step 14). */
 export const PURPOSE: Record<string, string> = { geldgeberin: 'Bericht an die Geldgeberin', lernen: 'eigenes Lernen', beides: 'beides', offen: 'offen' }
@@ -59,9 +72,20 @@ const info: { [S in StepId]: Record<string, CollectionInfo> } = {
     stakeholders: { noun: 'Beteiligte', main: 'role', fields: { role: { label: 'Rolle' }, expectations: { label: 'Erwartungen' } } },
   },
   2: {
-    problems: { noun: 'Kernproblem', main: 'coreProblem' },
-    causes: { noun: 'Ursache', main: 'text' },
-    consequences: { noun: 'Folge', main: 'text' },
+    problems: { noun: 'Kernproblem', main: 'coreProblem', fields: { groupId: group, coreProblem: { label: 'Kernproblem' }, why } },
+    causes: {
+      noun: 'Ursache',
+      main: 'text',
+      fields: {
+        groupId: group,
+        parentId: parent,
+        text: { label: 'Ursache' },
+        evidence: { label: 'Evidenzbasis', values: EVIDENCE, short: true },
+        notInfluenceable: { label: 'nicht beeinflussbar', short: true },
+        why,
+      },
+    },
+    consequences: { noun: 'Folge', main: 'text', fields: { groupId: group, parentId: parent, text: { label: 'Folge' } } },
   },
   3: {
     goals: { noun: 'Wirkungsziel', main: 'text' },
@@ -156,12 +180,15 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     for (const [field, value] of Object.entries(fields)) {
       if (field === mainField) continue
       const fi = fieldInfo(step, change.collection, field)
+      if (fi.ref) continue
       if (fi.short) {
         if (typeof value === 'boolean') value && meta.push(fi.label)
         else if (format(field, value)) meta.push(format(field, value))
       } else if (format(field, value)) lines.push({ label: fi.label, after: format(field, value) })
     }
-    return { kind, noun, main: format(mainField, fields[mainField]) || `${noun} ohne Namen`, meta, fields: lines }
+    const under = parentText(project, step, proposal, change.collection, fields.parentId)
+    if (under) meta.push(`unter „${cut(under, 40)}“`)
+    return { kind, noun: groupNoun(project, noun, fields.groupId), main: format(mainField, fields[mainField]) || `${noun} ohne Namen`, meta, fields: lines }
   }
 
   // The item before an applied update; otherwise as it is now (or was last seen), or as the
@@ -176,17 +203,62 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
   if (change.op === 'update' && isForm(step, change.collection)) return formRow(step, change, before, view)
   const unnamed = collectionMeta(step, change.collection)?.singleton ? '' : `${noun} ohne Namen`
   const name = format(mainField, before?.[mainField]) || unnamed
+  const placement = (id: unknown) => {
+    const text = parentText(project, step, proposal, change.collection, id)
+    return text ? `unter „${cut(text, 40)}“` : change.collection === 'causes' ? 'direkte Ursache' : 'direkte Folge'
+  }
   const lines =
     change.op === 'update'
       ? Object.entries(fields)
-          .map(([field, value]) => ({
-            label: fieldInfo(step, change.collection, field).label,
-            before: format(field, before?.[field]),
-            after: format(field, value) || '(leer)',
-          }))
+          .filter(([field]) => field !== 'groupId')
+          .map(([field, value]) =>
+            field === 'parentId'
+              ? { label: parent.label, before: placement(before?.parentId), after: placement(value) }
+              : { label: fieldInfo(step, change.collection, field).label, before: format(field, before?.[field]), after: format(field, value) || '(leer)' },
+          )
           .filter((line) => line.before !== line.after)
       : []
-  return { kind, noun, main: name, meta: [], fields: lines }
+  const meta = change.op === 'remove' && change.state !== 'applied' ? movedUp(project, step, change.collection, target) : []
+  return { kind, noun: groupNoun(project, noun, before?.groupId), main: name, meta, fields: lines }
+}
+
+/** Cut at `n` characters, at the last word boundary when one is near (design check step 16). */
+function cut(text: string, n: number): string {
+  if (text.length <= n) return text
+  const head = text.slice(0, n - 1)
+  const space = head.lastIndexOf(' ')
+  return `${(space > n / 2 ? head.slice(0, space) : head).trimEnd()} …`
+}
+
+/** "Ursache · Kinder 8–12": steps 2–4 name the group an item hangs on (cut at 40 characters). */
+function groupNoun(project: Project, noun: string, groupId: unknown): string {
+  if (typeof groupId !== 'string' || !groupId) return noun
+  const g = project.steps[1].block.targetGroups.find((t) => t.id === groupId)
+  return `${noun} · ${cut(g?.name || 'Zielgruppe ohne Namen', 40)}`
+}
+
+/** The text of a parent: an item of the block, or one this proposal creates (by temp id). */
+function parentText(project: Project, step: StepId, proposal: Proposal, collection: string, id: unknown): string | undefined {
+  if (typeof id !== 'string' || !id) return undefined
+  const creator = proposal.changes.find((c) => c.op === 'add' && c.tempId === id)
+  const real = creator?.resultId ?? (creator ? undefined : id)
+  const item = real ? findItem(stepOf(project, step).block, collection, real)?.item : undefined
+  const text = (item?.text ?? creator?.fields?.text) as string | undefined
+  return text || (item || creator ? 'ohne Text' : undefined)
+}
+
+/** ENTFERNEN of a tree item: "2 Ursachen darunter rücken eine Ebene hoch" (design §6.2, step 16). */
+function movedUp(project: Project, step: StepId, collection: string, id: string | undefined): string[] {
+  const list = stepOf(project, step).block[collection]
+  if (!id || !Array.isArray(list) || !list.some((i) => 'parentId' in i)) return []
+  return movedUpText(collection, list.filter((i) => i.parentId === id).length)
+}
+
+/** Shared with the block's undo line. */
+export function movedUpText(collection: string, n: number): string[] {
+  if (!n) return []
+  const noun = collection === 'causes' ? (n === 1 ? 'Ursache' : 'Ursachen') : n === 1 ? 'Folge' : 'Folgen'
+  return [`${n} ${noun} darunter ${n === 1 ? 'rückt' : 'rücken'} eine Ebene hoch`]
 }
 
 /**
@@ -226,6 +298,8 @@ export function staleText(project: Project, step: StepId, proposal: Proposal, ch
       return 'hängt an einer abgelehnten oder veralteten Änderung'
     case 'invalid':
       return 'passt nicht zum Baustein'
+    case 'hidden':
+      return 'gehört zu einer Gruppe, die keine Fokusgruppe mehr ist'
   }
 }
 

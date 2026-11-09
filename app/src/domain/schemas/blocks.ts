@@ -64,10 +64,12 @@ const step1 = z.strictObject({
   stakeholders: many({ role: text, expectations: texts }),
 })
 
+// Causes and consequences nest (domain/tree.ts): `parentId` = another item of the same list
+// and group, '' = directly at the core problem.
 const step2 = z.strictObject({
   problems: many({ groupId: ref, coreProblem: text }),
-  causes: many({ groupId: ref, text, evidence, notInfluenceable: z.boolean() }),
-  consequences: many({ groupId: ref, text }),
+  causes: many({ groupId: ref, parentId: ref, text, evidence, notInfluenceable: z.boolean() }),
+  consequences: many({ groupId: ref, parentId: ref, text }),
 })
 
 const step3 = z.strictObject({

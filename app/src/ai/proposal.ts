@@ -3,6 +3,8 @@ import { findItem, type LooseBlock } from '../domain/block'
 import { changeView } from '../domain/proposals'
 import { TEMP_ID, proposal as proposalSchema, type Project, type Proposal, type ProposalChange } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
+import type { Item } from '../domain/schemas/blocks'
+import { MAX_DEPTH, NON_FOCUS_KEEPS, TREES, depthOf, heightOf } from '../domain/tree'
 import { proposeInput, type ProposeInput } from './tools'
 
 // From a propose_changes call to a Proposal, and from Lukas's decisions back to the
@@ -15,11 +17,13 @@ export type ToProposal = {
   toolUseId: string
   proposalId: string
   at: string
+  /** Step 1's target groups now: steps 2–4 hang items on them (checked by `groupErrors`). */
+  groups?: Item[]
 }
 
 export type ProposalResult = { ok: true; proposal: Proposal } | { ok: false; errors: string[] }
 
-export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at }: ToProposal): ProposalResult {
+export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [] }: ToProposal): ProposalResult {
   const parsed = proposeInput(step).safeParse(input)
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`) }
@@ -73,12 +77,63 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
     }
   })
 
+  if (!errors.length) errors.push(...groupErrors(step, seen, result, groups))
   if (errors.length) return { ok: false, errors }
   if (!result.length) return { ok: false, errors: ['Der Vorschlag ändert nichts am Baustein.'] }
   const proposal = proposalSchema.safeParse({ id: proposalId, toolUseId, at, summary, changes: result })
   if (!proposal.success) return { ok: false, errors: proposal.error.issues.map((i) => i.message) }
   return { ok: true, proposal: proposal.data }
 }
+
+/**
+ * Steps 2–4 (design §6.2 "Step 16"): every item the proposal touches hangs on a step 1 target
+ * group; a non-focus group keeps only its core problem; one core problem per group; a parent
+ * is in the same list and group, at most three levels deep. Judged on the block as it would
+ * look with every change applied, so the order of changes doesn't matter.
+ */
+function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], groups: Item[]): string[] {
+  const keeps = NON_FOCUS_KEEPS[step]
+  if (!keeps) return []
+  const after: Record<string, Item[]> = {}
+  for (const [name, slot] of Object.entries(seen)) if (Array.isArray(slot)) after[name] = slot.map((i) => ({ ...i }))
+  const touched: { n: number; collection: string; id: string }[] = []
+  changes.forEach((c, i) => {
+    const list = after[c.collection]
+    if (!list) return
+    const id = c.op === 'add' ? c.tempId! : c.targetId!
+    if (c.op === 'remove') return void list.splice(list.findIndex((x) => x.id === id), 1)
+    if (c.op === 'add') list.push({ id, rev: 1, editedByUser: false, ...c.fields } as Item)
+    else Object.assign(list.find((x) => x.id === id) ?? {}, c.fields)
+    touched.push({ n: i + 1, collection: c.collection, id })
+  })
+  const errors: string[] = []
+  for (const { n, collection, id } of touched) {
+    const list = after[collection]
+    const item = list.find((x) => x.id === id)
+    if (!item || typeof item.groupId !== 'string') continue
+    const group = groups.find((g) => g.id === item.groupId)
+    if (!group) {
+      errors.push(`Änderung ${n}: groupId "${item.groupId}" ist keine Zielgruppe aus Schritt 1.`)
+      continue
+    }
+    if (!group.isFocus && !keeps.includes(collection)) errors.push(`Änderung ${n}: „${group.name}“ ist keine Fokusgruppe; dafür gibt es hier nur ${keeps.join(', ')}.`)
+    if (collection === 'problems' && list.filter((x) => x.groupId === item.groupId).length > 1) {
+      errors.push(`Änderung ${n}: „${group.name}“ hat schon ein Kernproblem. Ändere das vorhandene (update), statt ein zweites anzulegen.`)
+    }
+    if (!TREES[step]?.includes(collection)) continue
+    const parent = item.parentId as string
+    if (parent) {
+      const p = list.find((x) => x.id === parent)
+      if (!p) errors.push(`Änderung ${n}: parentId "${parent}" gibt es in „${collection}“ nicht.`)
+      else if (p.groupId !== item.groupId) errors.push(`Änderung ${n}: parentId "${parent}" gehört zu einer anderen Gruppe.`)
+    }
+    if (depthOf(list, item) + heightOf(list, item) > MAX_DEPTH) errors.push(`Änderung ${n}: höchstens ${MAX_DEPTH} Ebenen (direkt, darunter, darunter).`)
+  }
+  return errors
+}
+
+/** Fields where "" is a value, not a lazy blank: `parentId` "" = directly at the core problem (step 2). */
+const MEANINGFUL_EMPTY = new Set(['parentId'])
 
 const isEmpty = (value: unknown) => value === '' || (Array.isArray(value) && !value.length)
 
@@ -90,7 +145,7 @@ function changedFields(item: Record<string, unknown>, fields: Record<string, unk
   return Object.fromEntries(
     Object.entries(fields).filter(([key, value]) => {
       const before = item[key] ?? ''
-      if (isEmpty(value) && !isEmpty(before)) return false
+      if (isEmpty(value) && !isEmpty(before) && !MEANINGFUL_EMPTY.has(key)) return false
       return JSON.stringify(before) !== JSON.stringify(value)
     }),
   )

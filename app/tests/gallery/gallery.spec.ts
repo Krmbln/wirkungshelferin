@@ -191,6 +191,12 @@ const screenNames = [
   'step0-pdf-partial',
   'step0-pdf-draft',
   'step1-handoff',
+  'step2',
+  'step2-empty',
+  'step2-nofocus',
+  'step2-hidden',
+  'step2-blocked',
+  'step2-proposal',
   'home',
   'home-mixed',
   'home-backup-recent',
@@ -984,5 +990,105 @@ test('PDF upload (step 15): start panel, reading, failures, too long, after the 
     await log.evaluate((el) => (el.scrollTop = 0))
     await shotScreen(`step0-pdf-draft-top${suffix}`)
   }
+  expect(errors).toEqual([])
+})
+
+test('step 2 (step 16): groups, sticky header, tree, collapse, edge states, check into a collapsed group, card', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const block = page.getByRole('region', { name: 'Baustein' })
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  const column = page.locator('.workspace__block .workspace__scroll')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+
+    await openScreen(page, 'step2')
+    await expect(page.locator('[data-group-toggle="tg1"]')).toHaveAttribute('aria-expanded', 'true')
+    await noPageScroll()
+    await shotScreen(`step2${suffix}`)
+
+    // Scrolled into the first group: its header sticks at the top of the column with a line under it.
+    await column.evaluate((el) => (el.scrollTop = 700))
+    await page.waitForTimeout(50)
+    const head = page.locator('[data-group-header="tg1"]')
+    await expect(head).toHaveAttribute('data-stuck', '')
+    const colBox = (await column.boundingBox())!
+    const headBox = (await head.boundingBox())!
+    expect(Math.abs(headBox.y - colBox.y)).toBeLessThanOrEqual(1)
+    expect(headBox.height).toBeLessThanOrEqual(41)
+    // Rows at 48 px indent still fit; "+ Ursache dafür" never overflows the column.
+    for (const btn of await block.getByRole('button', { name: /^Ursache dafür hinzufügen/ }).all()) {
+      const b = (await btn.boundingBox())!
+      expect(b.x + b.width).toBeLessThanOrEqual(colBox.x + colBox.width)
+    }
+    await shotScreen(`step2-stuck${suffix}`)
+
+    // Collapsed: one summary line, the next group follows.
+    await column.evaluate((el) => (el.scrollTop = 0))
+    await page.locator('[data-group-toggle="tg1"]').click()
+    await expect(block.getByText('Kernproblem · 4 Ursachen · 2 Folgen')).toBeVisible()
+    await shotScreen(`step2-collapsed${suffix}`)
+  }
+  await page.setViewportSize({ width: 1390, height: 880 })
+
+  // State B: ⛔ rows name the group; Zum Feld into a collapsed group opens it and the field is visible below the header.
+  await openScreen(page, 'step2-blocked')
+  await expect(gate.getByText(/Warum fehlt: Ursache „Reparaturen im Fahrradladen/)).toBeVisible()
+  await page.locator('[data-group-toggle="tg1"]').click()
+  await expect(block.getByText(/2 blockieren|1 blockiert/)).toBeVisible()
+  await shotScreen('step2-blocked-collapsed')
+  await gate.getByRole('button', { name: /^Zum Feld: Warum fehlt: Ursache/ }).click()
+  const target = page.locator('[data-item-id="ca2"] [data-field="why"] textarea')
+  await expect(target).toBeFocused()
+  await page.waitForTimeout(400)
+  const t = (await target.boundingBox())!
+  const c = (await column.boundingBox())!
+  const stuck = (await page.locator('[data-group-header="tg1"]').boundingBox())!
+  expect(t.y).toBeGreaterThanOrEqual(Math.max(c.y, stuck.y + stuck.height) - 1)
+  expect(t.y + t.height).toBeLessThanOrEqual(c.y + c.height + 1)
+  await noPageScroll()
+  await shotScreen('step2-blocked-field')
+  // The field sits right under the stuck header: Zum Feld moves it out from under it (scroll padding).
+  await column.evaluate((el, y) => (el.scrollTop += y), t.y - c.y - 10)
+  await page.waitForTimeout(50)
+  await page.locator('body').click({ position: { x: 5, y: 5 } })
+  await gate.getByRole('button', { name: /^Zum Feld: Warum fehlt: Ursache/ }).click()
+  await page.waitForTimeout(400)
+  const t2 = (await target.boundingBox())!
+  const head2 = (await page.locator('[data-group-header="tg1"]').boundingBox())!
+  expect(t2.y).toBeGreaterThanOrEqual(head2.y + head2.height - 1)
+
+  // The card: group in the noun line, evidence + parent on NEU, placement on ÄNDERN, moved children on ENTFERNEN.
+  await openScreen(page, 'step2-proposal')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  await expect(card.getByText('Ursache · Jugendliche 12–17 aus der Siedlung')).toHaveCount(2)
+  await expect(card.getByText(/unsicher · nicht beeinflussbar · unter „Kaum Erwachsene/)).toBeVisible()
+  await expect(card.getByText('1 Folge darunter rückt eine Ebene hoch')).toBeVisible()
+  // Hover on a row of a collapsed group outlines the header, nothing opens.
+  await page.locator('[data-group-toggle="tg1"]').click()
+  await card.locator('[data-change-id="p1c2"]').hover()
+  await expect(page.locator('[data-group-header="tg1"]')).toHaveAttribute('data-outlined', '')
+  await expect(page.locator('[data-group-toggle="tg1"]')).toHaveAttribute('aria-expanded', 'false')
+  await shotScreen('step2-proposal-hover-collapsed')
+  await page.mouse.move(0, 0)
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = 0))
+  await shotScreen('step2-proposal')
+
+  for (const name of ['step2-empty', 'step2-nofocus', 'step2-hidden']) {
+    await openScreen(page, name)
+    await noPageScroll()
+    await shotScreen(name)
+  }
+  await openScreen(page, 'step2-hidden')
+  await page.locator('[data-group-toggle="tg1"]').click()
+  await expect(block.getByText(/1 Ursache ist ausgeblendet, solange „Mädchen 11–14 aus der Siedlung“/)).toBeVisible()
+  await shotScreen('step2-hidden-line')
   expect(errors).toEqual([])
 })

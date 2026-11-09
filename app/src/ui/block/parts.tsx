@@ -23,15 +23,20 @@ type SectionProps = {
   empty?: boolean
   /** More buttons before the add button, e.g. "+ PDF hochladen" in Quellen (step 15). */
   actions?: ReactNode
+  /** 4 inside a group of steps 2–4 (the group header is the h3). */
+  level?: 3 | 4
+  /** Under the heading, before the rows (step 2: the challenge line above Folgen). */
+  lead?: ReactNode
   children: ReactNode
 }
 
-export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, actions, children }: SectionProps) {
+export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, actions, level = 3, lead, children }: SectionProps) {
   const headingId = useId()
+  const Heading = level === 4 ? 'h4' : 'h3'
   return (
     <section className="bsection" aria-labelledby={headingId}>
       <div className="bsection__head">
-        <h3 id={headingId}>{title}</h3>
+        <Heading id={headingId}>{title}</Heading>
         {meta}
         {actions ? (
           <span className="bsection__adds">
@@ -42,6 +47,7 @@ export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addL
           add()
         )}
       </div>
+      {lead}
       {empty && emptyHint ? <p className="bsection__empty">{emptyHint}</p> : children}
     </section>
   )
@@ -93,6 +99,8 @@ export function BlockItem({ id, editedByUser, removeLabel, onRemove, onLeave, ch
 
 type WhyProps = {
   value: string
+  /** Says what belongs here (step 2: per collection); always ends with "(nötig zum Bestätigen)". */
+  placeholder?: string
   onSave: (value: string) => void
   /** ⛔ marker: set once a check found the Why missing (step 13). */
   blocked?: boolean
@@ -100,7 +108,7 @@ type WhyProps = {
 }
 
 /** "Warum?" directly under a Why-carrying item (design §6.2). */
-export function WhyField({ value, onSave, blocked = false, forceState }: WhyProps) {
+export function WhyField({ value, onSave, blocked = false, forceState, placeholder = 'Warum ist das wichtig? (nötig zum Bestätigen)' }: WhyProps) {
   const id = useId()
   return (
     <div className="why" data-field="why">
@@ -121,15 +129,15 @@ export function WhyField({ value, onSave, blocked = false, forceState }: WhyProp
         onSave={onSave}
         multiline
         invalid={blocked}
-        placeholder="Warum ist das wichtig? (nötig zum Bestätigen)"
+        placeholder={placeholder}
         forceState={forceState}
       />
     </div>
   )
 }
 
-/** A cross-step reference shows the referenced item's text; a broken one says so (PRD F5). */
-export function ReferenceChip({ text }: { text?: string }) {
+/** A cross-step reference shows the referenced item's text; a broken one says so (PRD F5). `full`: wraps, no max width (step 16). */
+export function ReferenceChip({ text, full = false }: { text?: string; full?: boolean }) {
   if (text === undefined)
     return (
       <span className="refchip refchip--missing">
@@ -138,7 +146,7 @@ export function ReferenceChip({ text }: { text?: string }) {
       </span>
     )
   return (
-    <span className="refchip" title={text}>
+    <span className={`refchip${full ? ' refchip--full' : ''}`} title={full ? undefined : text}>
       {text}
     </span>
   )

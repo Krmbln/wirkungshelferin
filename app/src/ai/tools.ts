@@ -137,7 +137,10 @@ export function stepTools(step: StepId): BetaTool[] {
       name: PROPOSE,
       description:
         'Schlägt Änderungen am Baustein dieses Schritts vor. Der einzige Weg, den Baustein zu ändern. ' +
-        'Die Person übernimmt oder lehnt jede Änderung selbst ab.',
+        'Die Person übernimmt oder lehnt jede Änderung selbst ab. ' +
+        // Step 16 PO run: big proposals came as thinking → tool call with no text, so no question.
+        'Ruf es erst auf, nachdem du in derselben Nachricht deinen Text geschrieben hast (was du vorschlägst, warum, und genau eine Frage): ' +
+        'Der Aufruf beendet deine Nachricht, ohne diesen Text sieht die Person keine Frage.',
       input_schema: jsonSchema(proposeInput(step)),
       strict: true,
       eager_input_streaming: true,

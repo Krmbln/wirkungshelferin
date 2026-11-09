@@ -30,7 +30,10 @@ const SCROLL_MARGIN = 12
 export function scrollIntoView(el: Element, block: 'nearest' | 'start' = 'nearest') {
   const box = el.closest('.workspace__scroll')
   if (!box) return
-  const outer = box.getBoundingClientRect()
+  const rect = box.getBoundingClientRect()
+  // Room a sticky header takes (steps 2–4): the column's scroll-padding-top.
+  const pad = el.classList.contains('bgroup') ? 0 : parseFloat(getComputedStyle(box).scrollPaddingTop) || 0
+  const outer = { top: rect.top + pad, bottom: rect.bottom, height: rect.height - pad }
   const inner = el.getBoundingClientRect()
   let by = 0
   if (block === 'start' || inner.height > outer.height || inner.top < outer.top) by = inner.top - outer.top - SCROLL_MARGIN

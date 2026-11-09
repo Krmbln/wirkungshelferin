@@ -1,6 +1,6 @@
 import type { BetaMessage } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type { LooseBlock } from '../domain/block'
-import { appOwned, hardIssues, sameBlock } from '../domain/check'
+import { appOwned, groupsOf, hardIssues, sameBlock } from '../domain/check'
 import type { Project, QualityCheck } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import { CHECK, checkInput, rubricCriteria } from './tools'
@@ -70,7 +70,7 @@ export function checkEvents(project: Project, step: StepId): string[] {
   const check = state.qualityCheck
   if (check?.source === 'app' && check.at > since) {
     const names = new Map(rubricCriteria(step).map((c) => [c.id, c.name]))
-    const hard = hardIssues(step, check.block as LooseBlock)
+    const hard = hardIssues(step, check.block as LooseBlock, groupsOf(project))
     const blocked = new Set(hard.map((i) => i.criterion))
     const lines = [
       ...hard.map((i) => `⛔ ${i.text}`),

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { BetaMessage, BetaToolResultBlockParam, BetaToolUseBlock } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { sdkAiClient, type SendOptions, type SendResult } from '../../src/ai/client'
-import { commitAnswer, prepareAct } from '../../src/ai/chat'
+import { commitAnswer, prepareAct, prepareTurn } from '../../src/ai/chat'
 import { extractPdf } from '../../src/ai/pdf'
 import {
   MESSAGE_ORDER,
@@ -24,7 +24,7 @@ import { CHECK, PROPOSE, stepTools } from '../../src/ai/tools'
 import { stepOf, type LooseBlock } from '../../src/domain/block'
 import type { Item } from '../../src/domain/schemas/blocks'
 import { demoProject } from '../../src/domain/demo'
-import { makeProject } from '../../src/domain/fixtures'
+import { makeItem, makeProject } from '../../src/domain/fixtures'
 import { formFields, isOffen } from '../../src/domain/profile'
 import { reducer } from '../../src/domain/reducer'
 import { changeView } from '../../src/domain/proposals'
@@ -554,5 +554,85 @@ describe('5 · step 0: PDF upload (made-up PDF)', () => {
       expect(offen.length, 'nothing marked "offen"').toBeGreaterThan(0)
       projectSchema.parse(project)
       return `${read.text.length} chars in ${counts.length} updates; text first; offen: ${offen.join(', ')}`
+    }))
+})
+
+// ---------------------------------------------------------------- 6. step 2 (step 16)
+
+describe('6 · step 2: problem tree per focus group (made-up project)', () => {
+  /** demo.ts with step 1 confirmed: two focus groups and one other group, step 2 empty. */
+  function step2Start(): Project {
+    const p = demoProject()
+    p.steps[1].block = {
+      challenge: makeItem(1, 'challenge', { text: 'Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus.', why: 'Aus Schritt 0.' }),
+      targetGroups: [
+        makeItem(1, 'targetGroups', { name: 'Jugendliche 12–17', description: 'Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.', isFocus: true, why: 'Hauptwirkung.' }, { id: 'tg1' }),
+        makeItem(1, 'targetGroups', { name: 'Mädchen 11–14', description: 'Kommen seltener, schauen oft erst zu.', isFocus: true, why: 'Sollen gezielt erreicht werden.' }, { id: 'tg2' }),
+        makeItem(1, 'targetGroups', { name: 'Eltern', description: 'Erlauben das Kommen.', reach: 'indirect', why: 'Ohne sie kommen die Jüngeren nicht.' }, { id: 'tg3' }),
+      ],
+      stakeholders: [],
+    } as never
+    p.steps[1].status = 'confirmed'
+    p.steps[1].confirmed = { at: AT, block: structuredClone(p.steps[1].block) as never, basis: { 0: AT } }
+    p.idCounters = { ...p.idCounters, tg: 3 }
+    return projectSchema.parse(p)
+  }
+
+  it('a first proposal for one focus group: valid groupIds, a cause of a cause via parentId, text and a question first', () =>
+    check('Step 2: problem tree proposal valid (groupId, parentId, ≤ 3 levels), text + question first', async () => {
+      const text = 'Fang mit den Jugendlichen an: Schlag mir das Kernproblem und ein paar Ursachen vor. Eine davon liegt tiefer: Reparaturen sind für die Familien zu teuer, deshalb fahren viele kein Rad.'
+      const prepared = prepareTurn(step2Start(), 2, text, { at: AT })
+      rec.recordNext('step2-tree')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}step2-tree.json`, JSON.stringify({ step: 2, project: prepared.project }, null, 2))
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
+      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no question before the card').toContain('?')
+      let project = commitAnswer(prepared.project, 2, { status: 'done', message }, prepared.shown, { at: AT })
+      const errors = project.steps[2].segments.at(-1)!.messages.at(-1)!.toolErrors
+      const [proposal] = project.steps[2].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(errors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 2, proposalId: proposal.id })
+      const block = project.steps[2].block
+      expect(block.problems.filter((x) => x.groupId === 'tg1'), 'no core problem for the group').toHaveLength(1)
+      expect(block.causes.length, 'no causes').toBeGreaterThan(1)
+      expect(block.causes.every((c) => c.groupId === 'tg1'), 'causes for another group').toBe(true)
+      const nested = block.causes.filter((c) => c.parentId)
+      expect(nested.length, 'no cause of a cause').toBeGreaterThan(0)
+      projectSchema.parse(project)
+      const evidence = [...new Set(block.causes.map((c) => c.evidence))].join('/')
+      after = project
+      return `${proposal.changes.length} changes; ${block.causes.length} causes (${nested.length} nested), ${block.consequences.length} consequences; evidence ${evidence}; question: ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
+    }))
+
+  // The step 16 PO run: a big second proposal came as a card with no text, and the challenge
+  // was added as a consequence (the app shows it above Folgen itself).
+  let after: Project | undefined
+  it('a big follow-up proposal: text + question first; the challenge is never a consequence', () =>
+    check('Step 2 follow-up: second group + consequences, text first, no challenge as a consequence', async () => {
+      expect(after, 'needs the first step 2 case').toBeDefined()
+      const text = 'Ja, das trifft es. Jetzt die Mädchen: Sie trauen sich nicht an das Werkzeug, wenn viele Jungen da sind. Und bitte auch Folgen für beide Gruppen und ein Kernproblem für die Eltern.'
+      const prepared = prepareTurn(after!, 2, text, { at: AT })
+      rec.recordNext('step2-followup')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
+      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no question before the card').toContain('?')
+      let project = commitAnswer(prepared.project, 2, { status: 'done', message }, prepared.shown, { at: AT })
+      const [, proposal] = project.steps[2].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[2].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 2, proposalId: proposal.id })
+      const block = project.steps[2].block
+      const challenge = project.steps[1].block.challenge.text
+      const echo = block.consequences.filter((c) => /Herausforderung/i.test(c.text) || c.text.includes(challenge.slice(0, 40)))
+      expect(echo.map((c) => c.text), 'the challenge was added as a consequence').toEqual([])
+      expect(block.consequences.length, 'no consequences').toBeGreaterThan(1)
+      expect(new Set(block.consequences.map((c) => c.groupId)).size, 'consequences for one group only').toBe(2)
+      projectSchema.parse(project)
+      return `${proposal.changes.length} changes; ${block.consequences.length} consequences; text first (${textBefore.length} chars): ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
     }))
 })

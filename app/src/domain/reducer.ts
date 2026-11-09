@@ -1,6 +1,7 @@
 import { confirmStep, withAppJudged } from './check'
 import { findItem, isEmptyItem, type LooseBlock, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
 import { deleteTargetGroup } from './groups'
+import { detachChildren, isTree, reattachChildren } from './tree'
 import { applyAll, applyChange, rejectChange, undoChange } from './proposals'
 import { collectionMeta, type Item } from './schemas/blocks'
 import type { Project, Proposal, QualityCheck } from './schemas/project'
@@ -20,8 +21,8 @@ export type Action =
   | ({ type: 'item/remove'; id: string } & Target)
   /** A row Lukas just added and left empty goes again; one with any content stays. */
   | ({ type: 'item/discard'; id: string } & Target)
-  /** The 10-second "Rückgängig" after a removal (design §7.6). */
-  | ({ type: 'item/restore'; item: Item; index: number } & Target)
+  /** The 10-second "Rückgängig" after a removal (design §7.6); `children` moved up by it go back under it. */
+  | ({ type: 'item/restore'; item: Item; index: number; children?: string[] } & Target)
   | { type: 'proposal/add'; step: StepId; proposal: Proposal }
   | ({ type: 'change/apply' } & ChangeRef)
   | ({ type: 'change/reject' } & ChangeRef)
@@ -104,13 +105,16 @@ function editBlock(project: Project, action: ItemAction): Project {
       const found = findItem(block, action.collection, action.id)
       if (!found) return project
       if (action.type === 'item/discard' && !isEmptyItem(action.step, action.collection, found.item)) return project
-      ;(block[action.collection] as Item[]).splice(found.index, 1)
+      const list = block[action.collection] as Item[]
+      list.splice(found.index, 1)
+      if (isTree(action.step, action.collection)) detachChildren(list, found.item)
       break
     }
     case 'item/restore': {
       const list = block[action.collection] as Item[]
       if (list.some((i) => i.id === action.item.id) || !validItem(action.step, action.collection, action.item)) return project
       list.splice(Math.min(action.index, list.length), 0, action.item)
+      if (action.children) reattachChildren(list, action.item, action.children)
       break
     }
   }
