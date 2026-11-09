@@ -775,3 +775,193 @@
   font: var(--text-small);
   color: var(--text-muted);
 }
+
+/* Step 4 (design §6.2 "Step 18"): usage line, read-only goals, link rows and picker, cue lines. */
+.buse,
+.bsection__cue,
+.bchain__label,
+.bchain__mark,
+.bchain__free,
+.blink__empty,
+.blink__skip,
+.blink__changed,
+.blink__over {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.buse {
+  margin-top: 2px;
+}
+
+.bsection__cue {
+  padding-bottom: var(--space-2);
+}
+
+.bchain__lead {
+  max-width: 70ch;
+  margin: var(--space-2) 0 var(--space-3);
+  color: var(--text-muted);
+}
+
+.bchain__goals {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.bchain__level {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+}
+
+.bchain__chips {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A link's chips: the level prefix inside, up to the column's width (LevelChip). */
+.refchip--level {
+  max-width: 100%;
+  padding: 2px var(--space-2);
+  font: var(--text-body);
+  color: var(--text);
+}
+
+/* The ends carry the row: chip text at body size, the level prefix small and muted (design check step 18). */
+.refchip__prefix {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.blink__arrow {
+  display: grid;
+  gap: var(--space-1);
+  padding-top: 4px;
+}
+
+.blinkpicker__draft {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+/* One line each, never wrapping: a long chip is cut with "…" (full text in its title), so the
+   arrow never sits alone above its chip and "Ändern" stays at the right (design check step 18). */
+.blink__line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.blink__line > * {
+  flex: none;
+}
+
+.blink__line > .refchip {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.blink__line--to {
+  padding-left: var(--space-6);
+}
+
+.blink__to {
+  font: var(--text-body);
+  color: var(--text-muted);
+}
+
+.blink__pick {
+  margin-left: auto;
+  font: 600 13px/18px var(--font);
+}
+
+.blink__skip,
+.blink__over {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.blink__over {
+  color: var(--text);
+}
+
+.bcritical {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 70ch;
+  font: var(--text-small);
+  color: var(--text);
+}
+
+.bcritical:not(:empty) {
+  padding: var(--space-2) 0;
+}
+
+.bcritical .status-icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.blinkpicker {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.blinkpicker fieldset {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.blinkpicker legend {
+  padding: 0 0 var(--space-1);
+  font: 600 13px/18px var(--font);
+}
+
+.bpicker__level + .bpicker__level {
+  margin-top: var(--space-2);
+}
+
+.bpicker__levelname {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.bpicker__option input:disabled + span {
+  color: var(--text-muted);
+}
+
+.blinkpicker__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+}
+
+.blinkpicker__actions .bpicker__meta {
+  margin-right: auto;
+  font: var(--text-small);
+}
+
+.blinkpicker__cancel,
+.blinkpicker__done {
+  font: 600 13px/18px var(--font);
+}
+
+.blinkpicker__cancel {
+  color: var(--text-muted);
+}
+
+/* "Umfeld und Nebenwirkungen": a project-wide section after the groups (like Stufe 7 in step 3). */
+.bwide > .bsection + .bsection {
+  margin-top: var(--space-6);
+}

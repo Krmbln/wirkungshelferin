@@ -22,7 +22,7 @@ Das ist die Wirkungslogik – im Fachjargon Theory of Change (S1, Kap. 3; S2).
     - eine **Annahme** mit Evidenzbasis und *kritisch ja/nein*
   - **Externe Faktoren**
   - **Mögliche unbeabsichtigte Wirkungen**
-- Richtwert: **3–5 Verbindungen je Fokusgruppe**. Lieber zusammenfassen als vervielfachen.
+- Richtwert: **3–5 Verbindungen zu Zielen (Stufen 4–6) je Fokusgruppe**. Die Verbindungen von der Aktivität bis Stufe 3 zählen nicht mit. Lieber zusammenfassen als vervielfachen.
 - Nicht-Fokusgruppen haben in diesem Schritt keine eigene Kette. Ihre Aktivitäten stehen aber in der projektweiten Liste.
 
 **Zwei Teile je Fokusgruppe:**
@@ -97,7 +97,7 @@ So baut der Assistent seinen Ketten-Entwurf. Er denkt die Fragen selbst durch un
 - Folgt eine Wirkung von selbst aus der vorherigen, ist das erlaubt und wird so benannt.
 - Kann das Projekt für ein Ziel nichts tun, wird das ehrlich so markiert.
 
-**Zusammenfassen:** Mehr als fünf Verbindungen? Dann schlägt der Assistent vor, ähnliche Leistungen oder Ziele zu bündeln.
+**Zusammenfassen:** Mehr als fünf Verbindungen zu Zielen? Dann schlägt der Assistent vor, ähnliche Leistungen oder Ziele zu bündeln.
 
 ### 4.3 Teil (b): die Prüfung
 
@@ -166,7 +166,7 @@ Annahme, Evidenzbasis und Markierung stehen schon im Ketten-Entwurf. Fragen stel
 | Annahme wiederholt nur die Verbindung („Kinder werden besser“) | Fragen, was *dafür* wahr sein muss. |
 | Alles ist kritisch | Höchstens 2 je Fokusgruppe: die, an denen das Projekt am ehesten scheitert (4.3). |
 | Keine Nebenwirkungen „weil alles positiv ist“ | Gezielt nach Gruppen fragen, die nicht profitieren oder Nachteile haben könnten. |
-| Zu viele Verbindungen | Bündeln; Richtwert 3–5 je Fokusgruppe. |
+| Zu viele Verbindungen | Bündeln; Richtwert 3–5 Verbindungen zu Zielen je Fokusgruppe. |
 | Allgemeine Lage im Umfeld als Annahme formuliert („Die Klassen sind klein“) | Als externen Faktor einsortieren: Er hängt nicht an einem bestimmten Pfeil, sondern trifft die ganze Kette. |
 
 
@@ -199,7 +199,7 @@ Zustände: ✓ erfüllt · ⚠ offen (Bestätigen möglich) · ⛔ blockiert Bes
 | 6 | Evidenz & kritisch | Jede Annahme hat Evidenzbasis und Markierung *kritisch ja/nein*; höchstens 2 kritische je Fokusgruppe. | ⚠ Label oder Markierung fehlt, oder mehr als 2 kritisch. | PO-Entscheidung G3; PRD F4; eigene Festlegung |
 | 7 | Externe Faktoren | Externe Faktoren sind benannt; nicht beeinflussbare Ursachen aus Schritt 2 tauchen hier auf. | ⚠ Keine externen Faktoren oder Ursachen aus Schritt 2 fehlen. | S12 S. 4–5; S1 S. 21 |
 | 8 | Nebenwirkungen bedacht | Mindestens eine mögliche unbeabsichtigte Wirkung ist geprüft (auch „keine gefunden, weil …“). | ⚠ Nicht bedacht. | S1 S. 56; S13 S. 35 |
-| 9 | Überschaubar | Höchstens 5 Verbindungen je Fokusgruppe. | ⚠ Mehr als 5 – bündeln prüfen. | PRD F5 |
+| 9 | Überschaubar | Höchstens 5 Verbindungen zu Zielen (Stufen 4–6) je Fokusgruppe; die Verbindungen bis Stufe 3 zählen nicht mit. | ⚠ Mehr als 5 – bündeln prüfen. | PRD F5; PO-Entscheidung 2026-11-09 |
 | 10 | Vorwärts-Check | Die Kette wurde vorwärts gelesen; plausibel und prüfbar wurde durchgegangen. | ⚠ Nicht durchgegangen. | S1 S. 42–44; S2 S. 25 |
 | 11 | Warum vorhanden | Jede Aktivität hat ein Warum. | ⛔ Warum fehlt. | PRD F4/F5 |
 

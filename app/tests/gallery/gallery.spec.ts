@@ -1193,3 +1193,98 @@ test('step 3 (step 17): levels, marks, picker, non-focus groups, Stufe 7, check,
   }
   expect(errors).toEqual([])
 })
+
+test('step 4 (step 18): chain per group, goals read-only, link picker, critical warning, check, card', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  const column = page.locator('.workspace__block .workspace__scroll')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  const noSideScroll = async () => expect(await column.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+    await openScreen(page, 'step4')
+    await noPageScroll()
+    await noSideScroll()
+    await shotScreen(`step4${suffix}`)
+    // Through the youth chain (stuck header), the girls' chain, Umfeld at the end.
+    for (const [i, top] of [1100, 2000, 3000].entries()) {
+      await column.evaluate((el, y) => (el.scrollTop = y), top)
+      await page.waitForTimeout(50)
+      await noSideScroll()
+      await shotScreen(`step4-${i + 1}${suffix}`)
+    }
+    await column.evaluate((el) => (el.scrollTop = el.scrollHeight))
+    await page.waitForTimeout(50)
+    await noSideScroll()
+    await shotScreen(`step4-end${suffix}`)
+  }
+  await page.setViewportSize({ width: 1390, height: 880 })
+
+  // A link row: two lines, the arrow; the deleted end and the level jump read as such.
+  await openScreen(page, 'step4')
+  await expect(page.locator('[data-item-id="li9"] .refchip--missing')).toBeVisible()
+  await expect(page.locator('[data-item-id="li8"]').getByText('überspringt Stufe 2', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-item-id="ac3"]').getByText('Noch in keiner Kette')).toBeVisible()
+
+  // The picker: in place, focus on the first radio, a draft until Fertig, Esc keeps the old ends.
+  const toggle = page.locator('[data-picker-toggle="li2"]')
+  await toggle.click()
+  const picker = page.locator('[data-picker="li2"]')
+  await expect(picker.getByRole('radio').first()).toBeFocused()
+  await picker.evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await noSideScroll()
+  await shotScreen('step4-picker')
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Escape')
+  await expect(picker).toHaveCount(0)
+  await expect(toggle).toBeFocused()
+  await expect(page.locator('[data-item-id="li2"] .refchip--level').first()).toContainText('Die Werkstatt hat zweimal pro Woche')
+
+  // Three critical assumptions: the line under the list and the cue on each ticked row.
+  await openScreen(page, 'step4-critical')
+  const warning = page.locator('[data-group="tg1"] .bcritical')
+  await expect(warning).toContainText('3 Annahmen sind als kritisch markiert')
+  await expect(page.locator('[data-item-id="li3"]').getByText('3 von höchstens 2 kritisch')).toBeVisible()
+  await page.locator('[data-item-id="li3"] [data-field="critical"]').scrollIntoViewIfNeeded()
+  await shotScreen('step4-critical')
+  await warning.scrollIntoViewIfNeeded()
+  await shotScreen('step4-critical-line')
+  // A long end chip is cut, never wraps under its arrow: arrow and chip share one line (design check step 18).
+  const arrow = (await page.locator('[data-item-id="li6"] .blink__to').boundingBox())!
+  const end = (await page.locator('[data-item-id="li6"] .blink__line--to .refchip').boundingBox())!
+  expect(Math.abs(arrow.y + arrow.height / 2 - (end.y + end.height / 2))).toBeLessThan(4)
+
+  // Check: ⛔ for the missing assumption, the app's ⚠ "Verbindung unvollständig" before Claude's note, with Zum Feld.
+  await openScreen(page, 'step4-blocked')
+  await expect(gate.getByText('Annahme fehlt: „Zehn Mädchen-Nachmittage im …“ → „Mädchen aus der Siedlung …“ · Mädchen 11–14 aus der Siedlung')).toBeVisible()
+  await expect(gate.getByText('Warum fehlt: Aktivität „Elternbrief zu Beginn des Halbjahrs“')).toBeVisible()
+  await shotScreen('step4-blocked')
+  await page.locator('[data-group-toggle="tg3"]').click()
+  await gate.getByRole('button', { name: /^Zum Feld: Verbindung unvollständig/ }).click()
+  await expect(page.locator('[data-picker-toggle="li9"]')).toBeFocused()
+  await expect(page.locator('[data-group-toggle="tg3"]')).toHaveAttribute('aria-expanded', 'true')
+  await noPageScroll()
+
+  // The card: a link named by its ends, waiting for the new output; "kritisch" on the meta line.
+  await openScreen(page, 'step4-proposal')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  await expect(card.getByText('Verbindung · Mädchen 11–14 aus der Siedlung')).toHaveCount(2)
+  await expect(card.getByText('„Sechs bis acht Mädchen kommen zu den …“ → „Die Mädchen kommen wieder und bringen …“')).toBeVisible()
+  await expect(card.getByText(/zuerst ‚Neu: Die Mädchen kommen wieder/)).toBeVisible()
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = 0))
+  await shotScreen('step4-proposal')
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await shotScreen('step4-proposal-end')
+
+  await openScreen(page, 'step4-empty')
+  await noPageScroll()
+  await shotScreen('step4-empty')
+  expect(errors).toEqual([])
+})

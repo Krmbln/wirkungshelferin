@@ -9,7 +9,13 @@ import type { StepId } from './types'
 // problem. Pure helpers shared by the reducer, proposals, the check and the panel.
 
 /** Per step: which collections a non-focus group keeps (the rest is hidden for it). */
-export const NON_FOCUS_KEEPS: Partial<Record<StepId, string[]>> = { 2: ['problems'], 3: ['goals', 'level7'] }
+export const NON_FOCUS_KEEPS: Partial<Record<StepId, string[]>> = { 2: ['problems'], 3: ['goals', 'level7'], 4: ['externalFactors'] }
+
+/**
+ * Step 4's lists that sit inside a focus group's panel section. Its external factors carry a
+ * `groupId` too ('' = all focus groups), but are shown project-wide (design "Step 18").
+ */
+const PROJECT_WIDE: Partial<Record<StepId, string[]>> = { 4: ['externalFactors'] }
 
 /** Collections with `parentId` nesting, per step. */
 export const TREES: Partial<Record<StepId, string[]>> = { 2: ['causes', 'consequences'] }
@@ -28,7 +34,7 @@ export function stepGroups(project: Project, step: StepId): { focus: Item[]; oth
   const orphans = new Set<string>()
   for (const slot of Object.values(stepOf(project, step).block)) {
     if (!Array.isArray(slot)) continue
-    for (const item of slot) if (typeof item.groupId === 'string' && !known.has(item.groupId)) orphans.add(item.groupId)
+    for (const item of slot) if (typeof item.groupId === 'string' && item.groupId && !known.has(item.groupId)) orphans.add(item.groupId)
   }
   return { focus: groups.filter((g) => g.isFocus), other: groups.filter((g) => !g.isFocus), orphans: [...orphans] }
 }
@@ -127,9 +133,9 @@ export function panelGroupOf(project: Project, step: StepId, id: string): string
   if (!NON_FOCUS_KEEPS[step]) return undefined
   let groupId = id.startsWith('problem:') ? id.slice('problem:'.length) : undefined
   if (!groupId) {
-    for (const slot of Object.values(stepOf(project, step).block)) {
+    for (const [name, slot] of Object.entries(stepOf(project, step).block)) {
       const item = Array.isArray(slot) ? slot.find((i) => i.id === id) : undefined
-      if (item) groupId = item.groupId as string | undefined
+      if (item && !PROJECT_WIDE[step]?.includes(name)) groupId = item.groupId as string | undefined
     }
   }
   return groupId ? panelKey(project, groupId) : undefined

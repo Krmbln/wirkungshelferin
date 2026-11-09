@@ -4,6 +4,7 @@ import { changeView } from '../domain/proposals'
 import { TEMP_ID, proposal as proposalSchema, type Project, type Proposal, type ProposalChange } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import type { Item } from '../domain/schemas/blocks'
+import { endOf } from '../domain/chain'
 import { MAX_DEPTH, NON_FOCUS_KEEPS, TREES, depthOf, heightOf } from '../domain/tree'
 import { proposeInput, type ProposeInput } from './tools'
 
@@ -21,11 +22,13 @@ export type ToProposal = {
   groups?: Item[]
   /** Step 2's block now: step 3's goals point to its causes and core problems. */
   step2?: LooseBlock
+  /** Step 3's block now: step 4's links end at its goals. */
+  step3?: LooseBlock
 }
 
 export type ProposalResult = { ok: true; proposal: Proposal } | { ok: false; errors: string[] }
 
-export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [], step2 }: ToProposal): ProposalResult {
+export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [], step2, step3 }: ToProposal): ProposalResult {
   const parsed = proposeInput(step).safeParse(input)
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`) }
@@ -79,7 +82,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
     }
   })
 
-  if (!errors.length) errors.push(...groupErrors(step, seen, result, groups, step2))
+  if (!errors.length) errors.push(...groupErrors(step, seen, result, groups, step2, step3))
   if (errors.length) return { ok: false, errors }
   if (!result.length) return { ok: false, errors: ['Der Vorschlag ändert nichts am Baustein.'] }
   const proposal = proposalSchema.safeParse({ id: proposalId, toolUseId, at, summary, changes: result })
@@ -93,7 +96,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
  * is in the same list and group, at most three levels deep. Judged on the block as it would
  * look with every change applied, so the order of changes doesn't matter.
  */
-function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], groups: Item[], step2?: LooseBlock): string[] {
+function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], groups: Item[], step2?: LooseBlock, step3?: LooseBlock): string[] {
   const keeps = NON_FOCUS_KEEPS[step]
   if (!keeps) return []
   const after: Record<string, Item[]> = {}
@@ -113,6 +116,8 @@ function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], 
     const list = after[collection]
     const item = list.find((x) => x.id === id)
     if (!item || typeof item.groupId !== 'string') continue
+    // Step 4: an external factor with groupId "" concerns all focus groups (design "Step 18").
+    if (collection === 'externalFactors' && !item.groupId) continue
     const group = groups.find((g) => g.id === item.groupId)
     if (!group) {
       errors.push(`Änderung ${n}: groupId "${item.groupId}" ist keine Zielgruppe aus Schritt 1.`)
@@ -123,6 +128,7 @@ function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], 
       errors.push(`Änderung ${n}: „${group.name}“ hat schon ein Kernproblem. Ändere das vorhandene (update), statt ein zweites anzulegen.`)
     }
     if (step === 3) errors.push(...goalErrors(n, collection, item, group, after, step2))
+    if (step === 4) errors.push(...chainErrors(n, collection, item, group, after, step3))
     if (!TREES[step]?.includes(collection)) continue
     const parent = item.parentId as string
     if (parent) {
@@ -167,6 +173,31 @@ function goalErrors(n: number, collection: string, item: Item, group: Item, afte
       errors.push(`Änderung ${n}: Stufe ${item.level} hat für „${name}“ schon Ziele. Eine Stufe hat Ziele oder ist „trifft nicht zu“, nicht beides.`)
     }
   }
+  return errors
+}
+
+/**
+ * Step 4 (design §6.2 "Step 18"): an external factor names all or a focus group; a link starts
+ * at an activity or at an output / Stufe 4–5 goal of its own group, ends at an output or goal of
+ * its own group at a higher level, and no two links of a group share start and end. Goals come
+ * from step 3 (read-only here); outputs may be created in the same proposal (temp ids).
+ */
+function chainErrors(n: number, collection: string, item: Item, group: Item, after: Record<string, Item[]>, step3?: LooseBlock): string[] {
+  const name = group.name as string
+  if (collection === 'externalFactors') {
+    return group.isFocus ? [] : [`Änderung ${n}: „${name}“ ist keine Fokusgruppe. Ein externer Faktor gilt für alle Fokusgruppen (groupId "") oder für eine davon.`]
+  }
+  if (collection !== 'links') return []
+  const items = { activities: after.activities ?? [], outputs: after.outputs ?? [], goals: (step3?.goals as Item[]) ?? [], marks: [] }
+  const from = endOf(items, group.id, item.fromId)
+  const to = endOf(items, group.id, item.toId)
+  const errors: string[] = []
+  if (!from) errors.push(`Änderung ${n}: fromId "${item.fromId}" ist keine Aktivität und keine Leistung oder kein Ziel von „${name}“.`)
+  else if (from.kind === 'goal' && from.level === 6) errors.push(`Änderung ${n}: Ein Ziel auf Stufe 6 ist das Ende der Kette; von dort geht keine Verbindung weiter.`)
+  if (!to || to.kind === 'activity') errors.push(`Änderung ${n}: toId "${item.toId}" ist keine Leistung und kein Ziel von „${name}“.`)
+  else if (from && to.level <= from.level) errors.push(`Änderung ${n}: Eine Verbindung führt nach oben – das Ende (Stufe ${to.level}) muss über dem Start (${from.level ? `Stufe ${from.level}` : 'Aktivität'}) liegen.`)
+  const twins = (after.links ?? []).filter((l) => l.groupId === item.groupId && l.fromId === item.fromId && l.toId === item.toId)
+  if (twins.length > 1) errors.push(`Änderung ${n}: Diese Verbindung gibt es für „${name}“ schon. Ändere die vorhandene (update).`)
   return errors
 }
 

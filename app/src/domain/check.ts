@@ -3,6 +3,7 @@ import { leerFields } from './profile'
 import type { Item } from './schemas/blocks'
 import type { Project, QualityCheck } from './schemas/project'
 import type { StepId } from './types'
+import { CRITICAL_MAX, chainOf, criticalLinks, endOf, linkState, type ChainItems } from './chain'
 import { GOAL_LEVELS, treeOf } from './tree'
 
 // Hard blocks (⛔) as code (tech design §7.2, PRD F4): exactly the PRD's three kinds — a
@@ -25,20 +26,27 @@ export type HardIssue = {
 }
 
 /** Which rubric criterion each kind of hard rule checks, per step (ids from the guide's rubric). */
-export const HARD_CRITERIA: Partial<Record<StepId, { why: string; focus?: string; levels?: string; link?: string; level7?: string; nonFocus?: string }>> = {
+export const HARD_CRITERIA: Partial<
+  Record<StepId, { why: string; focus?: string; levels?: string; link?: string; level7?: string; nonFocus?: string; because?: string; assumption?: string }>
+> = {
   1: { why: '8', focus: '5' },
   2: { why: '9' },
   3: { why: '10', levels: '4', link: '5', level7: '8', nonFocus: '9' },
+  4: { why: '11', because: '4', assumption: '5', focus: '1' },
 }
 
 /**
  * Criteria the app blocks on, but Claude still judges what isn't a hard rule (step 3, 8: a
  * missing Stufe 7 is ⛔, "bewirkt" instead of "trägt dazu bei" is Claude's ⚠).
  */
-const SHARED: Partial<Record<StepId, string[]>> = { 3: ['8'] }
+const SHARED: Partial<Record<StepId, string[]>> = { 3: ['8'], 4: ['1', '4', '5'] }
 
-/** A rubric criterion the app judges itself from the block (✓ or ⚠, never ⛔), overriding Claude. */
-export type AppJudged = { criterion: string; result: 'ok' | 'warn'; note: string; target?: FieldTarget }
+/**
+ * A rubric criterion the app judges itself from the block (✓ or ⚠, never ⛔), overriding Claude.
+ * `merge`: judged by both (step 4, criterion 1): the app's ⚠ comes first and Claude's ⚠ note
+ * follows; with no app finding Claude's result stands.
+ */
+export type AppJudged = { criterion: string; result: 'ok' | 'warn'; note: string; target?: FieldTarget; merge?: true }
 
 /**
  * Step 0 criterion 1 "Vollständigkeit": every field filled or "offen" (design §6.2, step 14).
@@ -47,6 +55,7 @@ export type AppJudged = { criterion: string; result: 'ok' | 'warn'; note: string
  */
 export function appJudged(step: StepId, block: LooseBlock, project?: Project): AppJudged[] {
   if (step === 3) return project ? step3Judged(block, project) : []
+  if (step === 4) return project ? step4Judged(block, project) : []
   if (step !== 0) return []
   const leer = leerFields(block)
   if (!leer.length) return [{ criterion: '1', result: 'ok', note: 'Jedes Feld ist ausgefüllt oder offen.' }]
@@ -86,15 +95,70 @@ function step3Judged(block: LooseBlock, project: Project): AppJudged[] {
 
 /** Criteria Claude may leave out because the app owns them (hard rules and app-judged ones). */
 export function appOwned(step: StepId): string[] {
-  const appIds: Partial<Record<StepId, string[]>> = { 0: ['1'], 3: ['5', '6'] }
+  const appIds: Partial<Record<StepId, string[]>> = { 0: ['1'], 3: ['5', '6'], 4: ['6'] }
   const shared = SHARED[step] ?? []
   return [...new Set([...Object.values(HARD_CRITERIA[step] ?? {}), ...(appIds[step] ?? [])])].filter((id) => !shared.includes(id))
 }
 
 /** Claude's results with the app-judged criteria replaced by the app's own judgement of `block`. */
 export function withAppJudged(step: StepId, block: LooseBlock, results: QualityCheck['results'], project?: Project): QualityCheck['results'] {
-  const own = new Map(appJudged(step, block, project).map((j) => [j.criterion, { criterion: j.criterion, result: j.result, note: j.note }]))
-  return results.map((r) => own.get(r.criterion) ?? r)
+  const own = new Map(appJudged(step, block, project).map((j) => [j.criterion, j]))
+  return results.map((r) => {
+    const j = own.get(r.criterion)
+    if (!j) return r
+    if (!j.merge) return { criterion: j.criterion, result: j.result, note: j.note }
+    if (j.result === 'ok') return r
+    return { criterion: r.criterion, result: 'warn', note: r.result === 'warn' ? `${j.note}\n${r.note}` : j.note }
+  })
+}
+
+/**
+ * Step 4 (design §6.2 "Step 18"): criterion 6 = at most two critical assumptions per focus
+ * group (label and mark always exist); criterion 1, app part = a link with a missing or deleted
+ * end, or one that doesn't point upwards.
+ */
+function step4Judged(block: LooseBlock, project: Project): AppJudged[] {
+  const items = { ...chainItemsOf(block, project.steps[3].block.goals as Item[]), marks: [] }
+  const focus = groupsOf(project).filter((g) => g.isFocus)
+  const links = (block.links as Item[]) ?? []
+  const over = focus.map((g) => ({ g, critical: criticalLinks(items, links, g.id) })).find((x) => x.critical.length > CRITICAL_MAX)
+  const broken = focus.flatMap((g) => chainOf(items, links, g.id).filter((l) => !linkState(items, l).upward).map((l) => ({ g, l })))
+  const linkTarget = (l: Item, field: string): FieldTarget => ({ collection: 'links', id: l.id, field, group: l.groupId as string })
+  const more = (n: number) => (n > 1 ? ` (und ${n - 1} weitere)` : '')
+  return [
+    over
+      ? {
+          criterion: '6',
+          result: 'warn',
+          note: `${over.critical.length} kritische Annahmen · ${groupName(over.g)} – höchstens ${CRITICAL_MAX}`,
+          target: linkTarget(over.critical[CRITICAL_MAX], 'critical'),
+        }
+      : { criterion: '6', result: 'ok', note: `Jede Annahme hat Evidenzbasis und Markierung; höchstens ${CRITICAL_MAX} kritisch je Gruppe.` },
+    broken.length
+      ? {
+          criterion: '1',
+          result: 'warn',
+          note: `Verbindung unvollständig: ${linkLabel(items, broken[0].l)} · ${groupName(broken[0].g)}${more(broken.length)}`,
+          target: linkTarget(broken[0].l, 'ends'),
+          merge: true,
+        }
+      : { criterion: '1', result: 'ok', note: '', merge: true },
+  ]
+}
+
+const chainItemsOf = (block: LooseBlock, goals: Item[]): Omit<ChainItems, 'marks'> => ({
+  activities: (block.activities as Item[]) ?? [],
+  outputs: (block.outputs as Item[]) ?? [],
+  goals,
+})
+
+/** A link in a check row: „A“ → „B“, each end cut at 30 characters; a missing end is „?“. */
+function linkLabel(items: ChainItems, link: Item): string {
+  const end = (id: unknown) => {
+    const found = endOf(items, link.groupId as string, id)
+    return found ? `„${cut((found.item.text as string) || 'ohne Text', 30)}“` : '„?“'
+  }
+  return `${end(link.fromId)} → ${end(link.toId)}`
 }
 
 const empty = (text: string | undefined) => !text?.trim()
@@ -110,10 +174,12 @@ export function cut(text: string, n: number): string {
 /**
  * The ⛔ issues of a step's block, in panel order. `groups` = step 1's target groups now
  * (steps 2–4 are judged per focus group), `problems` = step 2's core problems now (step 3:
- * a non-focus group's goals link to its core problem). Callers pass both via `issueContext`.
+ * a non-focus group's goals link to its core problem), `goals` = step 3's goals now (step 4's
+ * links end there). Callers pass all three via `issueContext`.
  */
-export function hardIssues(step: StepId, block: LooseBlock, groups: Item[] = [], problems: Item[] = []): HardIssue[] {
+export function hardIssues(step: StepId, block: LooseBlock, groups: Item[] = [], problems: Item[] = [], goals: Item[] = []): HardIssue[] {
   if (step === 2) return step2Issues(block, groups)
+  if (step === 4) return step4Issues(block, groups, goals)
   if (step === 3) return step3Issues(block, groups, problems)
   if (step !== 1) return []
   const ids = HARD_CRITERIA[1]!
@@ -228,6 +294,32 @@ function step3Issues(block: LooseBlock, groups: Item[], problems: Item[]): HardI
   return issues
 }
 
+/** Step 4 (design §6.2 "Step 18"): criteria 4, 5 and 11 as code; activities first, then each focus group's chain. */
+function step4Issues(block: LooseBlock, groups: Item[], goals: Item[]): HardIssue[] {
+  const ids = HARD_CRITERIA[4]!
+  const items = { ...chainItemsOf(block, goals), marks: [] }
+  const toStep1 = { collection: 'targetGroups', field: 'isFocus', step: 1 as StepId }
+  const focus = groups.filter((g) => g.isFocus)
+  const issues: HardIssue[] = []
+  if (!focus.length) issues.push({ criterion: ids.focus!, text: 'Wähle in Schritt 1 eine oder zwei Fokusgruppen', target: toStep1 })
+  if (focus.length > 2) issues.push({ criterion: ids.focus!, text: `${focus.length} Fokusgruppen in Schritt 1 – höchstens 2`, target: toStep1 })
+  for (const a of items.activities) {
+    if (!empty(a.why)) continue
+    const label = (a.text as string) ? `„${cut(a.text as string, 50)}“` : 'ohne Text'
+    issues.push({ criterion: ids.why, text: `Warum fehlt: Aktivität ${label}`, target: { collection: 'activities', id: a.id, field: 'why' } })
+  }
+  const links = (block.links as Item[]) ?? []
+  for (const group of focus) {
+    const name = groupName(group)
+    for (const l of chainOf(items, links, group.id)) {
+      const target = (field: string): FieldTarget => ({ collection: 'links', id: l.id, field, group: group.id })
+      if (empty(l.because as string)) issues.push({ criterion: ids.because!, text: `„weil“ fehlt: ${linkLabel(items, l)} · ${name}`, target: target('because') })
+      if (empty(l.assumption as string)) issues.push({ criterion: ids.assumption!, text: `Annahme fehlt: ${linkLabel(items, l)} · ${name}`, target: target('assumption') })
+    }
+  }
+  return issues
+}
+
 /** One key per field, shared by the gate's rows and the block's ⛔ field markers. */
 export const fieldKey = (collection: string, id: string | undefined, field: FieldTarget['field']) => `${collection}:${id ?? ''}:${field}`
 export const issueKey = (issue: HardIssue) => fieldKey(issue.target.collection, issue.target.id, issue.target.field)
@@ -236,7 +328,11 @@ export const issueKey = (issue: HardIssue) => fieldKey(issue.target.collection, 
 export const groupsOf = (project: Project): Item[] => project.steps[1].block.targetGroups as Item[]
 
 /** What hardIssues and openWarnings need besides the block: `hardIssues(step, block, ...issueContext(project))`. */
-export const issueContext = (project: Project): [Item[], Item[]] => [groupsOf(project), project.steps[2].block.problems as Item[]]
+export const issueContext = (project: Project): [Item[], Item[], Item[]] => [
+  groupsOf(project),
+  project.steps[2].block.problems as Item[],
+  project.steps[3].block.goals as Item[],
+]
 
 /** JSON with sorted keys, so two blocks compare by content, not by key order. */
 function stable(value: unknown): string {
@@ -260,8 +356,8 @@ export function checkCurrent(project: Project, step: StepId): boolean {
 }
 
 /** Criteria the assistant marked ⚠ and no hard rule blocks: what confirming stores as "trotzdem bestätigt". */
-export function openWarnings(step: StepId, check: QualityCheck, groups: Item[] = [], problems: Item[] = []): string[] {
-  const blocked = new Set(hardIssues(step, check.block as LooseBlock, groups, problems).map((i) => i.criterion))
+export function openWarnings(step: StepId, check: QualityCheck, groups: Item[] = [], problems: Item[] = [], goals: Item[] = []): string[] {
+  const blocked = new Set(hardIssues(step, check.block as LooseBlock, groups, problems, goals).map((i) => i.criterion))
   return check.results.filter((r) => r.result === 'warn' && !blocked.has(r.criterion)).map((r) => r.criterion)
 }
 

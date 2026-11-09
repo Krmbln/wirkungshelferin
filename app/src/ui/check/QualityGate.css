@@ -80,6 +80,8 @@
   display: block;
   font: var(--text-small);
   color: var(--text-muted);
+  /* A criterion judged by both (step 4, 1): the app's finding and Claude's sentence on their own lines. */
+  white-space: pre-line;
 }
 
 .gate__field {

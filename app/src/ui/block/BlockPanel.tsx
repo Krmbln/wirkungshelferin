@@ -14,6 +14,7 @@ import { Step0Block } from './Step0Block'
 import { Step1Block } from './Step1Block'
 import { Step2Block } from './Step2Block'
 import { Step3Block } from './Step3Block'
+import { Step4Block } from './Step4Block'
 import { panelGroupOf } from '../../domain/tree'
 import { FORMS, formEmpty, type FormName } from '../../domain/profile'
 import type { Item } from '../../domain/schemas/blocks'
@@ -163,6 +164,16 @@ export function BlockPanel({
           onAction={onAction}
           applied={applied}
           issues={stillOpen(project, 3, liveIssues)}
+          collapsed={collapsed}
+          onToggle={(key) => onCollapsedChange?.(collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key])}
+          onOpenStep={(s) => onOpenStep?.(s)}
+        />
+      ) : step === 4 ? (
+        <Step4Block
+          project={project}
+          onAction={onAction}
+          applied={applied}
+          issues={stillOpen(project, 4, liveIssues)}
           collapsed={collapsed}
           onToggle={(key) => onCollapsedChange?.(collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key])}
           onOpenStep={(s) => onOpenStep?.(s)}

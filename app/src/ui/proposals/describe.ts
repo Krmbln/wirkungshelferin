@@ -1,4 +1,5 @@
 import { findItem, stepOf, type LooseBlock } from '../../domain/block'
+import { endOf } from '../../domain/chain'
 import { cut } from '../../domain/check'
 import { canUndo, changeView, type ChangeView, type StaleReason } from '../../domain/proposals'
 import { collectionMeta, type Item } from '../../domain/schemas/blocks'
@@ -35,6 +36,9 @@ export const EVIDENCE: Record<string, string> = {
 const group: FieldInfo = { label: 'Zielgruppe', ref: true }
 const LEVELS: Record<string, string> = { 4: 'Stufe 4', 5: 'Stufe 5', 6: 'Stufe 6' }
 const parent: FieldInfo = { label: 'Einordnung', ref: true }
+const OUTPUT_LEVELS: Record<string, string> = { 1: 'Stufe 1', 2: 'Stufe 2', 3: 'Stufe 3' }
+/** Side effect direction in words, shared with the block's radios. */
+export const DIRECTION: Record<string, string> = { negative: 'negativ', positive: 'positiv' }
 
 /** "Wofür?" in words (design §6.2, step 14). */
 export const PURPOSE: Record<string, string> = { geldgeberin: 'Bericht an die Geldgeberin', lernen: 'eigenes Lernen', beides: 'beides', offen: 'offen' }
@@ -99,13 +103,30 @@ const info: { [S in StepId]: Record<string, CollectionInfo> } = {
     levelNotApplicable: { noun: 'Trifft nicht zu', main: 'level', fields: { groupId: group, level: { label: 'Stufe', values: LEVELS, ref: true }, why } },
     level7: { noun: 'Stufe 7 · Beitrag', main: 'text', fields: { text: { label: 'Beitrag' }, why } },
   },
+  // Step 4 (design "Step 18"): the output's level in the noun, a link named by its two ends.
   4: {
-    resources: { noun: 'Ressource', main: 'text' },
-    activities: { noun: 'Aktivität', main: 'text' },
-    outputs: { noun: 'Leistung', main: 'text' },
-    links: { noun: 'Verbindung', main: 'because' },
-    externalFactors: { noun: 'Einflussfaktor', main: 'text' },
-    sideEffects: { noun: 'Nebenwirkung', main: 'text' },
+    resources: { noun: 'Ressource', main: 'text', fields: { text: { label: 'Ressource' } } },
+    activities: { noun: 'Aktivität', main: 'text', fields: { text: { label: 'Aktivität' }, why } },
+    outputs: { noun: 'Leistung', main: 'text', fields: { groupId: group, level: { label: 'Stufe', values: OUTPUT_LEVELS, ref: true }, text: { label: 'Leistung' } } },
+    links: {
+      noun: 'Verbindung',
+      main: '',
+      fields: {
+        groupId: group,
+        fromId: { label: 'von', ref: true },
+        toId: { label: 'nach', ref: true },
+        because: { label: 'weil …', ref: true },
+        assumption: { label: 'Annahme', ref: true },
+        evidence: { label: 'Evidenzbasis', values: EVIDENCE, short: true },
+        critical: { label: 'kritisch', short: true },
+      },
+    },
+    externalFactors: { noun: 'Externer Faktor', main: 'text', fields: { groupId: group, text: { label: 'Faktor' } } },
+    sideEffects: {
+      noun: 'Unbeabsichtigte Wirkung',
+      main: 'text',
+      fields: { text: { label: 'Wirkung' }, direction: { label: 'Richtung', values: DIRECTION, short: true }, affectedGroup: { label: 'Betrifft', ref: true } },
+    },
   },
   5: {
     focusQuestions: { noun: 'Lernfrage', main: 'text' },
@@ -195,8 +216,9 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     }
     const under = parentText(project, step, proposal, change.collection, fields.parentId)
     if (under) meta.push(`unter „${cut(under, 40)}“`)
-    const goal = goalText(project, step, change.collection, fields)
-    if (goal.meta) meta.push(goal.meta)
+    const goal = { ...goalText(project, step, change.collection, fields), ...chainText(project, step, proposal, change.collection, fields) }
+    // A link's "weil … · Annahme" comes before its evidence and mark (design "Step 18").
+    if (goal.meta) (change.collection === 'links' ? meta.unshift(goal.meta) : meta.push(goal.meta))
     return {
       kind,
       noun: groupNoun(project, goal.noun ?? noun, fields.groupId),
@@ -217,7 +239,7 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
   // Never an internal id on screen (an empty singleton is named by its noun alone).
   if (change.op === 'update' && isForm(step, change.collection)) return formRow(step, change, before, view)
   const unnamed = collectionMeta(step, change.collection)?.singleton ? '' : `${noun} ohne Namen`
-  const goal = goalText(project, step, change.collection, before ?? {})
+  const goal = { ...goalText(project, step, change.collection, before ?? {}), ...chainText(project, step, proposal, change.collection, before ?? {}) }
   // A singleton named by its own text (Stufe 7): its ÄNDERN line already shows old and new, so
   // no name line repeating the old one (design check step 17).
   const ownText = change.op === 'update' && step === 3 && change.collection === 'level7' && mainField in fields
@@ -235,7 +257,11 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
               ? { label: parent.label, before: placement(before?.parentId), after: placement(value) }
               : field === 'causeIds'
                 ? { label: 'Löst auf', before: causesText(project, before?.causeIds), after: causesText(project, value) || '(leer)' }
-                : { label: fieldInfo(step, change.collection, field).label, before: format(field, before?.[field]), after: format(field, value) || '(leer)' },
+                : field === 'fromId' || field === 'toId'
+                  ? { label: field === 'fromId' ? 'von' : 'nach', before: endText(project, proposal, before?.groupId, before?.[field]), after: endText(project, proposal, before?.groupId, value) }
+                  : field === 'critical'
+                    ? { label: 'kritisch', before: before?.critical ? 'kritisch' : 'nicht kritisch', after: value ? 'kritisch' : 'nicht kritisch' }
+                    : { label: fieldInfo(step, change.collection, field).label, before: format(field, before?.[field]), after: format(field, value) || '(leer)' },
           )
           .filter((line) => line.before !== line.after)
       : []
@@ -254,6 +280,34 @@ function goalText(project: Project, step: StepId, collection: string, fields: Re
   if (collection === 'levelNotApplicable') return { noun: `Trifft nicht zu · ${level}`, main: `Trifft für „${cut(groupName, 40)}“ nicht zu` }
   const meta = [fields.timeFrame as string, causesText(project, fields.causeIds, 2) && `löst auf: ${causesText(project, fields.causeIds, 2)}`].filter(Boolean).join(' · ')
   return { noun: `Ziel · ${level}`, meta: meta || undefined }
+}
+
+/**
+ * Step 4 rows (design §6.2 "Step 18"): an output's level in the noun; a link named by its ends
+ * („A“ → „B“, 40 characters each) with "weil …" and the assumption on the meta line; an
+ * external factor names its group or "alle Fokusgruppen"; a side effect whom it concerns.
+ */
+function chainText(project: Project, step: StepId, proposal: Proposal, collection: string, fields: Record<string, unknown>): { noun?: string; main?: string; meta?: string } {
+  if (step !== 4) return {}
+  if (collection === 'outputs') return { noun: `Leistung · ${OUTPUT_LEVELS[String(fields.level)] ?? 'Stufe ?'}` }
+  if (collection === 'externalFactors' && !fields.groupId) return { noun: 'Externer Faktor · alle Fokusgruppen' }
+  if (collection === 'sideEffects') return { meta: fields.affectedGroup ? `betrifft ${cut(fields.affectedGroup as string, 40)}` : undefined }
+  if (collection !== 'links') return {}
+  const main = `${endText(project, proposal, fields.groupId, fields.fromId)} → ${endText(project, proposal, fields.groupId, fields.toId)}`
+  const meta = [fields.because && `weil: ${cut(fields.because as string, 60)}`, fields.assumption && `Annahme: ${cut(fields.assumption as string, 60)}`].filter(Boolean).join(' · ')
+  return { main, meta: meta || undefined }
+}
+
+/** A link's end in words: an activity, output (also one this proposal creates) or step 3 goal; „?“ when unknown. */
+function endText(project: Project, proposal: Proposal, groupId: unknown, id: unknown): string {
+  if (typeof id !== 'string' || !id) return '„?“'
+  const creator = proposal.changes.find((c) => c.op === 'add' && c.tempId === id)
+  const real = creator?.resultId ?? (creator ? undefined : id)
+  const block = project.steps[4].block
+  const known = real ? endOf({ activities: block.activities as Item[], outputs: block.outputs as Item[], goals: project.steps[3].block.goals as Item[], marks: [] }, groupId as string, real) : undefined
+  const text = (known?.item.text ?? creator?.fields?.text) as string | undefined
+  if (text) return `„${cut(text, 40)}“`
+  return known || creator ? '„ohne Text“' : 'Verweis fehlt'
 }
 
 /** Linked step 2 items in words: „A“, „B“ + 1 weitere; a deleted one is "Verweis fehlt". */

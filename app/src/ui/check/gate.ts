@@ -51,7 +51,12 @@ function judged(step: StepId, check: QualityCheck, project: Project, confirmedWa
   const live = new Map(appJudged(step, project.steps[step].block as LooseBlock, project).map((j) => [j.criterion, j]))
   const rows = check.results
     .filter((r) => !blocked.has(r.criterion))
-    .map((r) => ({ ...r, ...live.get(r.criterion) }))
+    // A criterion judged by both (step 4, 1) keeps its stored merged result; the app only adds "Zum Feld".
+    .map((r) => {
+      const j = live.get(r.criterion)
+      if (!j?.merge) return { ...r, ...j }
+      return j.result === 'warn' && r.result === 'warn' ? { ...r, target: j.target } : r
+    })
     .map((r) => ({ ...r, name: names.get(r.criterion) ?? `Kriterium ${r.criterion}`, confirmedAnyway: r.result === 'warn' && confirmedWarnings.includes(r.criterion) }))
   return { warn: rows.filter((r) => r.result === 'warn'), ok: rows.filter((r) => r.result === 'ok') }
 }
@@ -79,8 +84,9 @@ export function fieldSelector(target: FieldTarget): string {
   const item = `[data-item-id="${CSS.escape(target.id)}"]`
   if (target.field === 'isFocus') return `${item} [data-field="isFocus"]`
   const field = `${item} [data-field="${CSS.escape(target.field)}"]`
-  // Step 3: a goal's links have no text input; "Ursache wählen" is the field.
-  if (target.field === 'causeIds') return `${field} button`
+  // Step 3: a goal's links have no text input; "Ursache wählen" is the field. Step 4: a link's
+  // ends are chosen with "Verbindung wählen" / "Ändern".
+  if (target.field === 'causeIds' || target.field === 'ends') return `${field} button`
   return `${field} textarea, ${field} input`
 }
 

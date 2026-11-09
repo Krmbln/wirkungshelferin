@@ -33,9 +33,10 @@ export function IntroPanel({ intro, open, onToggle }: { intro: StepIntro; open: 
   )
 }
 
-export function Term({ term }: { term: string }) {
+/** `label`: the word shown, when it differs from the glossary term ("kritisch" for „Kritische Annahme“, step 18). */
+export function Term({ term, label = term }: { term: string; label?: string }) {
   const entries = termEntries(term)
-  if (!entries.length) return <>{term}</>
+  if (!entries.length) return <>{label}</>
   const content =
     entries.length === 1 ? (
       <Definition plain={entries[0].plain} technical={entries[0].technical} />
@@ -48,7 +49,7 @@ export function Term({ term }: { term: string }) {
     )
   return (
     <Tooltip content={content} fixed>
-      <span className="term">{term}</span>
+      <span className="term">{label}</span>
     </Tooltip>
   )
 }

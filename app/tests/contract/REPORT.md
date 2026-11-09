@@ -77,3 +77,12 @@ First run ✓ both (≈ $0.34), but the recorded text showed item ids to Lukas (
 | ✓ | Step 3: gap in step 2 → "[Zu Schritt 2](#schritt-2)" in the text | link offered, no goal without a cause proposed, no ids in the text |
 
 Usage: 2 calls · output 4888 · cache write 1 h 27237 · **≈ $0.32**
+
+## Step 18 add-on (run alone: `-t "8 · step 4"`, 2026-11-09, three runs)
+
+| | Check | Note |
+|---|---|---|
+| ✓ | Step 4: chain proposal valid (own group, upwards, ends at goals), text + question first, no ids | all three runs ✓: 3–5 outputs, 7–10 links all upwards within the group, 2 critical, every link with "weil" and assumption; run 3: links ac1→ou1 ac3→ou2 ou1→ou3 ou2→ou3 ou3→ou4 ou3→ou5 ou4→go1 ou5→go1 go1→go2! go2→go3! |
+| ✗ | Step 4: factors (groupId "" or tg1) and side effects with direction, text first | all three runs ✗ "no question before the card": thinking → propose_changes with no text block. Content valid each time (bus from step 2 as a factor for all groups, 3 side effects). Tried: step 16 tool description (already in place), step 4 rule "Prüfung: zuerst Text + Entdeckungsfrage" (run 2), a reply-form reminder after every snapshot (run 3, reverted). Open for the PO. |
+
+Usage: 6 calls over three runs · **≈ $1.16** ($0.46 + $0.44 + $0.26)

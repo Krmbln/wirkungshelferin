@@ -721,3 +721,116 @@ describe('7 · step 3: goals per focus group (made-up project)', () => {
       return `link: ${line.slice(0, 120)}; proposal: ${project.steps[3].proposals.length > 1 ? 'yes' : 'no'}`
     }))
 })
+
+describe('8 · step 4: the chain of one focus group (made-up project)', () => {
+  /** demo.ts with steps 1–3 confirmed: one focus group with goals at 4–6, its causes, one other group; step 4 has the activities. */
+  function step4Start(): Project {
+    const p = demoProject()
+    p.steps[1].block = {
+      challenge: makeItem(1, 'challenge', { text: 'Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus.', why: 'Aus Schritt 0.' }),
+      targetGroups: [
+        makeItem(1, 'targetGroups', { name: 'Jugendliche 12–17', description: 'Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.', isFocus: true, why: 'Hauptwirkung.' }, { id: 'tg1' }),
+        makeItem(1, 'targetGroups', { name: 'Eltern', description: 'Erlauben das Kommen.', reach: 'indirect', why: 'Ohne sie kommen die Jüngeren nicht.' }, { id: 'tg2' }),
+      ],
+      stakeholders: [],
+    } as never
+    p.steps[2].block = {
+      problems: [
+        makeItem(2, 'problems', { groupId: 'tg1', coreProblem: 'Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen.', why: 'Erzählen sie selbst.' }, { id: 'pb1' }),
+        makeItem(2, 'problems', { groupId: 'tg2', coreProblem: 'Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen.', why: 'Fragen beim Sommerfest.' }, { id: 'pb2' }),
+      ],
+      causes: [
+        makeItem(2, 'causes', { groupId: 'tg1', parentId: '', text: 'Viele haben kein funktionierendes Rad.', evidence: 'eigene_erfahrung', why: 'Beobachtung.' }, { id: 'ca1' }),
+        makeItem(2, 'causes', { groupId: 'tg1', parentId: 'ca1', text: 'Der Bus fährt nachmittags nur stündlich.', evidence: 'eigene_daten', notInfluenceable: true, why: 'Fahrplan.' }, { id: 'ca2' }),
+        makeItem(2, 'causes', { groupId: 'tg1', parentId: '', text: 'Kaum Erwachsene zeigen ihnen handwerkliche Dinge.', evidence: 'unsicher', why: 'Vermutung.' }, { id: 'ca3' }),
+      ],
+      consequences: [],
+    } as never
+    const goal = (id: string, level: 4 | 5 | 6, text: string, causeIds: string[]) => makeItem(3, 'goals', { groupId: 'tg1', level, text, causeIds, timeFrame: 'bis Ende 2027', why: 'Aus dem Problembaum.' }, { id })
+    p.steps[3].block = {
+      goals: [
+        goal('go1', 4, 'Die Jugendlichen können einen Platten flicken und die Bremsen einstellen.', ['ca3']),
+        goal('go2', 5, 'Die Jugendlichen reparieren ihr Rad selbst, statt es stehen zu lassen.', ['ca1', 'ca3']),
+        goal('go3', 6, 'Die Jugendlichen sind nachmittags mit dem eigenen Rad unterwegs.', ['ca1']),
+        makeItem(3, 'goals', { groupId: 'tg2', level: 4, text: 'Eltern wissen, was ihre Kinder in der Werkstatt lernen.', causeIds: [], timeFrame: 'bis Ende 2026', why: 'Dann lassen sie die Jüngeren kommen.' }, { id: 'go4' }),
+      ],
+      levelNotApplicable: [],
+      level7: makeItem(3, 'level7', { text: 'Das Projekt trägt dazu bei, dass Jugendliche in der Siedlung eigene Wege gehen.', why: 'Aus der Herausforderung.' }, { id: 'level7' }),
+    } as never
+    p.steps[4].block = {
+      resources: [makeItem(4, 'resources', { text: 'Zwei Ehrenamtliche aus dem Fahrradclub' }, { id: 'rs1' }), makeItem(4, 'resources', { text: 'Kellerraum mit Werkbank' }, { id: 'rs2' })],
+      activities: [
+        makeItem(4, 'activities', { text: 'Offene Werkstatt dienstags und donnerstags, 15–18 Uhr', why: 'Damit die Jugendlichen einen festen Ort zum Schrauben haben.' }, { id: 'ac1' }),
+        makeItem(4, 'activities', { text: 'Elternbrief zu Beginn des Halbjahrs', why: 'Damit die Eltern wissen, was ihre Kinder lernen.' }, { id: 'ac2' }),
+      ],
+      outputs: [],
+      links: [],
+      externalFactors: [],
+      sideEffects: [],
+    } as never
+    for (const step of [1, 2, 3] as const) {
+      p.steps[step].status = 'confirmed'
+      p.steps[step].confirmed = { at: AT, block: structuredClone(p.steps[step].block) as never, basis: { 0: AT } }
+    }
+    p.idCounters = { ...p.idCounters, tg: 2, pb: 2, ca: 3, go: 4, rs: 2, ac: 2 }
+    return projectSchema.parse(p)
+  }
+
+  let after: Project | undefined
+  it('the chain for the focus group: outputs 1–3, links upwards to its goals, "weil" and assumption, ≤ 2 critical, text first', () =>
+    check('Step 4: chain proposal valid (own group, upwards, ends at goals), text + question first, no ids', async () => {
+      const text = 'Die Aktivitäten stimmen so. Schlag mir jetzt die Kette für die Jugendlichen vor.'
+      const prepared = prepareTurn(step4Start(), 4, text, { at: AT })
+      rec.recordNext('step4-chain')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}step4-chain.json`, JSON.stringify({ step: 4, project: prepared.project }, null, 2))
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
+      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no question before the card').toContain('?')
+      expect(textBefore.match(SHOWN_ID_4) ?? [], 'ids in the visible text').toEqual([])
+      let project = commitAnswer(prepared.project, 4, { status: 'done', message }, prepared.shown, { at: AT })
+      const [proposal] = project.steps[4].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[4].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 4, proposalId: proposal.id })
+      const { outputs, links } = project.steps[4].block
+      expect(new Set(outputs.filter((o) => o.groupId === 'tg1').map((o) => o.level)), 'not all three output levels').toEqual(new Set([1, 2, 3]))
+      expect(links.length, 'no links').toBeGreaterThan(0)
+      expect(links.every((l) => l.because.trim() && l.assumption.trim()), 'a link without "weil" or assumption').toBe(true)
+      expect(links.filter((l) => l.critical).length, 'more than 2 critical').toBeLessThanOrEqual(2)
+      expect(links.some((l) => ['go1', 'go2', 'go3'].includes(l.toId)), 'no link reaches a goal').toBe(true)
+      projectSchema.parse(project)
+      after = project
+      const chain = links.map((l) => `${l.fromId}→${l.toId}${l.critical ? '!' : ''}`).join(' ')
+      return `${proposal.changes.length} changes; ${outputs.length} outputs; links ${chain}; question: ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
+    }))
+
+  it('external factors and side effects: for all or the focus group, text first', () =>
+    check('Step 4: factors (groupId "" or tg1) and side effects with direction, text first', async () => {
+      expect(after, 'needs the first step 4 case').toBeDefined()
+      const text = 'Passt. Was wirkt außer uns noch auf die Kette, und was könnte nebenbei passieren?'
+      const prepared = prepareTurn(after!, 4, text, { at: AT })
+      rec.recordNext('step4-surroundings')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
+      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no question before the card').toContain('?')
+      expect(textBefore.match(SHOWN_ID_4) ?? [], 'ids in the visible text').toEqual([])
+      let project = commitAnswer(prepared.project, 4, { status: 'done', message }, prepared.shown, { at: AT })
+      const proposal = project.steps[4].proposals.at(-1)!
+      expect(project.steps[4].proposals.length, `no valid propose_changes call ${JSON.stringify(project.steps[4].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBe(2)
+      project = reducer(project, { type: 'change/applyAll', step: 4, proposalId: proposal.id })
+      const { externalFactors, sideEffects } = project.steps[4].block
+      expect(externalFactors.length, 'no external factor').toBeGreaterThan(0)
+      expect(externalFactors.every((f) => !f.groupId || f.groupId === 'tg1'), 'a factor for a non-focus group').toBe(true)
+      expect(sideEffects.length, 'no side effect').toBeGreaterThan(0)
+      projectSchema.parse(project)
+      const bus = externalFactors.some((f) => /bus/i.test(f.text))
+      return `${externalFactors.length} factors (${externalFactors.map((f) => f.groupId || 'alle').join(', ')}; bus named: ${bus}); ${sideEffects.length} side effects (${sideEffects.map((s) => s.direction).join(', ')})`
+    }))
+})
+
+const SHOWN_ID_4 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|new:)\d+\b/g

@@ -109,15 +109,29 @@ type WhyProps = {
   /** Names the item in the field's accessible name when many rows repeat it ("Warum: Ziel „…“", step 17). */
   context?: string
   forceState?: 'hover'
+  /** Another reason field in the same look (step 4: "weil …", "Annahme"): visible label, `data-field`, accessible name prefix. */
+  label?: ReactNode
+  field?: string
+  name?: string
 }
 
 /** "Warum?" directly under a Why-carrying item (design §6.2). */
-export function WhyField({ value, onSave, blocked = false, context, forceState, placeholder = 'Warum ist das wichtig? (nötig zum Bestätigen)' }: WhyProps) {
+export function WhyField({
+  value,
+  onSave,
+  blocked = false,
+  context,
+  forceState,
+  placeholder = 'Warum ist das wichtig? (nötig zum Bestätigen)',
+  label = 'Warum?',
+  field = 'why',
+  name = 'Warum',
+}: WhyProps) {
   const id = useId()
   return (
-    <div className="why" data-field="why">
+    <div className="why" data-field={field}>
       <label className="why__label" htmlFor={id}>
-        Warum?
+        {label}
         {blocked && (
           <>
             <span aria-hidden="true">
@@ -131,7 +145,7 @@ export function WhyField({ value, onSave, blocked = false, context, forceState, 
         id={id}
         value={value}
         onSave={onSave}
-        label={context && `Warum: ${context}`}
+        label={context && `${name}: ${context}`}
         multiline
         invalid={blocked}
         placeholder={placeholder}
