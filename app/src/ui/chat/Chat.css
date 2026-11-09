@@ -530,3 +530,28 @@ span.intro__label {
 .pdfread__count {
   font-variant-numeric: tabular-nums;
 }
+
+/* "Zu Schritt N" in Claude's text (design §6.2 "Step 17"): reads like a link wherever Claude puts it
+   (mid-sentence or after a paragraph), so it never splits a sentence or pushes lines apart. */
+.md__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  vertical-align: baseline;
+  cursor: pointer;
+}
+
+.md__step svg {
+  align-self: center;
+}
+
+.md__step:hover {
+  color: var(--accent-hover);
+}

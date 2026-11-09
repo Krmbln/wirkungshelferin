@@ -18,7 +18,7 @@ export type StaleReason =
 
 export type ChangeView =
   | { kind: 'open' }
-  | { kind: 'blocked'; needs: string } // id of the creating change that must be applied first
+  | { kind: 'blocked'; needs: string } // id of the change that must be applied first (creates an item, or removes one in the way)
   | { kind: 'stale'; reason: StaleReason }
   | { kind: 'applied' }
   | { kind: 'rejected' }
@@ -108,6 +108,8 @@ function view(project: Project, step: StepId, proposal: Proposal, change: Propos
 
   if (change.op === 'add') {
     if (isHidden(targetGroups(project), step, change.collection, fields)) return { kind: 'stale', reason: 'hidden' }
+    const clash = levelClash(project, step, proposal, change, fields)
+    if (clash) return clash
     // Validate with a placeholder id; the real one is handed out on apply.
     return newItem(step, change.collection, `${meta.prefix}0`, fields, false) ? { kind: 'open' } : { kind: 'stale', reason: 'invalid' }
   }
@@ -119,10 +121,36 @@ function view(project: Project, step: StepId, proposal: Proposal, change: Propos
   }
   if (isHidden(targetGroups(project), step, change.collection, { ...found.item, ...fields })) return { kind: 'stale', reason: 'hidden' }
   if (found.item.rev !== expectedRev(proposal, change, target, map)) return { kind: 'stale', reason: 'edited' }
+  const clash = change.op === 'update' ? levelClash(project, step, proposal, change, { ...found.item, ...fields }) : undefined
+  if (clash) return clash
   if (change.op === 'update' && !validItem(step, change.collection, { ...found.item, ...fields })) {
     return { kind: 'stale', reason: 'invalid' }
   }
   return { kind: 'open' }
+}
+
+/**
+ * Step 3: a level has goals or a "trifft nicht zu" mark, never both (design "Step 17"). A
+ * change that would make both waits for a removal of the other in the same proposal, else
+ * it can't apply.
+ */
+function levelClash(project: Project, step: StepId, proposal: Proposal, change: ProposalChange, item: Record<string, unknown>): ChangeView | undefined {
+  if (step !== 3) return undefined
+  const block = project.steps[3].block
+  const goal = change.collection === 'goals'
+  if (!goal && change.collection !== 'levelNotApplicable') return undefined
+  if (goal && !item.text) return undefined
+  const sameLevel = (i: { groupId: string; level: number }) => i.groupId === item.groupId && i.level === item.level
+  const inWay = goal ? block.levelNotApplicable.filter(sameLevel) : block.goals.filter((g) => sameLevel(g) && g.text)
+  if (!inWay.length) return undefined
+  const other = goal ? 'levelNotApplicable' : 'goals'
+  for (const blocker of inWay) {
+    const removal = proposal.changes.find((c) => c.op === 'remove' && c.collection === other && c.targetId === blocker.id && c.state !== 'applied')
+    // A removal never runs levelClash itself, so this can't loop.
+    if (!removal || changeView(project, step, proposal.id, removal.id).kind !== 'open') return { kind: 'stale', reason: 'invalid' }
+    return { kind: 'blocked', needs: removal.id }
+  }
+  return undefined
 }
 
 export function changeView(project: Project, step: StepId, proposalId: string, changeId: string): ChangeView {

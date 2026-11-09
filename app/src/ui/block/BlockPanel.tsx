@@ -13,6 +13,7 @@ import { prefersReducedMotion } from '../motion'
 import { Step0Block } from './Step0Block'
 import { Step1Block } from './Step1Block'
 import { Step2Block } from './Step2Block'
+import { Step3Block } from './Step3Block'
 import { panelGroupOf } from '../../domain/tree'
 import { FORMS, formEmpty, type FormName } from '../../domain/profile'
 import type { Item } from '../../domain/schemas/blocks'
@@ -152,6 +153,16 @@ export function BlockPanel({
           onAction={onAction}
           applied={applied}
           issues={stillOpen(project, 2, liveIssues)}
+          collapsed={collapsed}
+          onToggle={(key) => onCollapsedChange?.(collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key])}
+          onOpenStep={(s) => onOpenStep?.(s)}
+        />
+      ) : step === 3 ? (
+        <Step3Block
+          project={project}
+          onAction={onAction}
+          applied={applied}
+          issues={stillOpen(project, 3, liveIssues)}
           collapsed={collapsed}
           onToggle={(key) => onCollapsedChange?.(collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key])}
           onOpenStep={(s) => onOpenStep?.(s)}

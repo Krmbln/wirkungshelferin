@@ -3,7 +3,7 @@ import { stepOf, type LooseBlock } from '../domain/block'
 import { reducer } from '../domain/reducer'
 import type { Project, StoredMessage } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
-import { groupsOf, hardIssues } from '../domain/check'
+import { groupsOf, hardIssues, issueContext } from '../domain/check'
 import { scrubContacts } from '../domain/contacts'
 import { CHECK_REQUEST, checkEvents, parseCheck } from './check'
 import { contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, sourceText, sourcesText, systemPrompt, withCacheBreakpoint } from './prompt'
@@ -103,7 +103,7 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
       step,
       shown,
       first ? undefined : (state.sentBlock as LooseBlock | undefined),
-      hardIssues(step, shown, groupsOf(next)).map((i) => i.text),
+      hardIssues(step, shown, ...issueContext(next)).map((i) => i.text),
     ),
   })
   segment.messages.push(...appended.map((m, i) => ({ ...m, id: newId(), at, ...(act && i === appended.length - 1 && { act }) })))
@@ -220,7 +220,7 @@ export function commitAnswer(project: Project, step: StepId, answer: Answer, sho
       continue
     }
     const proposalId = `p${next.steps[step].proposals.length + 1}`
-    const result = toProposal(step, block.input, { seen: shown, toolUseId: block.id, proposalId, at, groups: groupsOf(project) })
+    const result = toProposal(step, block.input, { seen: shown, toolUseId: block.id, proposalId, at, groups: groupsOf(project), step2: project.steps[2].block as unknown as LooseBlock })
     if (result.ok) next = reducer(next, { type: 'proposal/add', step, proposal: result.proposal })
     else toolErrors[block.id] = result.errors
   }

@@ -50,11 +50,17 @@ export function newItem(step: StepId, collection: string, id: string, fields: Re
   return validItem(step, collection, { ...emptyFields(step, collection), ...fields, id, rev: 1, editedByUser })
 }
 
-/** True if no field holds anything beyond its empty value (the Why included). */
+/**
+ * Where an item sits, not what it says: a row added by hand under a group, a parent or at a level
+ * (steps 2–4) gets these at once, and is still empty (step 17; step 16's rows never went again).
+ */
+const PLACEMENT = new Set(['groupId', 'parentId', 'level'])
+
+/** True if no field holds anything beyond its empty value (the Why included); placement doesn't count. */
 export function isEmptyItem(step: StepId, collection: string, item: Item): boolean {
   const empty = emptyFields(step, collection)
   return Object.entries(item).every(([key, value]) => {
-    if (key === 'id' || key === 'rev' || key === 'editedByUser') return true
+    if (key === 'id' || key === 'rev' || key === 'editedByUser' || PLACEMENT.has(key)) return true
     if (key in empty) return JSON.stringify(value) === JSON.stringify(empty[key])
     return value === undefined || value === ''
   })

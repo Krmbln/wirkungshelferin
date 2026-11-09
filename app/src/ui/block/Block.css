@@ -4,13 +4,32 @@
   gap: var(--space-3); /* + the rows' 12 px padding = 24 px between sections */
 }
 
+/* Grid items default to min-width: auto; a stuck group header's one-line name then widened its
+   group past the column (step 16, found in step 17 at 960 px). */
+.bpanel > * {
+  min-width: 0;
+}
+
 /* Sections: heading with "+ hinzufügen" at the right */
 .bsection__head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
   min-height: var(--target-min);
+}
+
+.bsection__head > :is(h3, h4) {
+  min-width: 0;
+}
+
+/* A disabled add button's reason sits under it, so a long heading never pushes the row wider (step 17). */
+.bsection__head .btn-with-reason {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  margin-left: auto;
 }
 
 .bsection__adds {
@@ -628,4 +647,131 @@
   padding: 2px var(--space-2);
   color: var(--text);
   white-space: normal;
+}
+
+/* Step 3 (design §6.2 "Step 17"): goal rows, "trifft nicht zu", cause picker, Stufe 7. */
+.bgoal__controls {
+  gap: 0 var(--space-4);
+}
+
+.bgoal__time {
+  cursor: default;
+}
+
+.bgoal__time .inline {
+  min-width: 180px;
+}
+
+/* "Löst auf:" + chips + "Ändern" wrap like words; the chips keep the step 16 size. */
+.bgoal__causes {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+  cursor: default;
+}
+
+.bgoal__lead {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.bgoal__pick,
+.blevel__mark,
+.bnonfocus__problem .btn--text {
+  font: 600 13px/18px var(--font);
+}
+
+/* Lined up with the hint above it (the text button's padding offset). */
+.blevel__mark {
+  margin-inline-start: calc(-1 * var(--space-1));
+}
+
+.bmark {
+  font: var(--text-body);
+  color: var(--text);
+}
+
+.blevel__empty {
+  display: grid;
+  justify-items: start;
+}
+
+.bnonfocus__problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.bpicker {
+  min-inline-size: 0;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.bpicker legend {
+  padding: 0 var(--space-1);
+  font: 600 13px/18px var(--font);
+}
+
+.bpicker ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Nested causes: the step 2 indent (24 px per level). */
+.bpicker ul ul {
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--line);
+}
+
+.bpicker__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 6px 0;
+  font: var(--text-body);
+  cursor: pointer;
+}
+
+.bpicker__option input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.bpicker__option .status-icon {
+  vertical-align: -2px;
+}
+
+.bpicker__meta,
+.bpicker__none {
+  color: var(--text-muted);
+}
+
+.bpicker__broken {
+  margin-top: var(--space-1);
+}
+
+/* Stufe 7: a project-wide section, a peer of the groups (h3 like a group header, not collapsible). */
+.blevel7__title {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  margin-top: var(--space-2);
+}
+
+.blevel7__note {
+  margin-bottom: var(--space-3);
+  font: var(--text-small);
+  color: var(--text-muted);
 }

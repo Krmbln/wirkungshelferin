@@ -1,0 +1,471 @@
+{
+  "step": 3,
+  "project": {
+    "schemaVersion": 1,
+    "createdAt": "2026-11-02T10:00:00.000Z",
+    "updatedAt": "2026-11-02T10:00:00.000Z",
+    "privacyNoteSeen": true,
+    "steps": {
+      "0": {
+        "status": "confirmed",
+        "block": {
+          "profile": {
+            "id": "profile",
+            "rev": 1,
+            "editedByUser": false,
+            "name": "Schraubzeit – offene Fahrradwerkstatt für Jugendliche",
+            "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
+            "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
+            "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
+            "activities": [
+              "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
+              "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
+              "Kleine Touren in die Umgebung"
+            ],
+            "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+            "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
+            "duration": "2026–2027",
+            "funder": "Stiftung Stadtteil Morgen",
+            "budgetRange": "offen",
+            "statedGoals": [
+              "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
+              "Jugendliche können ihr Rad selbst instand halten"
+            ],
+            "otherOffers": [
+              "Jugendclub im Einkaufszentrum (abends)",
+              "Sportverein mit Fußball und Boxen"
+            ],
+            "openQuestions": [
+              "Erwartet die Stiftung Angaben über die Teilnahmezahlen hinaus?"
+            ]
+          },
+          "frame": {
+            "id": "frame",
+            "rev": 1,
+            "editedByUser": false,
+            "purpose": "beides",
+            "audience": "Stiftung Stadtteil Morgen und das Team",
+            "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
+            "requiredFigures": [
+              "Teilnahmen pro Halbjahr"
+            ],
+            "existingData": [
+              "Anwesenheitsliste pro Nachmittag",
+              "Liste der vergebenen Räder"
+            ]
+          },
+          "sources": [
+            {
+              "id": "src1",
+              "rev": 1,
+              "editedByUser": false,
+              "origin": "paste",
+              "label": "Projektskizze (eingefügt)",
+              "text": "Schraubzeit ist eine offene Fahrradwerkstatt im Nachbarschaftshaus …",
+              "at": "2026-11-01T10:00:00.000Z"
+            }
+          ]
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-02T10:00:00.000Z",
+          "block": {
+            "profile": {
+              "id": "profile",
+              "rev": 1,
+              "editedByUser": false,
+              "name": "Schraubzeit – offene Fahrradwerkstatt für Jugendliche",
+              "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
+              "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
+              "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
+              "activities": [
+                "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
+                "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
+                "Kleine Touren in die Umgebung"
+              ],
+              "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+              "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
+              "duration": "2026–2027",
+              "funder": "Stiftung Stadtteil Morgen",
+              "budgetRange": "offen",
+              "statedGoals": [
+                "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
+                "Jugendliche können ihr Rad selbst instand halten"
+              ],
+              "otherOffers": [
+                "Jugendclub im Einkaufszentrum (abends)",
+                "Sportverein mit Fußball und Boxen"
+              ],
+              "openQuestions": [
+                "Erwartet die Stiftung Angaben über die Teilnahmezahlen hinaus?"
+              ]
+            },
+            "frame": {
+              "id": "frame",
+              "rev": 1,
+              "editedByUser": false,
+              "purpose": "beides",
+              "audience": "Stiftung Stadtteil Morgen und das Team",
+              "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
+              "requiredFigures": [
+                "Teilnahmen pro Halbjahr"
+              ],
+              "existingData": [
+                "Anwesenheitsliste pro Nachmittag",
+                "Liste der vergebenen Räder"
+              ]
+            },
+            "sources": [
+              {
+                "id": "src1",
+                "rev": 1,
+                "editedByUser": false,
+                "origin": "paste",
+                "label": "Projektskizze (eingefügt)",
+                "text": "Schraubzeit ist eine offene Fahrradwerkstatt im Nachbarschaftshaus …",
+                "at": "2026-11-01T10:00:00.000Z"
+              }
+            ]
+          },
+          "basis": {}
+        }
+      },
+      "1": {
+        "status": "confirmed",
+        "block": {
+          "challenge": {
+            "id": "challenge",
+            "rev": 1,
+            "editedByUser": false,
+            "why": "Aus Schritt 0.",
+            "text": "Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus."
+          },
+          "targetGroups": [
+            {
+              "id": "tg1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Hauptwirkung.",
+              "name": "Jugendliche 12–17",
+              "description": "Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.",
+              "reach": "direct",
+              "isFocus": true
+            },
+            {
+              "id": "tg2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Ohne sie kommen die Jüngeren nicht.",
+              "name": "Eltern",
+              "description": "Erlauben das Kommen.",
+              "reach": "indirect",
+              "isFocus": false
+            }
+          ],
+          "stakeholders": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-05T10:00:00.000Z",
+          "block": {
+            "challenge": {
+              "id": "challenge",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Aus Schritt 0.",
+              "text": "Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus."
+            },
+            "targetGroups": [
+              {
+                "id": "tg1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Hauptwirkung.",
+                "name": "Jugendliche 12–17",
+                "description": "Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.",
+                "reach": "direct",
+                "isFocus": true
+              },
+              {
+                "id": "tg2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Ohne sie kommen die Jüngeren nicht.",
+                "name": "Eltern",
+                "description": "Erlauben das Kommen.",
+                "reach": "indirect",
+                "isFocus": false
+              }
+            ],
+            "stakeholders": []
+          },
+          "basis": {
+            "0": "2026-11-05T10:00:00.000Z"
+          }
+        }
+      },
+      "2": {
+        "status": "confirmed",
+        "block": {
+          "problems": [
+            {
+              "id": "pb1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Erzählen sie selbst.",
+              "groupId": "tg1",
+              "coreProblem": "Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen."
+            },
+            {
+              "id": "pb2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Fragen beim Sommerfest.",
+              "groupId": "tg2",
+              "coreProblem": "Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen."
+            }
+          ],
+          "causes": [
+            {
+              "id": "ca1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Beobachtung in der Werkstatt.",
+              "groupId": "tg1",
+              "parentId": "",
+              "text": "Viele haben kein funktionierendes Rad.",
+              "evidence": "eigene_erfahrung",
+              "notInfluenceable": false
+            },
+            {
+              "id": "ca2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Beobachtung in der Werkstatt.",
+              "groupId": "tg1",
+              "parentId": "ca1",
+              "text": "Reparaturen sind für die Familien zu teuer.",
+              "evidence": "eigene_erfahrung",
+              "notInfluenceable": false
+            },
+            {
+              "id": "ca3",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Beobachtung in der Werkstatt.",
+              "groupId": "tg1",
+              "parentId": "ca2",
+              "text": "Viele Familien leben von Sozialleistungen.",
+              "evidence": "eigene_erfahrung",
+              "notInfluenceable": true
+            },
+            {
+              "id": "ca4",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Beobachtung in der Werkstatt.",
+              "groupId": "tg1",
+              "parentId": "",
+              "text": "Kaum Erwachsene zeigen ihnen handwerkliche Dinge.",
+              "evidence": "eigene_erfahrung",
+              "notInfluenceable": false
+            }
+          ],
+          "consequences": [
+            {
+              "id": "co1",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "parentId": "",
+              "text": "Sie trauen sich wenig zu."
+            }
+          ]
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-05T10:00:00.000Z",
+          "block": {
+            "problems": [
+              {
+                "id": "pb1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Erzählen sie selbst.",
+                "groupId": "tg1",
+                "coreProblem": "Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen."
+              },
+              {
+                "id": "pb2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Fragen beim Sommerfest.",
+                "groupId": "tg2",
+                "coreProblem": "Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen."
+              }
+            ],
+            "causes": [
+              {
+                "id": "ca1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Beobachtung in der Werkstatt.",
+                "groupId": "tg1",
+                "parentId": "",
+                "text": "Viele haben kein funktionierendes Rad.",
+                "evidence": "eigene_erfahrung",
+                "notInfluenceable": false
+              },
+              {
+                "id": "ca2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Beobachtung in der Werkstatt.",
+                "groupId": "tg1",
+                "parentId": "ca1",
+                "text": "Reparaturen sind für die Familien zu teuer.",
+                "evidence": "eigene_erfahrung",
+                "notInfluenceable": false
+              },
+              {
+                "id": "ca3",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Beobachtung in der Werkstatt.",
+                "groupId": "tg1",
+                "parentId": "ca2",
+                "text": "Viele Familien leben von Sozialleistungen.",
+                "evidence": "eigene_erfahrung",
+                "notInfluenceable": true
+              },
+              {
+                "id": "ca4",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Beobachtung in der Werkstatt.",
+                "groupId": "tg1",
+                "parentId": "",
+                "text": "Kaum Erwachsene zeigen ihnen handwerkliche Dinge.",
+                "evidence": "eigene_erfahrung",
+                "notInfluenceable": false
+              }
+            ],
+            "consequences": [
+              {
+                "id": "co1",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "parentId": "",
+                "text": "Sie trauen sich wenig zu."
+              }
+            ]
+          },
+          "basis": {
+            "0": "2026-11-05T10:00:00.000Z"
+          }
+        }
+      },
+      "3": {
+        "status": "not_started",
+        "block": {
+          "goals": [],
+          "levelNotApplicable": [],
+          "level7": {
+            "id": "level7",
+            "rev": 1,
+            "editedByUser": false,
+            "text": ""
+          }
+        },
+        "segments": [
+          {
+            "id": "6e4af2de-dbc9-4ea4-8d3d-0509f5eefeb5",
+            "startedAt": "2026-11-05T10:00:00.000Z",
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n## Schritt 0 (bestätigt am 2026-11-02)\nprofile: {\"id\":\"profile\",\"rev\":1,\"editedByUser\":false,\"name\":\"Schraubzeit – offene Fahrradwerkstatt für Jugendliche\",\"organisation\":\"Nachbarschaftshaus Am Weidengrund e. V.\",\"projectBoundary\":\"Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.\",\"location\":\"Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)\",\"activities\":[\"Offene Werkstatt: eigene Räder reparieren mit Anleitung\",\"Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten\",\"Kleine Touren in die Umgebung\"],\"participants\":\"Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag\",\"team\":\"Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus\",\"duration\":\"2026–2027\",\"funder\":\"Stiftung Stadtteil Morgen\",\"budgetRange\":\"offen\",\"statedGoals\":[\"Jugendliche werden mobiler und kommen auch in andere Stadtteile\",\"Jugendliche können ihr Rad selbst instand halten\"],\"otherOffers\":[\"Jugendclub im Einkaufszentrum (abends)\",\"Sportverein mit Fußball und Boxen\"],\"openQuestions\":[\"Erwartet die Stiftung Angaben über die Teilnahmezahlen hinaus?\"]}\nframe: {\"id\":\"frame\",\"rev\":1,\"editedByUser\":false,\"purpose\":\"beides\",\"audience\":\"Stiftung Stadtteil Morgen und das Team\",\"requiredFormat\":\"Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr\",\"requiredFigures\":[\"Teilnahmen pro Halbjahr\"],\"existingData\":[\"Anwesenheitsliste pro Nachmittag\",\"Liste der vergebenen Räder\"]}\nsources:\n- {\"id\":\"src1\",\"rev\":1,\"editedByUser\":false,\"origin\":\"paste\",\"label\":\"Projektskizze (eingefügt)\",\"chars\":68,\"at\":\"2026-11-01T10:00:00.000Z\"}\n\n## Schritt 1 (bestätigt am 2026-11-05)\nchallenge: {\"id\":\"challenge\",\"rev\":1,\"editedByUser\":false,\"text\":\"Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus.\",\"why\":\"Aus Schritt 0.\"}\ntargetGroups:\n- {\"id\":\"tg1\",\"rev\":1,\"editedByUser\":false,\"name\":\"Jugendliche 12–17\",\"description\":\"Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.\",\"reach\":\"direct\",\"isFocus\":true,\"why\":\"Hauptwirkung.\"}\n- {\"id\":\"tg2\",\"rev\":1,\"editedByUser\":false,\"name\":\"Eltern\",\"description\":\"Erlauben das Kommen.\",\"reach\":\"indirect\",\"isFocus\":false,\"why\":\"Ohne sie kommen die Jüngeren nicht.\"}\nstakeholders: (leer)\n\n## Schritt 2 (bestätigt am 2026-11-05)\nproblems:\n- {\"id\":\"pb1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"coreProblem\":\"Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen.\",\"why\":\"Erzählen sie selbst.\"}\n- {\"id\":\"pb2\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg2\",\"coreProblem\":\"Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen.\",\"why\":\"Fragen beim Sommerfest.\"}\ncauses:\n- {\"id\":\"ca1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"\",\"text\":\"Viele haben kein funktionierendes Rad.\",\"evidence\":\"eigene_erfahrung\",\"notInfluenceable\":false,\"why\":\"Beobachtung in der Werkstatt.\"}\n- {\"id\":\"ca2\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"ca1\",\"text\":\"Reparaturen sind für die Familien zu teuer.\",\"evidence\":\"eigene_erfahrung\",\"notInfluenceable\":false,\"why\":\"Beobachtung in der Werkstatt.\"}\n- {\"id\":\"ca3\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"ca2\",\"text\":\"Viele Familien leben von Sozialleistungen.\",\"evidence\":\"eigene_erfahrung\",\"notInfluenceable\":true,\"why\":\"Beobachtung in der Werkstatt.\"}\n- {\"id\":\"ca4\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"\",\"text\":\"Kaum Erwachsene zeigen ihnen handwerkliche Dinge.\",\"evidence\":\"eigene_erfahrung\",\"notInfluenceable\":false,\"why\":\"Beobachtung in der Werkstatt.\"}\nconsequences:\n- {\"id\":\"co1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"\",\"text\":\"Sie trauen sich wenig zu.\"}\n\n## Schritt 4: noch nicht begonnen\n\n## Schritt 5: noch nicht begonnen\n\n## Schritt 6: noch nicht begonnen"
+                  },
+                  {
+                    "type": "text",
+                    "text": "Fang mit den Jugendlichen an. Wir setzen beim fehlenden Rad und beim fehlenden Handwerk an, nicht beim Geld der Familien. Schlag mir Ziele für die Stufen 6, 5 und 4 vor."
+                  },
+                  {
+                    "type": "text",
+                    "text": "[Bausteinstand Schritt 3]\ngoals: (leer)\nlevelNotApplicable: (leer)\nlevel7: {\"id\":\"level7\",\"rev\":1,\"editedByUser\":false,\"text\":\"\",\"why\":\"\"}\n⛔ offen:\n- Stufe 6 ist leer · Jugendliche 12–17\n- Stufe 5 ist leer · Jugendliche 12–17\n- Stufe 4 ist leer · Jugendliche 12–17\n- Kein Ziel · Eltern\n- Stufe 7 fehlt"
+                  }
+                ],
+                "id": "cd23a6b5-4d69-4ae5-b9f5-9b18b6359167",
+                "at": "2026-11-05T10:00:00.000Z"
+              }
+            ]
+          }
+        ],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "sentBlock": {
+          "goals": [],
+          "levelNotApplicable": [],
+          "level7": {
+            "id": "level7",
+            "rev": 1,
+            "editedByUser": false,
+            "text": ""
+          }
+        }
+      },
+      "4": {
+        "status": "not_started",
+        "block": {
+          "resources": [],
+          "activities": [],
+          "outputs": [],
+          "links": [],
+          "externalFactors": [],
+          "sideEffects": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "5": {
+        "status": "not_started",
+        "block": {
+          "focusQuestions": [],
+          "deferredCandidates": [],
+          "indicators": [],
+          "mandatoryFigures": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      },
+      "6": {
+        "status": "not_started",
+        "block": {
+          "planRows": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": []
+      }
+    },
+    "idCounters": {
+      "src": 1,
+      "tg": 2,
+      "pb": 2,
+      "ca": 4,
+      "co": 1
+    }
+  }
+}

@@ -9,7 +9,7 @@ import type { StepId } from './types'
 // problem. Pure helpers shared by the reducer, proposals, the check and the panel.
 
 /** Per step: which collections a non-focus group keeps (the rest is hidden for it). */
-export const NON_FOCUS_KEEPS: Partial<Record<StepId, string[]>> = { 2: ['problems'] }
+export const NON_FOCUS_KEEPS: Partial<Record<StepId, string[]>> = { 2: ['problems'], 3: ['goals', 'level7'] }
 
 /** Collections with `parentId` nesting, per step. */
 export const TREES: Partial<Record<StepId, string[]>> = { 2: ['causes', 'consequences'] }
@@ -132,7 +132,15 @@ export function panelGroupOf(project: Project, step: StepId, id: string): string
       if (item) groupId = item.groupId as string | undefined
     }
   }
-  if (!groupId) return undefined
+  return groupId ? panelKey(project, groupId) : undefined
+}
+
+/** The panel group of a step 1 target group: its own id (focus), "other" or "orphans". */
+export function panelKey(project: Project, groupId: string): string {
   const group = targetGroups(project).find((g) => g.id === groupId)
   return !group ? 'orphans' : group.isFocus ? group.id : 'other'
 }
+
+/** Step 3's levels per focus group, top to bottom (the guide works from the central goal down). */
+export const GOAL_LEVELS = [6, 5, 4] as const
+export type GoalLevel = (typeof GOAL_LEVELS)[number]

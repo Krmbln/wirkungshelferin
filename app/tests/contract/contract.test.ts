@@ -636,3 +636,88 @@ describe('6 · step 2: problem tree per focus group (made-up project)', () => {
       return `${proposal.changes.length} changes; ${block.consequences.length} consequences; text first (${textBefore.length} chars): ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
     }))
 })
+
+/** An item id in Claude's chat text (step 17 contract run: "ein funktionierendes Rad (ca1)"). Lukas never sees ids. */
+const SHOWN_ID = /\b(?:tg|sh|pb|ca|co|go|na|new:)\d+\b/g
+
+describe('7 · step 3: goals per focus group (made-up project)', () => {
+  /** demo.ts with steps 1 and 2 confirmed: one focus group with a small problem tree, one other group. */
+  function step3Start(): Project {
+    const p = demoProject()
+    p.steps[1].block = {
+      challenge: makeItem(1, 'challenge', { text: 'Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus.', why: 'Aus Schritt 0.' }),
+      targetGroups: [
+        makeItem(1, 'targetGroups', { name: 'Jugendliche 12–17', description: 'Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.', isFocus: true, why: 'Hauptwirkung.' }, { id: 'tg1' }),
+        makeItem(1, 'targetGroups', { name: 'Eltern', description: 'Erlauben das Kommen.', reach: 'indirect', why: 'Ohne sie kommen die Jüngeren nicht.' }, { id: 'tg2' }),
+      ],
+      stakeholders: [],
+    } as never
+    const cause = (id: string, parentId: string, text: string, notInfluenceable = false) =>
+      makeItem(2, 'causes', { groupId: 'tg1', parentId, text, evidence: 'eigene_erfahrung', notInfluenceable, why: 'Beobachtung in der Werkstatt.' }, { id })
+    p.steps[2].block = {
+      problems: [
+        makeItem(2, 'problems', { groupId: 'tg1', coreProblem: 'Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen.', why: 'Erzählen sie selbst.' }, { id: 'pb1' }),
+        makeItem(2, 'problems', { groupId: 'tg2', coreProblem: 'Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen.', why: 'Fragen beim Sommerfest.' }, { id: 'pb2' }),
+      ],
+      causes: [
+        cause('ca1', '', 'Viele haben kein funktionierendes Rad.'),
+        cause('ca2', 'ca1', 'Reparaturen sind für die Familien zu teuer.'),
+        cause('ca3', 'ca2', 'Viele Familien leben von Sozialleistungen.', true),
+        cause('ca4', '', 'Kaum Erwachsene zeigen ihnen handwerkliche Dinge.'),
+      ],
+      consequences: [makeItem(2, 'consequences', { groupId: 'tg1', parentId: '', text: 'Sie trauen sich wenig zu.' }, { id: 'co1' })],
+    } as never
+    for (const step of [1, 2] as const) {
+      p.steps[step].status = 'confirmed'
+      p.steps[step].confirmed = { at: AT, block: structuredClone(p.steps[step].block) as never, basis: { 0: AT } }
+    }
+    p.idCounters = { ...p.idCounters, tg: 2, pb: 2, ca: 4, co: 1 }
+    return projectSchema.parse(p)
+  }
+
+  let after: Project | undefined
+  it('goals for the focus group: links only to its causes, levels 4–6, text and a question first', () =>
+    check('Step 3: goals proposal valid (causeIds of the group, levels), text + question first', async () => {
+      const text = 'Fang mit den Jugendlichen an. Wir setzen beim fehlenden Rad und beim fehlenden Handwerk an, nicht beim Geld der Familien. Schlag mir Ziele für die Stufen 6, 5 und 4 vor.'
+      const prepared = prepareTurn(step3Start(), 3, text, { at: AT })
+      rec.recordNext('step3-goals')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}step3-goals.json`, JSON.stringify({ step: 3, project: prepared.project }, null, 2))
+      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
+      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
+      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(textBefore, 'no question before the card').toContain('?')
+      expect(textBefore.match(SHOWN_ID) ?? [], 'ids in the visible text').toEqual([])
+      let project = commitAnswer(prepared.project, 3, { status: 'done', message }, prepared.shown, { at: AT })
+      const [proposal] = project.steps[3].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[3].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 3, proposalId: proposal.id })
+      const goals = project.steps[3].block.goals.filter((g) => g.groupId === 'tg1')
+      expect(new Set(goals.map((g) => g.level)), 'not all three levels').toEqual(new Set([4, 5, 6]))
+      expect(goals.every((g) => g.causeIds.length > 0), 'a focus goal without a cause').toBe(true)
+      expect(goals.some((g) => g.causeIds.includes('ca3')), 'a goal on the not influenceable cause').toBe(false)
+      projectSchema.parse(project)
+      after = project
+      const links = goals.map((g) => `${g.level}:${g.causeIds.join('+')}`).join(' ')
+      return `${proposal.changes.length} changes; goals ${links}; time frames ${goals.filter((g) => g.timeFrame).length}/${goals.length}; question: ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
+    }))
+
+  // Guide 00 §7: a gap in an earlier step is named and offered as "[Zu Schritt 2](#schritt-2)".
+  it('a goal without a matching cause: Claude offers the link to step 2 instead of an unlinked goal', () =>
+    check('Step 3: gap in step 2 → "[Zu Schritt 2](#schritt-2)" in the text', async () => {
+      expect(after, 'needs the first step 3 case').toBeDefined()
+      const text = 'Passt so weit. Uns ist noch wichtig, dass sich die Jugendlichen in der Werkstatt sicher und willkommen fühlen. Mach daraus bitte auch ein Ziel.'
+      const prepared = prepareTurn(after!, 3, text, { at: AT })
+      rec.recordNext('step3-gap')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      const visible = message.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      expect(visible, 'no step link').toContain('(#schritt-2)')
+      expect(visible.match(SHOWN_ID) ?? [], 'ids in the visible text').toEqual([])
+      const project = commitAnswer(prepared.project, 3, { status: 'done', message }, prepared.shown, { at: AT })
+      projectSchema.parse(project)
+      const line = visible.split('\n').find((l) => l.includes('#schritt-2'))!
+      return `link: ${line.slice(0, 120)}; proposal: ${project.steps[3].proposals.length > 1 ? 'yes' : 'no'}`
+    }))
+})

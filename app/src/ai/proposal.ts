@@ -19,11 +19,13 @@ export type ToProposal = {
   at: string
   /** Step 1's target groups now: steps 2–4 hang items on them (checked by `groupErrors`). */
   groups?: Item[]
+  /** Step 2's block now: step 3's goals point to its causes and core problems. */
+  step2?: LooseBlock
 }
 
 export type ProposalResult = { ok: true; proposal: Proposal } | { ok: false; errors: string[] }
 
-export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [] }: ToProposal): ProposalResult {
+export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [], step2 }: ToProposal): ProposalResult {
   const parsed = proposeInput(step).safeParse(input)
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`) }
@@ -77,7 +79,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
     }
   })
 
-  if (!errors.length) errors.push(...groupErrors(step, seen, result, groups))
+  if (!errors.length) errors.push(...groupErrors(step, seen, result, groups, step2))
   if (errors.length) return { ok: false, errors }
   if (!result.length) return { ok: false, errors: ['Der Vorschlag ändert nichts am Baustein.'] }
   const proposal = proposalSchema.safeParse({ id: proposalId, toolUseId, at, summary, changes: result })
@@ -91,7 +93,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
  * is in the same list and group, at most three levels deep. Judged on the block as it would
  * look with every change applied, so the order of changes doesn't matter.
  */
-function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], groups: Item[]): string[] {
+function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], groups: Item[], step2?: LooseBlock): string[] {
   const keeps = NON_FOCUS_KEEPS[step]
   if (!keeps) return []
   const after: Record<string, Item[]> = {}
@@ -120,6 +122,7 @@ function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], 
     if (collection === 'problems' && list.filter((x) => x.groupId === item.groupId).length > 1) {
       errors.push(`Änderung ${n}: „${group.name}“ hat schon ein Kernproblem. Ändere das vorhandene (update), statt ein zweites anzulegen.`)
     }
+    if (step === 3) errors.push(...goalErrors(n, collection, item, group, after, step2))
     if (!TREES[step]?.includes(collection)) continue
     const parent = item.parentId as string
     if (parent) {
@@ -128,6 +131,41 @@ function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], 
       else if (p.groupId !== item.groupId) errors.push(`Änderung ${n}: parentId "${parent}" gehört zu einer anderen Gruppe.`)
     }
     if (depthOf(list, item) + heightOf(list, item) > MAX_DEPTH) errors.push(`Änderung ${n}: höchstens ${MAX_DEPTH} Ebenen (direkt, darunter, darunter).`)
+  }
+  return errors
+}
+
+/**
+ * Step 3 (design §6.2 "Step 17"): a focus group's goal points to causes of that group, a
+ * non-focus group's goal to its core problem (or causes it kept from being a focus group); a
+ * level is either marked "trifft nicht zu" or has goals, never both, and is marked once.
+ */
+function goalErrors(n: number, collection: string, item: Item, group: Item, after: Record<string, Item[]>, step2?: LooseBlock): string[] {
+  const errors: string[] = []
+  const name = group.name as string
+  const sameLevel = (list: Item[]) => list.filter((x) => x.groupId === item.groupId && x.level === item.level)
+  if (collection === 'goals') {
+    const causes = ((step2?.causes as Item[]) ?? []).filter((c) => c.groupId === group.id)
+    const problem = ((step2?.problems as Item[]) ?? []).find((p) => p.groupId === group.id)
+    const allowed = new Set([...causes.map((c) => c.id), ...(group.isFocus || !problem ? [] : [problem.id])])
+    for (const id of item.causeIds as string[]) {
+      if (allowed.has(id)) continue
+      errors.push(
+        group.isFocus
+          ? `Änderung ${n}: causeIds "${id}" ist keine Ursache von „${name}“ aus Schritt 2 (mehr). Verweise nur auf deren Ursachen; einen Verweis, den es nicht mehr gibt, lässt du weg.`
+          : `Änderung ${n}: causeIds "${id}" passt nicht. „${name}“ ist keine Fokusgruppe; die App verknüpft ihre Ziele selbst mit ihrem Kernproblem – causeIds ist [].`,
+      )
+    }
+    const mark = sameLevel(after.levelNotApplicable ?? [])[0]
+    if (group.isFocus && mark && (item.text as string)) {
+      errors.push(`Änderung ${n}: Stufe ${item.level} ist für „${name}“ als „trifft nicht zu“ markiert (${mark.id}). Gibt es doch ein Ziel, entferne die Markierung im selben Vorschlag (remove).`)
+    }
+  }
+  if (collection === 'levelNotApplicable') {
+    if (sameLevel(after.levelNotApplicable).length > 1) errors.push(`Änderung ${n}: Stufe ${item.level} ist für „${name}“ schon als „trifft nicht zu“ markiert.`)
+    if (sameLevel(after.goals ?? []).some((g) => g.text)) {
+      errors.push(`Änderung ${n}: Stufe ${item.level} hat für „${name}“ schon Ziele. Eine Stufe hat Ziele oder ist „trifft nicht zu“, nicht beides.`)
+    }
   }
   return errors
 }

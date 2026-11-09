@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { panelGroupOf } from '../domain/tree'
+import { panelGroupOf, panelKey } from '../domain/tree'
 import type { FieldTarget } from '../domain/check'
 import { chatEmpty, unanswered } from '../ai/chat'
 import { backupState } from '../domain/backup'
@@ -284,7 +284,7 @@ function StepView({
   /** "Zum Feld" (or "Zu Schritt 1" when the fix lies there); a collapsed group opens first. */
   function goToField(target: FieldTarget) {
     if (target.step !== undefined && target.step !== step) return onOpenStep(target.step)
-    const group = target.id ? panelGroupOf(project, step, target.id) : undefined
+    const group = target.group ? panelKey(project, target.group) : target.id ? panelGroupOf(project, step, target.id) : undefined
     if (group && collapsed.includes(group)) flushSync(() => onCollapsedChange(collapsed.filter((k) => k !== group)))
     focusField(target)
   }
@@ -301,7 +301,7 @@ function StepView({
     <StepWorkspace
       step={steps[step]}
       check={
-        step <= 2 ? (
+        step <= 3 ? (
           <QualityGate
             project={project}
             step={step}
@@ -361,6 +361,7 @@ function StepView({
           onRetry={() => chat.retry(step)}
           onOpenSettings={onOpenSettings}
           model={model}
+          stepLinks={{ step, onOpen: onOpenStep }}
           paste={
             step === 0
               ? {

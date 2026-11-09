@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { problemText } from '../../ai/errors'
 import { calendarDaysSince } from '../../domain/backup'
-import { groupsOf, hardIssues, openWarnings, type FieldTarget } from '../../domain/check'
+import { hardIssues, issueContext, openWarnings, type FieldTarget } from '../../domain/check'
 import type { LooseBlock } from '../../domain/block'
 import type { Project, QualityCheck } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
@@ -106,7 +106,7 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
   if (prompt && view.kind !== 'confirmed') setPrompt(null)
 
   const running = run?.kind === 'running'
-  const warnings = view.check ? openWarnings(step, view.check, groupsOf(project)) : []
+  const warnings = view.check ? openWarnings(step, view.check, ...issueContext(project)) : []
 
   function confirm() {
     // Read before confirming: the hand-off is offered while step 1 is still empty.
@@ -128,8 +128,8 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
     const result = await onCheck()
     if (!alive.current) return
     if (!result) return setAnnounce('')
-    const blocking = hardIssues(step, result.block as LooseBlock, groupsOf(project)).length
-    const open = openWarnings(step, result, groupsOf(project)).length
+    const blocking = hardIssues(step, result.block as LooseBlock, ...issueContext(project)).length
+    const open = openWarnings(step, result, ...issueContext(project)).length
     setAnnounce(blocking ? `Geprüft. ${blockingText(blocking)}.` : open ? `Geprüft. ${open === 1 ? '1 offener Punkt' : `${open} offene Punkte`}.` : 'Geprüft. Alles erfüllt.')
     if (blocking) focusNext.current = '[data-gate="field"]'
     else if (!confirmAfter) focusNext.current = '[data-gate="primary"]'

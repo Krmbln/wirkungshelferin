@@ -43,7 +43,7 @@ export function reducer(project: Project, action: Action): Project {
       if (old && old.at > action.check.at) return project
       const next = structuredClone(project)
       // What the app judges itself (step 0 completeness) never depends on Claude's reading.
-      const check = { ...structuredClone(action.check), results: withAppJudged(action.step, action.check.block as LooseBlock, action.check.results) }
+      const check = { ...structuredClone(action.check), results: withAppJudged(action.step, action.check.block as LooseBlock, action.check.results, project) }
       next.steps[action.step].qualityCheck = check as never
       return next
     }

@@ -66,3 +66,14 @@ The PO run's second proposal (13 changes) came as thinking → tool call with no
 | ✓ | Step 2 follow-up: second group + consequences, text first, no challenge as a consequence | 13 changes; 6 consequences; text first (2047 chars): Meine Frage: Trifft das Kernproblem der Mädchen den Kern – oder ist ihr eigentliches Probl |
 
 Usage: 2 calls · output 8394 · cache write 1 h 23597 · **≈ $0.36**
+
+## Step 17 add-on (run alone: `-t "7 · step 3"`, 2026-11-09)
+
+First run ✓ both (≈ $0.34), but the recorded text showed item ids to Lukas ("ein funktionierendes Rad (ca1)") and the step link mid-sentence. Fix: rule "im Chat-Text nie eine ID", link at the end of the paragraph, the chat button reads like a link wherever it stands; the contract now asserts no ids in the visible text. Re-run:
+
+| | Check | Note |
+|---|---|---|
+| ✓ | Step 3: goals proposal valid (causeIds of the group, levels), text + question first | 5 changes; goals 6:ca1+ca4 5:ca4+ca1 5:ca1 4:ca4 4:ca4; time frames 5/5; no ids in the text; question: Bei vier Zielen steht „Jugendliche, die regelmäßig kommen“ … |
+| ✓ | Step 3: gap in step 2 → "[Zu Schritt 2](#schritt-2)" in the text | link offered, no goal without a cause proposed, no ids in the text |
+
+Usage: 2 calls · output 4888 · cache write 1 h 27237 · **≈ $0.32**

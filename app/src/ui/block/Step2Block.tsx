@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { isEmptyItem } from '../../domain/block'
 import { fieldKey, type HardIssue } from '../../domain/check'
 import type { Action } from '../../domain/reducer'
@@ -87,22 +87,7 @@ export function Step2Block({ project, onAction, applied, issues = [], collapsed,
     }
   }, [applied?.n])
 
-  // The group header carries its bottom line only while it is stuck (design: sticky header).
-  useEffect(() => {
-    const box = panel.current?.closest('.workspace__scroll')
-    if (!box) return
-    const mark = () => {
-      const top = box.getBoundingClientRect().top
-      for (const head of box.querySelectorAll<HTMLElement>('.bgroup__head')) {
-        const section = head.parentElement!.getBoundingClientRect()
-        const stuck = section.top < top - 1 && section.bottom > top + head.offsetHeight
-        head.toggleAttribute('data-stuck', stuck)
-      }
-    }
-    mark()
-    box.addEventListener('scroll', mark)
-    return () => box.removeEventListener('scroll', mark)
-  })
+  useStuckHeaders(panel)
 
   const edit = (collection: string, id: string, fields: Record<string, unknown>) => onAction({ type: 'item/edit', step: 2, collection, id, fields })
 
@@ -386,6 +371,25 @@ export function Step2Block({ project, onAction, applied, issues = [], collapsed,
   }
 }
 
+/** The group header carries its bottom line only while it is stuck (design: sticky header). */
+export function useStuckHeaders(panel: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const box = panel.current?.closest('.workspace__scroll')
+    if (!box) return
+    const mark = () => {
+      const top = box.getBoundingClientRect().top
+      for (const head of box.querySelectorAll<HTMLElement>('.bgroup__head')) {
+        const section = head.parentElement!.getBoundingClientRect()
+        const stuck = section.top < top - 1 && section.bottom > top + head.offsetHeight
+        head.toggleAttribute('data-stuck', stuck)
+      }
+    }
+    mark()
+    box.addEventListener('scroll', mark)
+    return () => box.removeEventListener('scroll', mark)
+  })
+}
+
 type GroupProps = {
   id: string
   name: string
@@ -441,10 +445,10 @@ export function Group({ id, name, indicator, summary, blocking = 0, collapsed, o
   )
 }
 
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+export const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 /** ⛔ issues that sit inside a group (the collapsed summary counts them). */
-const blockingIn = (issues: HardIssue[], groupId: string) => issues.filter((i) => i.target.group === groupId).length
+export const blockingIn = (issues: HardIssue[], groupId: string) => issues.filter((i) => i.target.group === groupId).length
 
 /** Where an undo line goes among the removed row's siblings. */
 function siblingsBefore(list: Item[], item: Item, index: number): number {

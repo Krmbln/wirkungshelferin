@@ -86,7 +86,7 @@ export function useCheckRunner({ ai, settings, project, change }: Options): Chec
       // older result never replaces a newer one (reducer).
       // With the app's own judgement in place already: the gate decides from this result
       // whether to ask "Trotzdem bestätigen?" (step 0 completeness).
-      const stored: QualityCheck = { at: now(), source: 'app', block: shown, results: withAppJudged(step, shown, results) }
+      const stored: QualityCheck = { at: now(), source: 'app', block: shown, results: withAppJudged(step, shown, results, latest.current.project() ?? undefined) }
       latest.current.change((p) => reducer(p, { type: 'check/store', step, check: stored }), { now: true })
       setRun(step, undefined)
       return stored

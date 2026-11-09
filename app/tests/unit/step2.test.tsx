@@ -113,6 +113,17 @@ describe('problem tree by hand', () => {
     expect(latest.steps[2].block.problems.at(-1)).toMatchObject({ id: 'pb2', groupId: 'tg2', coreProblem: 'Sie trauen sich nicht an das Werkzeug.', editedByUser: true })
   })
 
+  // Step 17 found this: the group and parent counted as content, so an empty row never went again.
+  it('a cause row left empty goes again when focus leaves it, also one under a parent', async () => {
+    const { user } = open()
+    await user.click(screen.getByRole('button', { name: 'Ursache hinzufügen: Mädchen' }))
+    await user.click(screen.getByRole('textbox', { name: 'Kernproblem: Mädchen' }))
+    expect(row('ca4')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Ursache dafür hinzufügen: unter „Kein eigenes Rad“' }))
+    await user.click(screen.getByRole('textbox', { name: 'Kernproblem: Mädchen' }))
+    expect(latest.steps[2].block.causes.map((c) => c.id)).toEqual(['ca1', 'ca2', 'ca3'])
+  })
+
   it('"+ Ursache" adds a direct cause, "+ Ursache dafür" one below; the third level offers none', async () => {
     const { user } = open()
     await user.click(screen.getByRole('button', { name: 'Ursache hinzufügen: Mädchen' }))

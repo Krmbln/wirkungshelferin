@@ -197,6 +197,11 @@ const screenNames = [
   'step2-hidden',
   'step2-blocked',
   'step2-proposal',
+  'step3',
+  'step3-empty',
+  'step3-nofocus',
+  'step3-blocked',
+  'step3-proposal',
   'home',
   'home-mixed',
   'home-backup-recent',
@@ -1019,6 +1024,7 @@ test('step 2 (step 16): groups, sticky header, tree, collapse, edge states, chec
     await page.waitForTimeout(50)
     const head = page.locator('[data-group-header="tg1"]')
     await expect(head).toHaveAttribute('data-stuck', '')
+    expect(await column.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
     const colBox = (await column.boundingBox())!
     const headBox = (await head.boundingBox())!
     expect(Math.abs(headBox.y - colBox.y)).toBeLessThanOrEqual(1)
@@ -1090,5 +1096,100 @@ test('step 2 (step 16): groups, sticky header, tree, collapse, edge states, chec
   await page.locator('[data-group-toggle="tg1"]').click()
   await expect(block.getByText(/1 Ursache ist ausgeblendet, solange „Mädchen 11–14 aus der Siedlung“/)).toBeVisible()
   await shotScreen('step2-hidden-line')
+  expect(errors).toEqual([])
+})
+
+test('step 3 (step 17): levels, marks, picker, non-focus groups, Stufe 7, check, card, step link', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const block = page.getByRole('region', { name: 'Baustein' })
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  const column = page.locator('.workspace__block .workspace__scroll')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+    await openScreen(page, 'step3')
+    await noPageScroll()
+    await shotScreen(`step3${suffix}`)
+    // Nothing sticks out of the column: chips, the picker button, the time field.
+    const colBox = (await column.boundingBox())!
+    for (const el of await block.locator('.bgoal__controls').all()) {
+      const b = (await el.boundingBox())!
+      expect(b.x + b.width).toBeLessThanOrEqual(colBox.x + colBox.width)
+    }
+    await column.evaluate((el) => (el.scrollTop = 900))
+    await page.waitForTimeout(50)
+    await shotScreen(`step3-mid${suffix}`)
+    // A stuck header (one-line name) and a disabled "+ Ziel" reason never make the column scroll sideways (step 17).
+    expect(await column.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await column.evaluate((el) => (el.scrollTop = el.scrollHeight))
+    await page.waitForTimeout(50)
+    await shotScreen(`step3-end${suffix}`)
+  }
+  await page.setViewportSize({ width: 1390, height: 880 })
+
+  // The cause picker: opens in place, focus on the first box, ticking links live, Esc closes back to the button.
+  await openScreen(page, 'step3')
+  const toggle = page.locator('[data-picker-toggle="go2"]')
+  await toggle.click()
+  const picker = page.locator('[data-picker="go2"]')
+  await expect(picker.getByRole('checkbox').first()).toBeFocused()
+  await expect(picker.getByRole('checkbox', { name: /Kaum Erwachsene/ })).toBeChecked()
+  await expect(picker.getByText(' · nicht beeinflussbar')).toBeVisible()
+  await picker.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+  await shotScreen('step3-picker')
+  await picker.getByRole('checkbox', { name: /Kaum Erwachsene/ }).uncheck()
+  await expect(page.locator('[data-item-id="go2"] .bgoal__causes .refchip')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await expect(picker).toHaveCount(0)
+  await expect(toggle).toBeFocused()
+  // The broken link: ⚠ chip, and in the picker a checked "Verweis fehlt" box that removes it.
+  await expect(page.locator('[data-item-id="go4"]').getByText('Verweis fehlt')).toBeVisible()
+  await page.locator('[data-picker-toggle="go4"]').click()
+  await page.locator('[data-picker="go4"]').getByRole('checkbox', { name: /Verweis fehlt/ }).click()
+  await expect(page.locator('[data-item-id="go4"] .refchip--missing')).toHaveCount(0)
+
+  // Check: ⛔ rows per group, ⚠ from the app (time frame); Zum Feld on "Stufe 4 ist leer" focuses that level's "+ Ziel".
+  await openScreen(page, 'step3-blocked')
+  await expect(gate.getByText('Stufe 4 ist leer · Mädchen 11–14 aus der Siedlung')).toBeVisible()
+  await expect(gate.getByText('Kein Ziel · Nachbarinnen und Nachbarn')).toBeVisible()
+  await expect(gate.getByText('Warum fehlt: Stufe 7')).toBeVisible()
+  await shotScreen('step3-blocked')
+  await page.locator('[data-group-toggle="tg3"]').click()
+  await gate.getByRole('button', { name: /^Zum Feld: Stufe 4 ist leer/ }).click()
+  await expect(page.locator('[data-add="goals-tg3-4"]')).toBeFocused()
+  await expect(page.locator('[data-group-toggle="tg3"]')).toHaveAttribute('aria-expanded', 'true')
+  await noPageScroll()
+
+  // "Trifft für diese Gruppe nicht zu": the mark appears, its Why gets focus, "+ Ziel" says why it can't be used.
+  await block.getByRole('button', { name: 'Stufe 4 trifft für „Mädchen 11–14 aus der Siedlung“ nicht zu' }).click()
+  await expect(page.locator('[data-item-id="na2"] [data-field="why"] textarea')).toBeFocused()
+  await expect(page.locator('[data-add="goals-tg3-4"]')).toHaveAttribute('aria-disabled', 'true')
+  await shotScreen('step3-marked')
+
+  // The card: level in the noun, links on the meta line, a goal waiting for the mark's removal; "Zu Schritt 2" opens step 2.
+  await openScreen(page, 'step3-proposal')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  await expect(card.getByText('Ziel · Stufe 4 · Mädchen 11–14 aus der Siedlung')).toBeVisible()
+  await expect(card.getByText(/bis zum Sommer · löst auf: „Werkstätten gelten/)).toBeVisible()
+  await expect(card.getByText('zuerst „Entfernen: Trifft nicht zu · Stufe 6“ übernehmen')).toBeVisible()
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = 0))
+  await shotScreen('step3-proposal')
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await shotScreen('step3-proposal-end')
+  await page.getByRole('button', { name: 'Zu Schritt 2' }).first().click()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Problem')
+
+  for (const name of ['step3-empty', 'step3-nofocus']) {
+    await openScreen(page, name)
+    await noPageScroll()
+    await shotScreen(name)
+  }
   expect(errors).toEqual([])
 })

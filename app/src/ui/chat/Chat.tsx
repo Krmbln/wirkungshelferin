@@ -10,7 +10,8 @@ import { Icon } from '../components/Icon'
 import { ThinkingIndicator } from '../components/ThinkingIndicator'
 import { IntroPanel } from './IntroPanel'
 import { AppLine, PasteForm, StartPanel, type PasteControls } from './StartPanel'
-import { Markdown } from './Markdown'
+import { Markdown, StepLinks } from './Markdown'
+import type { StepId } from '../../domain/types'
 import { PDF_WAIT, PdfButton, PdfPanel, type PdfControls } from './PdfImport'
 import { sessionBreak, sessionLabel } from './sessions'
 import { isThinking, messageTexts, streamTexts, type ChatRun } from './stream'
@@ -41,6 +42,8 @@ export type ChatProps = {
   onInterview?: () => void
   /** Step 0's PDF upload (step 15); undefined where it isn't offered. */
   pdf?: PdfControls
+  /** "[Zu Schritt N](#schritt-N)" in Claude's text opens an earlier step (step 17). */
+  stepLinks?: { step: StepId; onOpen: (step: StepId) => void }
 }
 
 /**
@@ -57,7 +60,7 @@ const FOLLOW_SLACK = 80
 
 // The chat column (design §6.2). Lukas's turns right, Claude's left; the stream shows
 // "denkt nach …" until text arrives. Errors stay in the chat, the input is never lost.
-export function Chat({ segments, intro, now, proposals, renderProposal, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model, paste, onInterview, pdf }: ChatProps) {
+export function Chat({ segments, intro, now, proposals, renderProposal, run, unanswered, draft, onDraftChange, onSend, onStop, onRetry, onOpenSettings, model, paste, onInterview, pdf, stepLinks }: ChatProps) {
   const log = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const following = useRef(true)
@@ -164,7 +167,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
   else if (atEnd) items.push(<SessionDivider key="session" label={atEnd} />)
 
   return (
-    <>
+    <StepLinks.Provider value={stepLinks ?? null}>
       {intro && <IntroPanel intro={intro} open={introOpen && !roomNeeded} onToggle={() => setIntroOpen((o) => !o)} />}
       <div
         className="workspace__scroll chat__log"
@@ -236,7 +239,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
           {composer()}
         </>
       )}
-    </>
+    </StepLinks.Provider>
   )
 
   function cancelPaste() {

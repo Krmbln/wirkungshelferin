@@ -8,7 +8,7 @@ import './Block.css'
 // The reusable pieces of every block panel (design §6.2, step 11). Steps 2–6 use them too.
 
 type SectionProps = {
-  title: string
+  title: ReactNode
   /** The add button's visible text (default "hinzufügen"). */
   addText?: string
   /** Beside the heading, e.g. "von dir geändert" of a form (step 14). */
@@ -27,10 +27,12 @@ type SectionProps = {
   level?: 3 | 4
   /** Under the heading, before the rows (step 2: the challenge line above Folgen). */
   lead?: ReactNode
+  /** The add button can't be used now, and why (step 3: a level marked "trifft nicht zu"). */
+  addDisabled?: string
   children: ReactNode
 }
 
-export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, actions, level = 3, lead, children }: SectionProps) {
+export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, actions, level = 3, lead, addDisabled, children }: SectionProps) {
   const headingId = useId()
   const Heading = level === 4 ? 'h4' : 'h3'
   return (
@@ -55,7 +57,7 @@ export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addL
   function add() {
     if (!onAdd) return null
     return (
-      <Button variant="text" className="bsection__add" icon={<Icon name="plus" size={16} />} aria-label={addLabel} data-add={addKey} onClick={onAdd}>
+      <Button variant="text" className="bsection__add" icon={<Icon name="plus" size={16} />} aria-label={addLabel} data-add={addKey} disabledReason={addDisabled} onClick={onAdd}>
         {addText}
       </Button>
     )
@@ -104,11 +106,13 @@ type WhyProps = {
   onSave: (value: string) => void
   /** ⛔ marker: set once a check found the Why missing (step 13). */
   blocked?: boolean
+  /** Names the item in the field's accessible name when many rows repeat it ("Warum: Ziel „…“", step 17). */
+  context?: string
   forceState?: 'hover'
 }
 
 /** "Warum?" directly under a Why-carrying item (design §6.2). */
-export function WhyField({ value, onSave, blocked = false, forceState, placeholder = 'Warum ist das wichtig? (nötig zum Bestätigen)' }: WhyProps) {
+export function WhyField({ value, onSave, blocked = false, context, forceState, placeholder = 'Warum ist das wichtig? (nötig zum Bestätigen)' }: WhyProps) {
   const id = useId()
   return (
     <div className="why" data-field="why">
@@ -127,6 +131,7 @@ export function WhyField({ value, onSave, blocked = false, forceState, placehold
         id={id}
         value={value}
         onSave={onSave}
+        label={context && `Warum: ${context}`}
         multiline
         invalid={blocked}
         placeholder={placeholder}

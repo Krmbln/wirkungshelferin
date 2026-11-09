@@ -1,4 +1,5 @@
 import { findItem, stepOf, type LooseBlock } from '../../domain/block'
+import { cut } from '../../domain/check'
 import { canUndo, changeView, type ChangeView, type StaleReason } from '../../domain/proposals'
 import { collectionMeta, type Item } from '../../domain/schemas/blocks'
 import type { Project, Proposal, ProposalChange } from '../../domain/schemas/project'
@@ -32,6 +33,7 @@ export const EVIDENCE: Record<string, string> = {
 }
 
 const group: FieldInfo = { label: 'Zielgruppe', ref: true }
+const LEVELS: Record<string, string> = { 4: 'Stufe 4', 5: 'Stufe 5', 6: 'Stufe 6' }
 const parent: FieldInfo = { label: 'Einordnung', ref: true }
 
 /** "Wofür?" in words (design §6.2, step 14). */
@@ -87,10 +89,15 @@ const info: { [S in StepId]: Record<string, CollectionInfo> } = {
     },
     consequences: { noun: 'Folge', main: 'text', fields: { groupId: group, parentId: parent, text: { label: 'Folge' } } },
   },
+  // The level goes into the noun ("Ziel · Stufe 5 · Jugendliche"), links into the meta line.
   3: {
-    goals: { noun: 'Wirkungsziel', main: 'text' },
-    levelNotApplicable: { noun: 'Stufe nicht zutreffend', main: 'level' },
-    level7: { noun: 'Stufe 7', main: 'text' },
+    goals: {
+      noun: 'Ziel',
+      main: 'text',
+      fields: { groupId: group, level: { label: 'Stufe', values: LEVELS, ref: true }, text: { label: 'Ziel' }, causeIds: { label: 'Löst auf', ref: true }, timeFrame: { label: 'Zeitrahmen', ref: true }, why },
+    },
+    levelNotApplicable: { noun: 'Trifft nicht zu', main: 'level', fields: { groupId: group, level: { label: 'Stufe', values: LEVELS, ref: true }, why } },
+    level7: { noun: 'Stufe 7 · Beitrag', main: 'text', fields: { text: { label: 'Beitrag' }, why } },
   },
   4: {
     resources: { noun: 'Ressource', main: 'text' },
@@ -188,7 +195,15 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     }
     const under = parentText(project, step, proposal, change.collection, fields.parentId)
     if (under) meta.push(`unter „${cut(under, 40)}“`)
-    return { kind, noun: groupNoun(project, noun, fields.groupId), main: format(mainField, fields[mainField]) || `${noun} ohne Namen`, meta, fields: lines }
+    const goal = goalText(project, step, change.collection, fields)
+    if (goal.meta) meta.push(goal.meta)
+    return {
+      kind,
+      noun: groupNoun(project, goal.noun ?? noun, fields.groupId),
+      main: goal.main ?? (format(mainField, fields[mainField]) || `${noun} ohne Namen`),
+      meta,
+      fields: lines,
+    }
   }
 
   // The item before an applied update; otherwise as it is now (or was last seen), or as the
@@ -202,7 +217,11 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
   // Never an internal id on screen (an empty singleton is named by its noun alone).
   if (change.op === 'update' && isForm(step, change.collection)) return formRow(step, change, before, view)
   const unnamed = collectionMeta(step, change.collection)?.singleton ? '' : `${noun} ohne Namen`
-  const name = format(mainField, before?.[mainField]) || unnamed
+  const goal = goalText(project, step, change.collection, before ?? {})
+  // A singleton named by its own text (Stufe 7): its ÄNDERN line already shows old and new, so
+  // no name line repeating the old one (design check step 17).
+  const ownText = change.op === 'update' && step === 3 && change.collection === 'level7' && mainField in fields
+  const name = ownText ? '' : (goal.main ?? (format(mainField, before?.[mainField]) || unnamed))
   const placement = (id: unknown) => {
     const text = parentText(project, step, proposal, change.collection, id)
     return text ? `unter „${cut(text, 40)}“` : change.collection === 'causes' ? 'direkte Ursache' : 'direkte Folge'
@@ -214,21 +233,43 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
           .map(([field, value]) =>
             field === 'parentId'
               ? { label: parent.label, before: placement(before?.parentId), after: placement(value) }
-              : { label: fieldInfo(step, change.collection, field).label, before: format(field, before?.[field]), after: format(field, value) || '(leer)' },
+              : field === 'causeIds'
+                ? { label: 'Löst auf', before: causesText(project, before?.causeIds), after: causesText(project, value) || '(leer)' }
+                : { label: fieldInfo(step, change.collection, field).label, before: format(field, before?.[field]), after: format(field, value) || '(leer)' },
           )
           .filter((line) => line.before !== line.after)
       : []
   const meta = change.op === 'remove' && change.state !== 'applied' ? movedUp(project, step, change.collection, target) : []
-  return { kind, noun: groupNoun(project, noun, before?.groupId), main: name, meta, fields: lines }
+  return { kind, noun: groupNoun(project, goal.noun ?? noun, before?.groupId), main: name, meta, fields: lines }
 }
 
-/** Cut at `n` characters, at the last word boundary when one is near (design check step 16). */
-function cut(text: string, n: number): string {
-  if (text.length <= n) return text
-  const head = text.slice(0, n - 1)
-  const space = head.lastIndexOf(' ')
-  return `${(space > n / 2 ? head.slice(0, space) : head).trimEnd()} …`
+/**
+ * Step 3 rows (design §6.2 "Step 17"): the level in the noun; a goal's meta "bis … · löst auf:
+ * „…“" (a non-focus goal's link is its core problem, not said); a mark is named in words.
+ */
+function goalText(project: Project, step: StepId, collection: string, fields: Record<string, unknown>): { noun?: string; main?: string; meta?: string } {
+  if (step !== 3 || (collection !== 'goals' && collection !== 'levelNotApplicable')) return {}
+  const level = LEVELS[String(fields.level)] ?? ''
+  const groupName = project.steps[1].block.targetGroups.find((g) => g.id === fields.groupId)?.name || 'Zielgruppe ohne Namen'
+  if (collection === 'levelNotApplicable') return { noun: `Trifft nicht zu · ${level}`, main: `Trifft für „${cut(groupName, 40)}“ nicht zu` }
+  const meta = [fields.timeFrame as string, causesText(project, fields.causeIds, 2) && `löst auf: ${causesText(project, fields.causeIds, 2)}`].filter(Boolean).join(' · ')
+  return { noun: `Ziel · ${level}`, meta: meta || undefined }
 }
+
+/** Linked step 2 items in words: „A“, „B“ + 1 weitere; a deleted one is "Verweis fehlt". */
+function causesText(project: Project, ids: unknown, max = Infinity): string {
+  if (!Array.isArray(ids) || !ids.length) return ''
+  const step2 = project.steps[2].block
+  const names = ids.map((id) => {
+    const item = [...step2.causes, ...step2.problems].find((i) => i.id === id)
+    if (!item) return 'Verweis fehlt'
+    const text = ('text' in item ? item.text : item.coreProblem) || 'ohne Text'
+    return `„${cut(text, 40)}“`
+  })
+  const shown = names.slice(0, max).join(', ')
+  return names.length > max ? `${shown} + ${names.length - max} weitere` : shown
+}
+
 
 /** "Ursache · Kinder 8–12": steps 2–4 name the group an item hangs on (cut at 40 characters). */
 function groupNoun(project: Project, noun: string, groupId: unknown): string {
@@ -307,6 +348,12 @@ export function staleText(project: Project, step: StepId, proposal: Proposal, ch
 export function blockedText(project: Project, step: StepId, proposal: Proposal, needs: string): string {
   const creator = proposal.changes.find((c) => c.id === needs)
   const name = creator ? rowText(project, step, proposal, creator, { kind: 'open' }).main : 'die andere Änderung'
+  // Step 3: a removal can be in the way too (a goal on a level marked "trifft nicht zu"). Named
+  // by its noun, so no quotes nest inside the quotes.
+  if (creator?.op === 'remove') {
+    const noun = rowText(project, step, proposal, creator, { kind: 'open' }).noun.split(' · ').slice(0, 2).join(' · ')
+    return `zuerst „Entfernen: ${noun}“ übernehmen`
+  }
   return `zuerst ‚Neu: ${name}‘ übernehmen`
 }
 
