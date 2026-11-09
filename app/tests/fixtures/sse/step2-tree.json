@@ -237,7 +237,7 @@
         },
         "segments": [
           {
-            "id": "d4a95ad0-5e32-4856-8847-ed65a5420ed3",
+            "id": "c1fc602a-c9cb-4066-a812-ea2c03b963b7",
             "startedAt": "2026-11-05T10:00:00.000Z",
             "messages": [
               {
@@ -256,7 +256,7 @@
                     "text": "[Bausteinstand Schritt 2]\nproblems: (leer)\ncauses: (leer)\nconsequences: (leer)\n⛔ offen:\n- Kernproblem fehlt · Jugendliche 12–17\n- Kernproblem fehlt · Mädchen 11–14"
                   }
                 ],
-                "id": "cac88472-35d9-4c84-b86d-ea331aa231ab",
+                "id": "006cdc93-d6a5-4fc8-8b38-471605af3e19",
                 "at": "2026-11-05T10:00:00.000Z"
               }
             ]

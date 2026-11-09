@@ -17,15 +17,15 @@
             "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
             "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
             "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
-            "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
-            "team": "",
-            "funder": "Stiftung Stadtteil Morgen",
             "activities": [
               "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
               "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
               "Kleine Touren in die Umgebung"
             ],
+            "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+            "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
             "duration": "2026–2027",
+            "funder": "Stiftung Stadtteil Morgen",
             "budgetRange": "offen",
             "statedGoals": [
               "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
@@ -46,7 +46,9 @@
             "purpose": "beides",
             "audience": "Stiftung Stadtteil Morgen und das Team",
             "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
-            "requiredFigures": [],
+            "requiredFigures": [
+              "Teilnahmen pro Halbjahr"
+            ],
             "existingData": [
               "Anwesenheitsliste pro Nachmittag",
               "Liste der vergebenen Räder"
@@ -78,15 +80,15 @@
               "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
               "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
               "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
-              "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
-              "team": "",
-              "funder": "Stiftung Stadtteil Morgen",
               "activities": [
                 "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
                 "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
                 "Kleine Touren in die Umgebung"
               ],
+              "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+              "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
               "duration": "2026–2027",
+              "funder": "Stiftung Stadtteil Morgen",
               "budgetRange": "offen",
               "statedGoals": [
                 "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
@@ -107,7 +109,9 @@
               "purpose": "beides",
               "audience": "Stiftung Stadtteil Morgen und das Team",
               "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
-              "requiredFigures": [],
+              "requiredFigures": [
+                "Teilnahmen pro Halbjahr"
+              ],
               "existingData": [
                 "Anwesenheitsliste pro Nachmittag",
                 "Liste der vergebenen Räder"
@@ -135,28 +139,28 @@
             "id": "challenge",
             "rev": 2,
             "editedByUser": false,
-            "why": "Abgeleitet aus Schritt 0: Die Siedlung ist eine Großwohnsiedlung am Stadtrand, und das Projekt will, dass Jugendliche mobiler werden und in andere Stadtteile kommen. Beobachtungen oder Zahlen, die das belegen, sind noch offen.",
-            "text": "Viele Jugendliche aus der Weidengrund-Siedlung am Stadtrand kommen selten aus ihrer Siedlung heraus, weil sie nicht selbstständig mobil sind."
+            "why": "Vermutung, noch zu belegen: Die Siedlung liegt am Stadtrand, und das Projekt will ausdrücklich erreichen, dass Jugendliche mobiler werden und in andere Stadtteile kommen. Beobachtungen oder Zahlen aus dem Alltag fehlen hier noch.",
+            "text": "Viele Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus, weil ihnen ein verlässliches Fortbewegungsmittel fehlt."
           },
           "targetGroups": [
             {
               "id": "tg1",
               "rev": 3,
               "editedByUser": true,
-              "why": "Bei ihnen will das Projekt seine Hauptwirkung erzielen: Sie sollen ihr Rad selbst instand halten und mobiler werden. Die 12- bis 14-Jährigen sind die, die regelmäßig kommen – Ältere kommen kaum. Bei ihnen ist deshalb Veränderung zu erwarten, darum Fokusgruppe.",
-              "name": "Stammgäste der offenen Werkstatt (12–14 Jahre)",
-              "description": "Jugendliche von 12 bis 14 Jahren aus der Weidengrund-Siedlung, vor allem aus den Hochhäusern am Weidengrund, die regelmäßig dienstags oder donnerstags in die offene Werkstatt kommen. Sie reparieren dort ihr eigenes Rad mit Anleitung oder bereiten gespendete Räder auf, um sich nach 20 Stunden ein eigenes zu erarbeiten. Stärken und Wünsche: offen (Vermutung: Lust am Schrauben, Wunsch nach einem eigenen, fahrbereiten Rad).",
+              "why": "Bei ihnen will das Projekt seine Hauptwirkung erzielen: Sie lernen, ihr Rad selbst instand zu halten, und werden mobiler. Fokusgruppe, weil sie regelmäßig kommen und Veränderung vor allem bei ihnen zu erwarten ist.",
+              "name": "Stammgäste der Werkstatt (12–14 Jahre)",
+              "description": "12- bis 14-jährige Jugendliche aus der Weidengrund-Siedlung, die regelmäßig dienstags und donnerstags in die offene Werkstatt kommen, ihre Räder reparieren und zum Teil auf ein eigenes Rad hinarbeiten (20 Stunden Mitarbeit). Stärke (Vermutung): Interesse am Schrauben und an praktischer Arbeit. Vor allem aus den Hochhäusern am Weidengrund.",
               "reach": "direct",
               "isFocus": true,
-              "sizeEstimate": "offen – laut Schritt 0 im Schnitt 15 pro Nachmittag; das zählt Besuche, nicht verschiedene Personen, und schließt auch Ältere ein"
+              "sizeEstimate": ""
             },
             {
               "id": "tg2",
               "rev": 1,
               "editedByUser": false,
-              "why": "Sie nutzen das offene Angebot ebenfalls und sind oft der Einstieg zu den Stammgästen. Wegen der seltenen Teilnahme ist bei ihnen weniger Veränderung zu erwarten – deshalb keine Fokusgruppe.",
-              "name": "Gelegenheitsbesucher der offenen Werkstatt",
-              "description": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, die nur ab und zu vorbeikommen, z. B. für eine schnelle Reparatur oder eine Tour.",
+              "why": "Sie machen einen Teil der rund 15 Besuche pro Nachmittag aus und können zu Stammgästen werden; ohne sie wäre die offene Werkstatt nur halb beschrieben.",
+              "name": "Gelegenheitsbesucher der Werkstatt (12–17 Jahre)",
+              "description": "Jugendliche aus der Siedlung, die nur ab und zu in die offene Werkstatt kommen, etwa für eine einzelne Reparatur.",
               "reach": "direct",
               "isFocus": false,
               "sizeEstimate": ""
@@ -167,29 +171,32 @@
               "id": "sh1",
               "rev": 1,
               "editedByUser": false,
-              "role": "Stiftung Stadtteil Morgen – Geldgeber",
+              "role": "Stiftung Stadtteil Morgen – Geldgeberin",
               "expectations": [
                 "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
-                "Ob darüber hinaus Wirkungsangaben erwartet werden: offen"
+                "Ob sie mehr als Teilnahmezahlen erwartet: offen"
               ]
             },
             {
               "id": "sh2",
               "rev": 1,
               "editedByUser": false,
-              "role": "Nachbarschaftshaus Am Weidengrund e. V. – Träger und Team der Werkstatt",
-              "expectations": [
-                "Lernen, was die Werkstatt bei den Jugendlichen verändert, um das Angebot zu verbessern"
-              ]
+              "role": "Fahrradmechanikerin auf Honorar – leitet die Werkstatt an",
+              "expectations": []
             },
             {
               "id": "sh3",
               "rev": 1,
               "editedByUser": false,
-              "role": "Spenderinnen und Spender der Fahrräder",
-              "expectations": [
-                "Vermutung: dass die gespendeten Räder bei Jugendlichen ankommen und genutzt werden – noch offen"
-              ]
+              "role": "Zwei Ehrenamtliche aus dem Nachbarschaftshaus – unterstützen in der Werkstatt",
+              "expectations": []
+            },
+            {
+              "id": "sh4",
+              "rev": 1,
+              "editedByUser": false,
+              "role": "Nachbarschaftshaus Am Weidengrund e. V. – Träger",
+              "expectations": []
             }
           ]
         },
@@ -197,9 +204,10 @@
         "proposals": [
           {
             "id": "p1",
-            "toolUseId": "toolu_01EuWKqZK3JmsbNhGHCtdDNj",
+            "toolUseId": "toolu_01MtnhyCvuqdzpJne6QAPU6K",
             "at": "2026-11-05T10:00:00.000Z",
-            "summary": "Erster Gesamtentwurf aus Schritt 0: Herausforderung als Zustand bei den Jugendlichen, Zielgruppen nach Stammgästen und Gelegenheitsbesuchern getrennt, dazu Geldgeber, Träger, Spender und ähnliche Angebote als Beteiligte.",
+            "summary": "Erster Gesamtentwurf: Herausforderung als Zustand bei den Jugendlichen, Stammgäste als Fokusgruppe, Gelegenheitsbesucher als weitere direkte Gruppe, fünf Beteiligte.",
+            "question": "Von den rund 15 Jugendlichen pro Nachmittag: Wie viele sind fast jedes Mal da, und wie viele kommen nur ab und zu?",
             "changes": [
               {
                 "id": "p1c1",
@@ -208,8 +216,8 @@
                 "targetId": "challenge",
                 "baseRev": 1,
                 "fields": {
-                  "text": "Viele Jugendliche aus der Weidengrund-Siedlung am Stadtrand kommen selten aus ihrer Siedlung heraus, weil sie nicht selbstständig mobil sind.",
-                  "why": "Abgeleitet aus Schritt 0: Die Siedlung ist eine Großwohnsiedlung am Stadtrand, und das Projekt will, dass Jugendliche mobiler werden und in andere Stadtteile kommen. Beobachtungen oder Zahlen, die das belegen, sind noch offen."
+                  "text": "Viele Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus, weil ihnen ein verlässliches Fortbewegungsmittel fehlt.",
+                  "why": "Vermutung, noch zu belegen: Die Siedlung liegt am Stadtrand, und das Projekt will ausdrücklich erreichen, dass Jugendliche mobiler werden und in andere Stadtteile kommen. Beobachtungen oder Zahlen aus dem Alltag fehlen hier noch."
                 },
                 "state": "applied",
                 "undo": {
@@ -229,12 +237,12 @@
                 "collection": "targetGroups",
                 "tempId": "new:1",
                 "fields": {
-                  "name": "Stammgäste der offenen Werkstatt",
-                  "description": "Jugendliche von 12 bis 17 Jahren aus der Weidengrund-Siedlung, die regelmäßig dienstags oder donnerstags in die offene Werkstatt kommen. Sie reparieren dort ihr eigenes Rad mit Anleitung oder bereiten gespendete Räder auf, um sich nach 20 Stunden ein eigenes zu erarbeiten. Stärken und Wünsche: offen (Vermutung: Lust am Schrauben, Wunsch nach einem eigenen, fahrbereiten Rad).",
+                  "name": "Stammgäste der Werkstatt (12–17 Jahre)",
+                  "description": "Jugendliche aus der Weidengrund-Siedlung, die regelmäßig dienstags und donnerstags in die offene Werkstatt kommen, ihre Räder reparieren und zum Teil auf ein eigenes Rad hinarbeiten (20 Stunden Mitarbeit). Stärke (Vermutung): Interesse am Schrauben und an praktischer Arbeit.",
                   "reach": "direct",
                   "isFocus": true,
-                  "sizeEstimate": "offen – laut Schritt 0 im Schnitt 15 pro Nachmittag; das zählt Besuche, nicht verschiedene Personen",
-                  "why": "Bei ihnen will das Projekt seine Hauptwirkung erzielen: Sie sollen ihr Rad selbst instand halten und mobiler werden. Veränderung ist vor allem bei denen zu erwarten, die regelmäßig kommen – deshalb Fokusgruppe."
+                  "sizeEstimate": "",
+                  "why": "Bei ihnen will das Projekt seine Hauptwirkung erzielen: Sie lernen, ihr Rad selbst instand zu halten, und werden mobiler. Fokusgruppe, weil sie regelmäßig kommen und Veränderung vor allem bei ihnen zu erwarten ist."
                 },
                 "state": "applied",
                 "resultId": "tg1",
@@ -250,12 +258,12 @@
                 "collection": "targetGroups",
                 "tempId": "new:2",
                 "fields": {
-                  "name": "Gelegenheitsbesucher der offenen Werkstatt",
-                  "description": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, die nur ab und zu vorbeikommen, z. B. für eine schnelle Reparatur oder eine Tour.",
+                  "name": "Gelegenheitsbesucher der Werkstatt (12–17 Jahre)",
+                  "description": "Jugendliche aus der Siedlung, die nur ab und zu in die offene Werkstatt kommen, etwa für eine einzelne Reparatur.",
                   "reach": "direct",
                   "isFocus": false,
                   "sizeEstimate": "",
-                  "why": "Sie nutzen das offene Angebot ebenfalls und sind oft der Einstieg zu den Stammgästen. Wegen der seltenen Teilnahme ist bei ihnen weniger Veränderung zu erwarten – deshalb keine Fokusgruppe."
+                  "why": "Sie machen einen Teil der rund 15 Besuche pro Nachmittag aus und können zu Stammgästen werden; ohne sie wäre die offene Werkstatt nur halb beschrieben."
                 },
                 "state": "applied",
                 "resultId": "tg2",
@@ -271,10 +279,10 @@
                 "collection": "stakeholders",
                 "tempId": "new:3",
                 "fields": {
-                  "role": "Stiftung Stadtteil Morgen – Geldgeber",
+                  "role": "Stiftung Stadtteil Morgen – Geldgeberin",
                   "expectations": [
                     "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
-                    "Ob darüber hinaus Wirkungsangaben erwartet werden: offen"
+                    "Ob sie mehr als Teilnahmezahlen erwartet: offen"
                   ]
                 },
                 "state": "applied",
@@ -291,10 +299,8 @@
                 "collection": "stakeholders",
                 "tempId": "new:4",
                 "fields": {
-                  "role": "Nachbarschaftshaus Am Weidengrund e. V. – Träger und Team der Werkstatt",
-                  "expectations": [
-                    "Lernen, was die Werkstatt bei den Jugendlichen verändert, um das Angebot zu verbessern"
-                  ]
+                  "role": "Fahrradmechanikerin auf Honorar – leitet die Werkstatt an",
+                  "expectations": []
                 },
                 "state": "applied",
                 "resultId": "sh2",
@@ -310,10 +316,8 @@
                 "collection": "stakeholders",
                 "tempId": "new:5",
                 "fields": {
-                  "role": "Spenderinnen und Spender der Fahrräder",
-                  "expectations": [
-                    "Vermutung: dass die gespendeten Räder bei Jugendlichen ankommen und genutzt werden – noch offen"
-                  ]
+                  "role": "Zwei Ehrenamtliche aus dem Nachbarschaftshaus – unterstützen in der Werkstatt",
+                  "expectations": []
                 },
                 "state": "applied",
                 "resultId": "sh3",
@@ -329,10 +333,25 @@
                 "collection": "stakeholders",
                 "tempId": "new:6",
                 "fields": {
-                  "role": "Ähnliche Angebote in der Siedlung: Jugendclub im Einkaufszentrum, Sportverein",
-                  "expectations": [
-                    "offen"
-                  ]
+                  "role": "Nachbarschaftshaus Am Weidengrund e. V. – Träger",
+                  "expectations": []
+                },
+                "state": "applied",
+                "resultId": "sh4",
+                "undo": {
+                  "before": null,
+                  "index": 3,
+                  "afterRev": 1
+                }
+              },
+              {
+                "id": "p1c8",
+                "op": "add",
+                "collection": "stakeholders",
+                "tempId": "new:7",
+                "fields": {
+                  "role": "Jugendclub im Einkaufszentrum und Sportverein – ähnliche Angebote vor Ort",
+                  "expectations": []
                 },
                 "state": "rejected"
               }
@@ -340,9 +359,10 @@
           },
           {
             "id": "p2",
-            "toolUseId": "toolu_01CJ4xgssULDucfUeM1jhnHy",
+            "toolUseId": "toolu_01Ui2aEfs2SDgL6qZXXFwSDB",
             "at": "2026-11-05T10:00:00.000Z",
-            "summary": "tg1 wird auf die 12- bis 14-jährigen Stammgäste eingegrenzt, weil die Älteren kaum kommen und die Fokusgruppe nur die tatsächlich Erreichten beschreiben soll.",
+            "summary": "Die Stammgäste werden auf 12- bis 14-Jährige eingegrenzt, weil die Älteren kaum kommen.",
+            "question": "Sind auch die Gelegenheitsbesucher vor allem 12 bis 14 – oder kommen die wenigen Älteren eher ab und zu?",
             "changes": [
               {
                 "id": "p2c1",
@@ -351,10 +371,8 @@
                 "targetId": "tg1",
                 "baseRev": 2,
                 "fields": {
-                  "name": "Stammgäste der offenen Werkstatt (12–14 Jahre)",
-                  "description": "Jugendliche von 12 bis 14 Jahren aus der Weidengrund-Siedlung, vor allem aus den Hochhäusern am Weidengrund, die regelmäßig dienstags oder donnerstags in die offene Werkstatt kommen. Sie reparieren dort ihr eigenes Rad mit Anleitung oder bereiten gespendete Räder auf, um sich nach 20 Stunden ein eigenes zu erarbeiten. Stärken und Wünsche: offen (Vermutung: Lust am Schrauben, Wunsch nach einem eigenen, fahrbereiten Rad).",
-                  "sizeEstimate": "offen – laut Schritt 0 im Schnitt 15 pro Nachmittag; das zählt Besuche, nicht verschiedene Personen, und schließt auch Ältere ein",
-                  "why": "Bei ihnen will das Projekt seine Hauptwirkung erzielen: Sie sollen ihr Rad selbst instand halten und mobiler werden. Die 12- bis 14-Jährigen sind die, die regelmäßig kommen – Ältere kommen kaum. Bei ihnen ist deshalb Veränderung zu erwarten, darum Fokusgruppe."
+                  "name": "Stammgäste der Werkstatt (12–14 Jahre)",
+                  "description": "12- bis 14-jährige Jugendliche aus der Weidengrund-Siedlung, die regelmäßig dienstags und donnerstags in die offene Werkstatt kommen, ihre Räder reparieren und zum Teil auf ein eigenes Rad hinarbeiten (20 Stunden Mitarbeit). Stärke (Vermutung): Interesse am Schrauben und an praktischer Arbeit. Vor allem aus den Hochhäusern am Weidengrund."
                 },
                 "state": "applied",
                 "undo": {
@@ -362,12 +380,12 @@
                     "id": "tg1",
                     "rev": 2,
                     "editedByUser": true,
-                    "why": "Bei ihnen will das Projekt seine Hauptwirkung erzielen: Sie sollen ihr Rad selbst instand halten und mobiler werden. Veränderung ist vor allem bei denen zu erwarten, die regelmäßig kommen – deshalb Fokusgruppe.",
-                    "name": "Stammgäste der offenen Werkstatt",
-                    "description": "Jugendliche von 12 bis 17 Jahren aus der Weidengrund-Siedlung, die regelmäßig dienstags oder donnerstags in die offene Werkstatt kommen. Sie reparieren dort ihr eigenes Rad mit Anleitung oder bereiten gespendete Räder auf, um sich nach 20 Stunden ein eigenes zu erarbeiten. Stärken und Wünsche: offen (Vermutung: Lust am Schrauben, Wunsch nach einem eigenen, fahrbereiten Rad). Vor allem aus den Hochhäusern am Weidengrund.",
+                    "why": "Bei ihnen will das Projekt seine Hauptwirkung erzielen: Sie lernen, ihr Rad selbst instand zu halten, und werden mobiler. Fokusgruppe, weil sie regelmäßig kommen und Veränderung vor allem bei ihnen zu erwarten ist.",
+                    "name": "Stammgäste der Werkstatt (12–17 Jahre)",
+                    "description": "Jugendliche aus der Weidengrund-Siedlung, die regelmäßig dienstags und donnerstags in die offene Werkstatt kommen, ihre Räder reparieren und zum Teil auf ein eigenes Rad hinarbeiten (20 Stunden Mitarbeit). Stärke (Vermutung): Interesse am Schrauben und an praktischer Arbeit. Vor allem aus den Hochhäusern am Weidengrund.",
                     "reach": "direct",
                     "isFocus": true,
-                    "sizeEstimate": "offen – laut Schritt 0 im Schnitt 15 pro Nachmittag; das zählt Besuche, nicht verschiedene Personen"
+                    "sizeEstimate": ""
                   },
                   "index": 0,
                   "afterRev": 3
@@ -377,9 +395,10 @@
           },
           {
             "id": "p3",
-            "toolUseId": "toolu_01WF8JReDFzeTjuaB3XobSCB",
+            "toolUseId": "toolu_01T5vZDw4sJUog97W9HA7Zud",
             "at": "2026-11-05T10:00:00.000Z",
-            "summary": "Die Hausverwaltung der Weidengrund-Siedlung kommt als Beteiligte dazu. Ihre Erwartung ist noch offen, weil es dazu im Material keinen Anhaltspunkt gibt.",
+            "summary": "Die Hausverwaltung der Siedlung kommt dazu, als Beteiligte und nicht als Zielgruppe.",
+            "question": "Was hat die Hausverwaltung mit der Werkstatt zu tun, und was erwartet sie vom Projekt?",
             "changes": [
               {
                 "id": "p3c1",
@@ -388,9 +407,7 @@
                 "tempId": "new:1",
                 "fields": {
                   "role": "Hausverwaltung der Weidengrund-Siedlung",
-                  "expectations": [
-                    "offen"
-                  ]
+                  "expectations": []
                 },
                 "state": "open"
               }
@@ -465,7 +482,7 @@
     "idCounters": {
       "src": 1,
       "tg": 2,
-      "sh": 3
+      "sh": 4
     }
   }
 }

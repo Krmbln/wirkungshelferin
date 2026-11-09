@@ -4,13 +4,14 @@ import { MAX_PASTE, prepareAct, prepareTurn } from '../../../src/ai/chat'
 import { parseCheck } from '../../../src/ai/check'
 import { contextText, lukasText } from '../../../src/ai/prompt'
 import { operatingRules } from '../../../src/ai/rules'
-import { rubricCriteria } from '../../../src/ai/tools'
+import { rubricCriteria, stepTools } from '../../../src/ai/tools'
 import type { LooseBlock } from '../../../src/domain/block'
 import { appJudged, hardIssues } from '../../../src/domain/check'
 import { FIXTURE_TIME, makeItem, makeProject, makeProposal } from '../../../src/domain/fixtures'
 import { isBlank, isOffen, leerFields } from '../../../src/domain/profile'
 import { reducer } from '../../../src/domain/reducer'
 import { projectSchema, type Project, type StoredMessage } from '../../../src/domain/schemas/project'
+import { stepIds } from '../../../src/domain/types'
 import { rowText } from '../../../src/ui/proposals/describe'
 
 // Step 0 (implementation plan step 14): "offen", the completeness criterion the app judges
@@ -182,8 +183,16 @@ describe('interview and opening turns', () => {
     expect(prepareAct(confirmed, 0, { kind: 'opening' }, meta)).toBeUndefined()
   })
 
-  it('every step: text and the one question come before the tool call (a tool call ends the turn)', () => {
-    for (const step of [0, 1] as const) expect(operatingRules(step, 'text')).toContain('Ruf das Werkzeug erst danach auf, als Letztes.')
+  it('every step: the tool call comes last, the one question goes into its question field and not into the text (step 18b)', () => {
+    for (const step of stepIds) {
+      const rules = operatingRules(step, 'text')
+      expect(rules).toContain('Ruf das Werkzeug als Letztes auf')
+      expect(rules).toContain('Deine eine Frage steht im Feld `question` des Vorschlags.')
+      expect(rules).toContain('Schreib sie nicht zusätzlich in deinen Text')
+      // No step rule still asks for the question in the text before the tool.
+      expect(rules).not.toMatch(/beginnt mit Text: was du vorschlägst, warum, und deine eine Frage/)
+    }
+    expect(stepTools(4)[0].description).toContain('Deine eine Frage gehört in das Feld question')
   })
 
   it('the step 0 rules are only in step 0', () => {

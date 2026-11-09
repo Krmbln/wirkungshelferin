@@ -10,9 +10,11 @@ import { Icon } from '../components/Icon'
 import { ThinkingIndicator } from '../components/ThinkingIndicator'
 import { IntroPanel } from './IntroPanel'
 import { AppLine, PasteForm, StartPanel, type PasteControls } from './StartPanel'
-import { Markdown, StepLinks } from './Markdown'
+import { InlineMarkdown, Markdown, StepLinks } from './Markdown'
 import type { StepId } from '../../domain/types'
 import { PDF_WAIT, PdfButton, PdfPanel, type PdfControls } from './PdfImport'
+import { closingQuestion, withoutQuestion } from './question'
+import { scrollIntoView } from '../proposals/highlight'
 import { sessionBreak, sessionLabel } from './sessions'
 import { isThinking, messageTexts, streamTexts, type ChatRun } from './stream'
 import './Chat.css'
@@ -66,6 +68,8 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
   const following = useRef(true)
   // Lukas scrolled up to read while an answer comes in: "Zur neuesten Nachricht" shows.
   const [away, setAway] = useState(false)
+  // A tall card just arrived and the chat stopped at its top: the jump button leads on to its question.
+  const [jumped, setJumped] = useState(false)
   const messages = segments.flatMap((s) => s.messages)
   // Open until Lukas has acted in the step; then it closes once and never under his hands.
   const acted = lukasActed(messages, proposals)
@@ -80,7 +84,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
   const roomNeeded = pasting || !!pdf?.state
   const running = run?.kind === 'running' || run?.kind === 'summarising'
   const reading = pdf?.state?.kind === 'reading'
-  const announcement = useAnnouncement(messages)
+  const announcement = useAnnouncement(messages, proposals)
   const visible = messages.filter((m) => m.role !== 'system')
   const sessionStart = sessionBreak(visible.map((m) => m.at), now)
 
@@ -95,10 +99,23 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
 
   // Opens at the newest message and follows the stream, unless Lukas scrolled up to read.
   const streamed = run?.kind === 'running' ? streamTexts(run.blocks).join('').length : 0
+  const lastId = useRef(messages.at(-1)?.id)
   useLayoutEffect(() => {
     const el = log.current
+    const last = messages.at(-1)
+    const arrived = !!last && last.id !== lastId.current
+    lastId.current = last?.id
     // An empty chat shows the start panel or the hint from the top (step 0's one next action).
-    if (el && following.current && (messages.length || run || pdf?.state)) el.scrollTop = el.scrollHeight
+    if (!el || !following.current || !(messages.length || run || pdf?.state)) return
+    // A card that just arrived and is taller than the chat: its top at the top, so Lukas reads
+    // summary → rows → question, not the question first (design §6.2 "Step 18b").
+    const card = arrived && last.role === 'assistant' ? el.querySelector(`[data-message-id="${CSS.escape(last.id)}"] .pcard`) : null
+    const reach = card ? card.closest('.msg')!.getBoundingClientRect().bottom - card.getBoundingClientRect().top : 0
+    if (card && reach > el.clientHeight) {
+      scrollIntoView(card, 'start')
+      following.current = false
+      setJumped(true)
+    } else el.scrollTop = el.scrollHeight
   }, [messages.length, streamed, run?.kind, pdf?.state?.kind])
 
   // Marks a log cut off at the bottom, e.g. the start panel's last option under the composer
@@ -121,6 +138,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
     if (el) el.scrollTop = el.scrollHeight
     following.current = true
     setAway(false)
+    setJumped(false)
     input.current?.focus()
   }
 
@@ -176,6 +194,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
           const el = e.currentTarget
           following.current = el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_SLACK
           setAway(!following.current)
+          if (following.current) setJumped(false)
         }}
       >
         {!messages.length && !run && paste && onInterview
@@ -201,7 +220,7 @@ export function Chat({ segments, intro, now, proposals, renderProposal, run, una
       <div className="visually-hidden" aria-live="polite" data-testid="chat-live">
         {announcement}
       </div>
-      {running && away && (
+      {(running || jumped) && away && (
         <div className="chat__jump">
           <Button variant="secondary" icon={<Icon name="chevronDown" />} onClick={toNewest}>
             Zur neuesten Nachricht
@@ -312,21 +331,30 @@ function ChatMessage({ message, proposals, renderProposal }: { message: StoredMe
       </li>
     )
   }
-  const uses = message.aborted ? [] : message.content.filter((b) => b.type === 'tool_use' && b.name === PROPOSE)
-  const shown = uses.flatMap((use) => proposals.filter((p) => p.toolUseId === use.id))
+  const shown = shownProposals(message, proposals)
+  const question = closingQuestion(shown)
   return (
-    <li className="msg msg--assistant">
+    <li className="msg msg--assistant" data-message-id={message.id}>
       <span className="msg__label">Wirkungshelferin</span>
-      {messageTexts(message).map((text, i) => (
+      {withoutQuestion(messageTexts(message), question).map((text, i) => (
         <Markdown key={i}>{text}</Markdown>
       ))}
       {/* Only complete messages carry proposals; a stopped one shows no card (design §6.2). */}
       {shown.map((p) => (
         <Fragment key={p.id}>{renderProposal(p)}</Fragment>
       ))}
+      {/* The one question, as the message's last line under the card (step 18b). */}
+      {question && <InlineMarkdown className="msg__question">{question}</InlineMarkdown>}
       {message.aborted && <span className="msg__aborted">abgebrochen</span>}
     </li>
   )
+}
+
+/** The proposals a stored message shows as cards: none for a stopped message. */
+function shownProposals(message: StoredMessage, proposals: Proposal[]): Proposal[] {
+  if (message.aborted) return []
+  const uses = message.content.filter((b) => b.type === 'tool_use' && b.name === PROPOSE)
+  return uses.flatMap((use) => proposals.filter((p) => p.toolUseId === use.id))
 }
 
 function SessionDivider({ label }: { label: string }) {
@@ -431,8 +459,8 @@ function RunError({ run, model, onRetry, onOpenSettings }: { run: Extract<ChatRu
   )
 }
 
-/** One polite announcement per finished message, never per streamed token (design §10). */
-function useAnnouncement(messages: StoredMessage[]): string {
+/** One polite announcement per finished message, never per streamed token (design §10); it ends with the card's question. */
+function useAnnouncement(messages: StoredMessage[], proposals: Proposal[]): string {
   const last = messages.at(-1)
   const seen = useRef(last?.id)
   const [text, setText] = useState('')
@@ -440,7 +468,9 @@ function useAnnouncement(messages: StoredMessage[]): string {
     if (!last || last.id === seen.current) return
     seen.current = last.id
     if (last.role !== 'assistant') return
-    setText(last.aborted ? 'Antwort abgebrochen.' : `Wirkungshelferin: ${messageTexts(last).join('\n\n')}`)
+    const question = closingQuestion(shownProposals(last, proposals))
+    setText(last.aborted ? 'Antwort abgebrochen.' : `Wirkungshelferin: ${[...withoutQuestion(messageTexts(last), question), ...(question ? [question] : [])].join('\n\n')}`)
+    // Only a new message is announced; the proposals stored with it are read in the same render.
   }, [last])
   return text
 }

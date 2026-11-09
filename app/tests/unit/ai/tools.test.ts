@@ -76,24 +76,36 @@ describe('tool schemas', () => {
   it('step 0: profile and frame only — sources are Lukas\'s own and never proposed', () => {
     const schema = proposeInput(0)
     const profile = { op: 'update', collection: 'profile', id: 'profile', fields: { ...emptyFields(0, 'profile'), budgetRange: '', location: 'offen' } }
-    expect(schema.safeParse({ summary: 's', changes: [profile] }).success).toBe(true)
+    expect(schema.safeParse({ summary: 's', question: 'q?', changes: [profile] }).success).toBe(true)
     const source = { op: 'add', collection: 'sources', id: 'new:1', fields: { origin: 'paste', label: 'x', text: 'y', at: '2026-11-08T10:00:00.000Z' } }
-    expect(schema.safeParse({ summary: 's', changes: [source] }).success).toBe(false)
-    expect(schema.safeParse({ summary: 's', changes: [{ op: 'remove', collection: 'sources', id: 'src1' }] }).success).toBe(false)
+    expect(schema.safeParse({ summary: 's', question: 'q?', changes: [source] }).success).toBe(false)
+    expect(schema.safeParse({ summary: 's', question: 'q?', changes: [{ op: 'remove', collection: 'sources', id: 'src1' }] }).success).toBe(false)
   })
 
   it('accepts a complete add and rejects missing or extra fields', () => {
     const fields = { ...emptyFields(1, 'targetGroups'), sizeEstimate: '', name: 'Jugendliche', why: '' }
     const schema = proposeInput(1)
-    expect(schema.safeParse({ summary: 's', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields }] }).success).toBe(true)
+    expect(schema.safeParse({ summary: 's', question: 'q?', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields }] }).success).toBe(true)
     const { why: _, ...noWhy } = fields
-    expect(schema.safeParse({ summary: 's', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: noWhy }] }).success).toBe(false)
+    expect(schema.safeParse({ summary: 's', question: 'q?', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: noWhy }] }).success).toBe(false)
     expect(
-      schema.safeParse({ summary: 's', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: { ...fields, rev: 3 } }] }).success,
+      schema.safeParse({ summary: 's', question: 'q?', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: { ...fields, rev: 3 } }] }).success,
     ).toBe(false)
     // Singletons can only be updated, under their own id.
-    expect(schema.safeParse({ summary: 's', changes: [{ op: 'add', collection: 'challenge', id: 'new:1', fields: { text: '', why: '' } }] }).success).toBe(false)
-    expect(schema.safeParse({ summary: 's', changes: [{ op: 'remove', collection: 'challenge', id: 'challenge' }] }).success).toBe(false)
+    expect(schema.safeParse({ summary: 's', question: 'q?', changes: [{ op: 'add', collection: 'challenge', id: 'new:1', fields: { text: '', why: '' } }] }).success).toBe(false)
+    expect(schema.safeParse({ summary: 's', question: 'q?', changes: [{ op: 'remove', collection: 'challenge', id: 'challenge' }] }).success).toBe(false)
+  })
+
+  it('the one question is a required text in every step (step 18b): strict mode always sends it', () => {
+    for (const step of stepIds) {
+      const schema = stepTools(step)[0].input_schema as Node
+      expect((schema.properties as Node).question).toMatchObject({ type: 'string' })
+      expect(schema.required).toContain('question')
+    }
+    const fields = { ...emptyFields(1, 'targetGroups'), sizeEstimate: '', name: 'Jugendliche', why: '' }
+    const changes = [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields }]
+    expect(proposeInput(1).safeParse({ summary: 's', changes }).success).toBe(false)
+    expect(proposeInput(1).safeParse({ summary: 's', question: 'Passt das?', changes }).success).toBe(true)
   })
 
   it('reads the rubric criteria from the guide', () => {

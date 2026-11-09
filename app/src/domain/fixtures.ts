@@ -96,13 +96,14 @@ export function makeProject(init: ProjectInit = {}): Project {
 type ChangeInit = Omit<ProposalChange, 'id' | 'state'> & { id?: string; state?: ProposalChange['state'] }
 
 /** A proposal with ids c1, c2 … and all changes open unless stated. */
-export function makeProposal(changes: ChangeInit[], meta: { id?: string; summary?: string; at?: string } = {}): Proposal {
+export function makeProposal(changes: ChangeInit[], meta: { id?: string; summary?: string; question?: string; at?: string } = {}): Proposal {
   const id = meta.id ?? 'p1'
   return {
     id,
     toolUseId: `toolu_${id}`,
     at: meta.at ?? FIXTURE_TIME,
     summary: meta.summary ?? 'Vorschlag',
+    ...(meta.question !== undefined && { question: meta.question }),
     changes: changes.map((c, i) => ({ ...c, id: c.id ?? `${id}c${i + 1}`, state: c.state ?? 'open' })),
   }
 }

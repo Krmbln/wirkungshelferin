@@ -3,7 +3,7 @@ import { dummyKey } from '../dummyKey'
 import { readStored, replayClaude, startProject, watchProblems, writeStored } from './helpers'
 
 // Step 12 in real Chrome against the build (CSP on): the recorded opening answer from
-// `npm run contract` (a challenge update, two target groups, four stakeholders) through the card.
+// `npm run contract` (a challenge update, two target groups, five stakeholders) through the card.
 
 async function openStep1(page: Page) {
   await startProject(page)
@@ -25,18 +25,22 @@ test('from proposal to item in the block; after a reload the next request answer
   const card = page.getByRole('article', { name: 'Vorschlag' })
   const block = page.getByRole('region', { name: 'Baustein' })
   await expect(card).toBeVisible()
-  await expect(block.getByRole('button', { name: '7 offene Änderungen im Chat' })).toBeVisible()
+  await expect(block.getByRole('button', { name: '8 offene Änderungen im Chat' })).toBeVisible()
+  // Step 18b: the recorded question is the message's last line, under the card.
+  const question = page.locator('.msg--assistant .msg__question')
+  await expect(question).toHaveText(/^Von den rund 15 Jugendlichen pro Nachmittag: .*\?$/)
+  expect(await question.evaluate((el) => el === el.parentElement!.lastElementChild && el.previousElementSibling!.matches('.pcard'))).toBe(true)
 
   // Hover outlines nothing for a NEU row (no item yet), the challenge row outlines the challenge.
   await card.getByRole('button', { name: /^Übernehmen: Ändern – Herausforderung/ }).hover()
   await expect(block.locator('[data-item-id="challenge"]')).toHaveAttribute('data-outlined', '')
 
-  await card.getByRole('button', { name: 'Übernehmen: Neu – Zielgruppe „Stammgäste der offenen Werkstatt“' }).click()
-  await expect(block.getByRole('textbox', { name: 'Name der Zielgruppe' })).toHaveValue('Stammgäste der offenen Werkstatt')
+  await card.getByRole('button', { name: 'Übernehmen: Neu – Zielgruppe „Stammgäste der Werkstatt (12–17 Jahre)“' }).click()
+  await expect(block.getByRole('textbox', { name: 'Name der Zielgruppe' })).toHaveValue('Stammgäste der Werkstatt (12–17 Jahre)')
   await expect(block.locator('[data-item-id="tg1"]')).toBeInViewport()
-  await card.getByRole('button', { name: 'Ablehnen: Neu – Zielgruppe „Gelegenheitsbesucher der offenen Werkstatt“' }).click()
+  await card.getByRole('button', { name: 'Ablehnen: Neu – Zielgruppe „Gelegenheitsbesucher der Werkstatt (12–17 Jahre)“' }).click()
   await expect(card.getByText('abgelehnt', { exact: true })).toBeVisible()
-  await expect(block.getByRole('button', { name: '5 offene Änderungen im Chat' })).toBeVisible()
+  await expect(block.getByRole('button', { name: '6 offene Änderungen im Chat' })).toBeVisible()
 
   // Saved at once: a reload soon after keeps both decisions (lessons-learned steps 9, 11).
   await page.waitForTimeout(100)
@@ -45,7 +49,7 @@ test('from proposal to item in the block; after a reload the next request answer
   await expect(card.getByText('übernommen', { exact: true })).toBeVisible()
   await expect(card.getByText('abgelehnt', { exact: true })).toBeVisible()
   const stored = (await readStored(page, 'project')) as Stored
-  expect(stored.steps[1].block.targetGroups).toEqual([expect.objectContaining({ name: 'Stammgäste der offenen Werkstatt', editedByUser: false })])
+  expect(stored.steps[1].block.targetGroups).toEqual([expect.objectContaining({ name: 'Stammgäste der Werkstatt (12–17 Jahre)', editedByUser: false })])
 
   await input.fill('Weiter.')
   await input.press('Enter')
@@ -74,8 +78,8 @@ test('"offene Änderungen" jumps to the card; "Alle übernehmen" fills the block
   await expect(card).toBeInViewport()
 
   await card.getByRole('button', { name: 'Alle übernehmen' }).click()
-  await expect(card.getByText('übernommen', { exact: true })).toHaveCount(7)
+  await expect(card.getByText('übernommen', { exact: true })).toHaveCount(8)
   await expect(block.getByRole('button', { name: /im Chat$/ })).toHaveCount(0)
   await expect(block.getByRole('textbox', { name: 'Name der Zielgruppe' })).toHaveCount(2)
-  await expect(block.getByRole('textbox', { name: 'Rolle' })).toHaveCount(4)
+  await expect(block.getByRole('textbox', { name: 'Rolle' })).toHaveCount(5)
 })

@@ -1288,3 +1288,76 @@ test('step 4 (step 18): chain per group, goals read-only, link picker, critical 
   await shotScreen('step4-empty')
   expect(errors).toEqual([])
 })
+
+test('step 18b: the one question under the card, shown once, the scroll when a tall card arrives', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const log = page.locator('.chat__log')
+  const message = page.locator('.msg--assistant').filter({ has: page.locator('.pcard') })
+  const question = message.locator('.msg__question')
+  const toEnd = () => log.evaluate((el) => (el.scrollTop = el.scrollHeight))
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+    for (const name of ['question', 'question-no-text', 'question-duplicate', 'question-long']) {
+      await openScreen(page, name)
+      await toEnd()
+      // The message's last line, after the card and outside it, a plain 16/24 paragraph 16 px below the card.
+      await expect(question).toHaveCount(1)
+      expect(await message.evaluate((el) => el.lastElementChild!.classList.contains('msg__question'))).toBe(true)
+      const style = await question.evaluate((el) => {
+        const cs = getComputedStyle(el)
+        const card = el.parentElement!.querySelector('.pcard')!.getBoundingClientRect()
+        return { size: cs.fontSize, line: cs.lineHeight, weight: cs.fontWeight, gap: Math.round(el.getBoundingClientRect().top - card.bottom) }
+      })
+      expect(style).toEqual({ size: '16px', line: '24px', weight: '400', gap: 16 })
+      expect(await log.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+      await shotScreen(`${name}${suffix}`)
+    }
+  }
+
+  // The tops of the two messages that differ: label → card with no gap left; text → card.
+  for (const name of ['question-no-text', 'question-duplicate']) {
+    await openScreen(page, name)
+    await message.evaluate((el) => (el.closest('.chat__log')!.scrollTop = (el as HTMLElement).offsetTop - 12))
+    await shotScreen(`${name}-top`)
+  }
+  await openScreen(page, 'question-no-text')
+  const gap = await message.evaluate((el) => Math.round(el.querySelector('.pcard')!.getBoundingClientRect().top - el.querySelector('.msg__label')!.getBoundingClientRect().bottom))
+  expect(gap).toBeLessThanOrEqual(12)
+
+  // Shown once: the text's lead-in stays, its copy of the question goes; the card's line stays.
+  await openScreen(page, 'question-duplicate')
+  await expect(message.getByText('Passt das zu dem, was ihr an den Nachmittagen seht?')).toHaveCount(1)
+  await expect(message.locator('.md p').last()).toHaveText(/kommen nicht alle an die Werkbank\.$/)
+  await expect(question).toHaveText('Passt das zu dem, was ihr an den Nachmittagen seht?')
+
+  // A card taller than the chat arrives: its top at the chat's top, the question below the fold.
+  await page.setViewportSize({ width: 1390, height: 880 })
+  await openScreen(page, 'question-arrival')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  await card.waitFor()
+  await expect
+    .poll(() => card.evaluate((el) => Math.round(el.getBoundingClientRect().top - el.closest('.chat__log')!.getBoundingClientRect().top)))
+    .toBe(12)
+  expect(await question.evaluate((el) => el.getBoundingClientRect().top > el.closest('.chat__log')!.getBoundingClientRect().bottom)).toBe(true)
+  // The jump button leads on to the question; a click goes to the end and back to the input.
+  const jump = page.getByRole('button', { name: 'Zur neuesten Nachricht' })
+  await expect(jump).toBeVisible()
+  await shotScreen('question-arrival')
+  await jump.click()
+  await expect(jump).toBeHidden()
+  await expect(page.getByRole('textbox', { name: 'Deine Nachricht' })).toBeFocused()
+  await shotScreen('question-arrival-end')
+  // Scrolling down by hand also ends it.
+  await openScreen(page, 'question-arrival')
+  await expect(jump).toBeVisible()
+  await toEnd()
+  await expect(jump).toBeHidden()
+  expect(errors).toEqual([])
+})

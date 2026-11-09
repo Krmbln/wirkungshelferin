@@ -24,6 +24,7 @@ const profile = {
 const frame = { purpose: 'beides', audience: 'Stiftung und Team', requiredFormat: 'offen', requiredFigures: ['Teilnahmen pro Halbjahr'], existingData: ['Anwesenheitsliste'] }
 const draft = sseToolUse('propose_changes', {
   summary: 'Ein erstes Profil und der Messrahmen aus deiner Skizze.',
+  question: 'Stimmt das so?',
   changes: [
     { op: 'update', collection: 'profile', id: 'profile', fields: profile },
     { op: 'update', collection: 'frame', id: 'frame', fields: frame },

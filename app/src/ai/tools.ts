@@ -90,11 +90,17 @@ export function proposeInput(step: StepId) {
   return z.strictObject({
     summary: z.string().describe('Ein Satz: was sich ändert und warum'),
     changes: z.array(z.union(variants as [z.ZodType, z.ZodType, ...z.ZodType[]])),
+    // Step 18b: a tool call ends the message, and a prompt alone didn't keep text before it,
+    // so the one question is part of the proposal (shown under the card, design §6.2).
+    question: z
+      .string()
+      .describe('Deine eine Frage an die Person, ein Satz (höchstens 300 Zeichen). Die App zeigt sie unter der Karte als letzte Zeile deiner Nachricht. Nicht zusätzlich in deinen Text schreiben.'),
   })
 }
 
 export type ProposeInput = {
   summary: string
+  question: string
   changes: Array<{ op: 'add' | 'update' | 'remove'; collection: string; id: string; fields?: Record<string, unknown> }>
 }
 
@@ -138,9 +144,8 @@ export function stepTools(step: StepId): BetaTool[] {
       description:
         'Schlägt Änderungen am Baustein dieses Schritts vor. Der einzige Weg, den Baustein zu ändern. ' +
         'Die Person übernimmt oder lehnt jede Änderung selbst ab. ' +
-        // Step 16 PO run: big proposals came as thinking → tool call with no text, so no question.
-        'Ruf es erst auf, nachdem du in derselben Nachricht deinen Text geschrieben hast (was du vorschlägst, warum, und genau eine Frage): ' +
-        'Der Aufruf beendet deine Nachricht, ohne diesen Text sieht die Person keine Frage.',
+        'Der Aufruf beendet deine Nachricht: Schreib deinen Text (kurz, was du vorschlägst und warum) davor. ' +
+        'Deine eine Frage gehört in das Feld question; die App zeigt sie unter der Karte. Schreib sie nicht zusätzlich in den Text.',
       input_schema: jsonSchema(proposeInput(step)),
       strict: true,
       eager_input_streaming: true,

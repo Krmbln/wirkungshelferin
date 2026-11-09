@@ -510,7 +510,7 @@
         },
         "segments": [
           {
-            "id": "54e21139-d8e2-4f12-8066-35e7671a1f18",
+            "id": "21f76f82-2d96-4588-881b-5dd0243b7044",
             "startedAt": "2026-11-05T10:00:00.000Z",
             "messages": [
               {
@@ -526,10 +526,10 @@
                   },
                   {
                     "type": "text",
-                    "text": "[Bausteinstand Schritt 4]\nresources:\n- {\"id\":\"rs1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Zwei Ehrenamtliche aus dem Fahrradclub\"}\n- {\"id\":\"rs2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Kellerraum mit Werkbank\"}\nactivities:\n- {\"id\":\"ac1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Offene Werkstatt dienstags und donnerstags, 15–18 Uhr\",\"why\":\"Damit die Jugendlichen einen festen Ort zum Schrauben haben.\"}\n- {\"id\":\"ac2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Elternbrief zu Beginn des Halbjahrs\",\"why\":\"Damit die Eltern wissen, was ihre Kinder lernen.\"}\noutputs: (leer)\nlinks: (leer)\nexternalFactors: (leer)\nsideEffects: (leer)\n\n[App] Antwortform: zuerst dein Text mit genau einer Frage; ein Vorschlag mit propose_changes kommt erst danach, als Letztes."
+                    "text": "[Bausteinstand Schritt 4]\nresources:\n- {\"id\":\"rs1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Zwei Ehrenamtliche aus dem Fahrradclub\"}\n- {\"id\":\"rs2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Kellerraum mit Werkbank\"}\nactivities:\n- {\"id\":\"ac1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Offene Werkstatt dienstags und donnerstags, 15–18 Uhr\",\"why\":\"Damit die Jugendlichen einen festen Ort zum Schrauben haben.\"}\n- {\"id\":\"ac2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Elternbrief zu Beginn des Halbjahrs\",\"why\":\"Damit die Eltern wissen, was ihre Kinder lernen.\"}\noutputs: (leer)\nlinks: (leer)\nexternalFactors: (leer)\nsideEffects: (leer)"
                   }
                 ],
-                "id": "3d494ed8-ce6a-41d3-a45e-dcb0f2466592",
+                "id": "3f5340aa-fb3c-45a3-aafb-8ea9501bd328",
                 "at": "2026-11-05T10:00:00.000Z"
               }
             ]

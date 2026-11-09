@@ -33,7 +33,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`) }
   }
-  const { summary, changes } = parsed.data as ProposeInput
+  const { summary, changes, question } = parsed.data as ProposeInput
   const errors: string[] = []
   const temps = new Set<string>()
   /** Fields of the items this proposal creates, as its earlier changes leave them. */
@@ -85,7 +85,9 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
   if (!errors.length) errors.push(...groupErrors(step, seen, result, groups, step2, step3))
   if (errors.length) return { ok: false, errors }
   if (!result.length) return { ok: false, errors: ['Der Vorschlag ändert nichts am Baustein.'] }
-  const proposal = proposalSchema.safeParse({ id: proposalId, toolUseId, at, summary, changes: result })
+  // An empty question is no reason to lose the card (design §6.2 "Step 18b"): it just shows no line.
+  const asked = question.trim()
+  const proposal = proposalSchema.safeParse({ id: proposalId, toolUseId, at, summary, ...(asked && { question: asked }), changes: result })
   if (!proposal.success) return { ok: false, errors: proposal.error.issues.map((i) => i.message) }
   return { ok: true, proposal: proposal.data }
 }

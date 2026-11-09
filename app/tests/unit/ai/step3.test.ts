@@ -48,7 +48,7 @@ const meta = (p: Project) => ({
   groups: groupsOf(p),
   step2: p.steps[2].block as unknown as LooseBlock,
 })
-const run = (p: Project, changes: unknown[]) => toProposal(3, { summary: 'Ziele.', changes }, meta(p))
+const run = (p: Project, changes: unknown[]) => toProposal(3, { summary: 'Ziele.', question: 'Passt das so?', changes }, meta(p))
 const errors = (p: Project, changes: unknown[]) => {
   const r = run(p, changes)
   return r.ok ? [] : r.errors

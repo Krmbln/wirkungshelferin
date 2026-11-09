@@ -31,6 +31,8 @@ import { changeView } from '../../src/domain/proposals'
 import { projectSchema, type Project, type Proposal, type StoredMessage } from '../../src/domain/schemas/project'
 import { stepIds } from '../../src/domain/types'
 import type { Settings } from '../../src/storage/settings'
+import { withoutQuestion } from '../../src/ui/chat/question'
+import { messageTexts } from '../../src/ui/chat/stream'
 import { PDF_FIRST_LINE, PDF_LAST_LINE, PDF_ROWS, madeUpPdfBase64 } from '../madeUpPdf'
 import { FIXTURES, recorder } from './recorder'
 
@@ -126,6 +128,20 @@ function done(result: SendResult): BetaMessage {
 }
 
 const toolUses = (message: BetaMessage) => message.content.filter((b): b is BetaToolUseBlock => b.type === 'tool_use')
+
+/**
+ * Step 18b: every proposal carries the one question (shown under the card), with no ids and at
+ * most 300 characters. A copy in the text is hidden by the app, so it's reported, not failed.
+ */
+function asked(question: string | undefined, message: BetaMessage | Pick<StoredMessage, 'content'>): string {
+  expect(question ?? '', 'no question in the proposal').toContain('?')
+  expect(question!.length, 'question over 300 characters').toBeLessThanOrEqual(300)
+  expect(question!.match(SHOWN_ID_4) ?? [], 'ids in the question').toEqual([])
+  const texts = messageTexts(message)
+  const repeated = withoutQuestion(texts, question).join('\n') !== texts.join('\n')
+  const marks = question!.split('?').length - 1
+  return `${texts.length ? `text ${texts.join('').length} chars` : 'no text'}${repeated ? ', question also in the text (hidden there)' : ''}${marks > 1 ? `, ${marks} "?"` : ''}; question: ${question!.slice(0, 90)}`
+}
 
 // ---------------------------------------------------------------- 1. strict mode
 
@@ -245,6 +261,7 @@ describe('2 · step 1 conversation (demo project)', () => {
         ;[proposal] = takeProposals(retry)
       }
       expect(proposal, 'no valid propose_changes call').toBeDefined()
+      const question = asked(proposal.question, stored.filter((m) => m.role === 'assistant').at(-1)!)
       const adds = proposal.changes.filter((c) => c.op === 'add')
       expect(adds.length).toBeGreaterThan(1)
       // Lukas takes all but the last change, rejects that one.
@@ -255,7 +272,7 @@ describe('2 · step 1 conversation (demo project)', () => {
       const applied = latest(proposal).changes.filter((c) => c.state === 'applied')
       for (const c of applied.filter((c) => c.op === 'add')) expect(c.resultId).toMatch(/^[a-z]+\d+$/)
       projectSchema.parse(project)
-      return `${note}${proposal.changes.length} changes (${adds.length} adds), ${applied.length} applied, 1 rejected`
+      return `${note}${proposal.changes.length} changes (${adds.length} adds), ${applied.length} applied, 1 rejected; ${question}`
     }))
 
   it('message order: the documented shapes against the real API', () =>
@@ -321,6 +338,8 @@ describe('2 · step 1 conversation (demo project)', () => {
       // `seen` is still the block the update request showed.
       const answer = stored.filter((m) => m.role === 'assistant').at(-1)!
       const found = takeProposals({ content: answer.content } as unknown as BetaMessage)
+      // A follow-up in the same segment (the case that came without text in step 18).
+      const question = asked(found.at(-1)?.question, answer)
       const updates = found.flatMap((p) => p.changes.filter((c) => c.op === 'update').map((c) => ({ p, c })))
       expect(updates.length, 'no update in the answer').toBeGreaterThan(0)
       for (const { p, c } of updates) {
@@ -330,7 +349,7 @@ describe('2 · step 1 conversation (demo project)', () => {
       syncProposals()
       const { p, c } = updates[0]
       expect(latest(p).changes.find((x) => x.id === c.id)!.state).toBe('applied')
-      return `${updates.map(({ c }) => `${c.targetId} (baseRev ${c.baseRev})`).join(', ')} applied`
+      return `${updates.map(({ c }) => `${c.targetId} (baseRev ${c.baseRev})`).join(', ')} applied; ${question}`
     }))
 
   it('stop during thinking: left out of the next payload', () =>
@@ -389,7 +408,8 @@ describe('2 · step 1 conversation (demo project)', () => {
         if (ids && sent[i].role === 'assistant') expect(sent[i + 1].content.filter((b) => b.type === 'tool_result').length).toBe(ids)
       }
       const found = takeProposals(message)
-      return `${sent.length} messages sent, ${stored.filter((m) => m.aborted).length} stopped turns left out, ${found.length} new proposal(s)`
+      const question = found.length ? `; ${asked(found.at(-1)!.question, message)}` : ''
+      return `${sent.length} messages sent, ${stored.filter((m) => m.aborted).length} stopped turns left out, ${found.length} new proposal(s)${question}`
     }))
 
   it('reload with an open proposal: tool_result "offen" accepted', () =>
@@ -470,14 +490,11 @@ describe('4 · step 0: paste and interview (made-up text)', () => {
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
       writeFileSync(`${FIXTURES}step0-paste.json`, JSON.stringify({ step: 0, project: prepared.project }, null, 2))
-      // Text first, then the card: a tool call ends the turn (rules, step 14 PO test).
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use')
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no text before the proposal').toContain('?')
       let project = commitAnswer(prepared.project, 0, { status: 'done', message }, prepared.shown, { at: AT })
       const errors = project.steps[0].segments.at(-1)!.messages.at(-1)!.toolErrors
       const [proposal] = project.steps[0].proposals
       expect(proposal, `no valid propose_changes call ${JSON.stringify(errors ?? {})}`).toBeDefined()
+      const question = asked(proposal.question, message)
       project = reducer(project, { type: 'change/applyAll', step: 0, proposalId: proposal.id })
       const block = project.steps[0].block
       expect(block.profile.name).toContain('Schraubzeit')
@@ -485,7 +502,25 @@ describe('4 · step 0: paste and interview (made-up text)', () => {
       expect(offen.length, 'nothing marked "offen"').toBeGreaterThan(0)
       expect(JSON.stringify([block.profile, block.frame]), 'a deadline went into the block').not.toMatch(/31\. ?März|fällig/)
       projectSchema.parse(project)
-      return `text first (${textBefore.length} chars), ${proposal.changes.length} change(s); offen: ${offen.join(', ')}; frame purpose "${block.frame.purpose}"`
+      afterPaste = project
+      return `${proposal.changes.length} change(s); offen: ${offen.join(', ')}; frame purpose "${block.frame.purpose}"; ${question}`
+    }))
+
+  // Step 18b: a follow-up proposal in the same segment (in step 18 such follow-ups came without text).
+  let afterPaste: Project | undefined
+  it('paste follow-up: an answer fills open fields, the second card carries its question', () =>
+    check('Step 0 follow-up proposal: question field filled', async () => {
+      expect(afterPaste, 'needs the paste case').toBeDefined()
+      const text = 'Das Team sind zwei Ehrenamtliche aus dem Fahrradclub und eine Honorarkraft. Ähnliche Angebote gibt es im Stadtteil keine.'
+      const prepared = prepareTurn(afterPaste!, 0, text, { at: AT })
+      rec.recordNext('step0-followup')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      const project = commitAnswer(prepared.project, 0, { status: 'done', message }, prepared.shown, { at: AT })
+      const proposal = project.steps[0].proposals[1]
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[0].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      projectSchema.parse(project)
+      return `${proposal.changes.length} change(s); ${asked(proposal.question, message)}`
     }))
 
   it('opening (step 1 after step 0\'s confirm): text with one question before the draft card', () =>
@@ -494,11 +529,9 @@ describe('4 · step 0: paste and interview (made-up text)', () => {
       rec.recordNext('step1-handoff')
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
-      expect(firstTool, 'no draft card').toBeGreaterThan(-1)
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no question before the card').toContain('?')
-      return textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 140)
+      const use = toolUses(message).find((u) => u.name === PROPOSE)
+      expect(use, 'no draft card').toBeDefined()
+      return asked((use!.input as { question?: string }).question, message)
     }))
 
   it('interview: one first question, no proposal yet', () =>
@@ -540,20 +573,18 @@ describe('5 · step 0: PDF upload (made-up PDF)', () => {
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
       writeFileSync(`${FIXTURES}step0-pdf.json`, JSON.stringify({ step: 0, project: prepared.project }, null, 2))
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use')
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no text with a question before the proposal').toContain('?')
       let project = commitAnswer(prepared.project, 0, { status: 'done', message }, prepared.shown, { at: AT })
       const errors = project.steps[0].segments.at(-1)!.messages.at(-1)!.toolErrors
       const [proposal] = project.steps[0].proposals
       expect(proposal, `no valid propose_changes call ${JSON.stringify(errors ?? {})}`).toBeDefined()
+      const question = asked(proposal.question, message)
       project = reducer(project, { type: 'change/applyAll', step: 0, proposalId: proposal.id })
       const block = project.steps[0].block
       expect(block.profile.name).toContain('Schraubzeit')
       const offen = formFields('profile').filter((f) => isOffen((block.profile as Record<string, unknown>)[f]))
       expect(offen.length, 'nothing marked "offen"').toBeGreaterThan(0)
       projectSchema.parse(project)
-      return `${read.text.length} chars in ${counts.length} updates; text first; offen: ${offen.join(', ')}`
+      return `${read.text.length} chars in ${counts.length} updates; offen: ${offen.join(', ')}; ${question}`
     }))
 })
 
@@ -586,10 +617,7 @@ describe('6 · step 2: problem tree per focus group (made-up project)', () => {
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
       writeFileSync(`${FIXTURES}step2-tree.json`, JSON.stringify({ step: 2, project: prepared.project }, null, 2))
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
-      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no question before the card').toContain('?')
+      expect(toolUses(message).some((u) => u.name === PROPOSE), 'no proposal').toBe(true)
       let project = commitAnswer(prepared.project, 2, { status: 'done', message }, prepared.shown, { at: AT })
       const errors = project.steps[2].segments.at(-1)!.messages.at(-1)!.toolErrors
       const [proposal] = project.steps[2].proposals
@@ -604,7 +632,7 @@ describe('6 · step 2: problem tree per focus group (made-up project)', () => {
       projectSchema.parse(project)
       const evidence = [...new Set(block.causes.map((c) => c.evidence))].join('/')
       after = project
-      return `${proposal.changes.length} changes; ${block.causes.length} causes (${nested.length} nested), ${block.consequences.length} consequences; evidence ${evidence}; question: ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
+      return `${proposal.changes.length} changes; ${block.causes.length} causes (${nested.length} nested), ${block.consequences.length} consequences; evidence ${evidence}; ${asked(proposal.question, message)}`
     }))
 
   // The step 16 PO run: a big second proposal came as a card with no text, and the challenge
@@ -618,10 +646,7 @@ describe('6 · step 2: problem tree per focus group (made-up project)', () => {
       rec.recordNext('step2-followup')
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
-      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no question before the card').toContain('?')
+      expect(toolUses(message).some((u) => u.name === PROPOSE), 'no proposal').toBe(true)
       let project = commitAnswer(prepared.project, 2, { status: 'done', message }, prepared.shown, { at: AT })
       const [, proposal] = project.steps[2].proposals
       expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[2].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
@@ -633,7 +658,7 @@ describe('6 · step 2: problem tree per focus group (made-up project)', () => {
       expect(block.consequences.length, 'no consequences').toBeGreaterThan(1)
       expect(new Set(block.consequences.map((c) => c.groupId)).size, 'consequences for one group only').toBe(2)
       projectSchema.parse(project)
-      return `${proposal.changes.length} changes; ${block.consequences.length} consequences; text first (${textBefore.length} chars): ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
+      return `${proposal.changes.length} changes; ${block.consequences.length} consequences; ${asked(proposal.question, message)}`
     }))
 })
 
@@ -684,10 +709,8 @@ describe('7 · step 3: goals per focus group (made-up project)', () => {
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
       writeFileSync(`${FIXTURES}step3-goals.json`, JSON.stringify({ step: 3, project: prepared.project }, null, 2))
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
-      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no question before the card').toContain('?')
+      expect(toolUses(message).some((u) => u.name === PROPOSE), 'no proposal').toBe(true)
+      const textBefore = messageTexts(message).join('\n')
       expect(textBefore.match(SHOWN_ID) ?? [], 'ids in the visible text').toEqual([])
       let project = commitAnswer(prepared.project, 3, { status: 'done', message }, prepared.shown, { at: AT })
       const [proposal] = project.steps[3].proposals
@@ -700,7 +723,24 @@ describe('7 · step 3: goals per focus group (made-up project)', () => {
       projectSchema.parse(project)
       after = project
       const links = goals.map((g) => `${g.level}:${g.causeIds.join('+')}`).join(' ')
-      return `${proposal.changes.length} changes; goals ${links}; time frames ${goals.filter((g) => g.timeFrame).length}/${goals.length}; question: ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
+      return `${proposal.changes.length} changes; goals ${links}; time frames ${goals.filter((g) => g.timeFrame).length}/${goals.length}; ${asked(proposal.question, message)}`
+    }))
+
+  // Step 18b: a follow-up proposal in the same segment carries its question.
+  it('follow-up: Stufe 7 in the same segment, the card carries its question', () =>
+    check('Step 3 follow-up proposal (Stufe 7): question field filled', async () => {
+      expect(after, 'needs the first step 3 case').toBeDefined()
+      const text = 'Die Ziele passen. Jetzt bitte noch den Beitrag auf Stufe 7.'
+      const prepared = prepareTurn(after!, 3, text, { at: AT })
+      rec.recordNext('step3-followup')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      expect(messageTexts(message).join('\n').match(SHOWN_ID) ?? [], 'ids in the visible text').toEqual([])
+      const project = commitAnswer(prepared.project, 3, { status: 'done', message }, prepared.shown, { at: AT })
+      const proposal = project.steps[3].proposals[1]
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[3].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      projectSchema.parse(project)
+      return `${proposal.changes.length} change(s); ${asked(proposal.question, message)}`
     }))
 
   // Guide 00 §7: a gap in an earlier step is named and offered as "[Zu Schritt 2](#schritt-2)".
@@ -712,7 +752,8 @@ describe('7 · step 3: goals per focus group (made-up project)', () => {
       rec.recordNext('step3-gap')
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
-      const visible = message.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+      const questions = toolUses(message).flatMap((u) => (u.name === PROPOSE ? [String((u.input as { question?: string }).question ?? '')] : []))
+      const visible = [...messageTexts(message), ...questions].join('\n')
       expect(visible, 'no step link').toContain('(#schritt-2)')
       expect(visible.match(SHOWN_ID) ?? [], 'ids in the visible text').toEqual([])
       const project = commitAnswer(prepared.project, 3, { status: 'done', message }, prepared.shown, { at: AT })
@@ -785,10 +826,8 @@ describe('8 · step 4: the chain of one focus group (made-up project)', () => {
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
       writeFileSync(`${FIXTURES}step4-chain.json`, JSON.stringify({ step: 4, project: prepared.project }, null, 2))
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
-      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no question before the card').toContain('?')
+      expect(toolUses(message).some((u) => u.name === PROPOSE), 'no proposal').toBe(true)
+      const textBefore = messageTexts(message).join('\n')
       expect(textBefore.match(SHOWN_ID_4) ?? [], 'ids in the visible text').toEqual([])
       let project = commitAnswer(prepared.project, 4, { status: 'done', message }, prepared.shown, { at: AT })
       const [proposal] = project.steps[4].proposals
@@ -803,7 +842,7 @@ describe('8 · step 4: the chain of one focus group (made-up project)', () => {
       projectSchema.parse(project)
       after = project
       const chain = links.map((l) => `${l.fromId}→${l.toId}${l.critical ? '!' : ''}`).join(' ')
-      return `${proposal.changes.length} changes; ${outputs.length} outputs; links ${chain}; question: ${textBefore.split('\n').filter((l) => l.includes('?')).at(-1)!.slice(0, 90)}`
+      return `${proposal.changes.length} changes; ${outputs.length} outputs; links ${chain}; ${asked(proposal.question, message)}`
     }))
 
   it('external factors and side effects: for all or the focus group, text first', () =>
@@ -814,10 +853,8 @@ describe('8 · step 4: the chain of one focus group (made-up project)', () => {
       rec.recordNext('step4-surroundings')
       const message = done(await ai.send(settings, prepared.call))
       await rec.flushed()
-      const firstTool = message.content.findIndex((b) => b.type === 'tool_use' && b.name === PROPOSE)
-      expect(firstTool, 'no proposal').toBeGreaterThan(-1)
-      const textBefore = message.content.slice(0, firstTool).flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
-      expect(textBefore, 'no question before the card').toContain('?')
+      expect(toolUses(message).some((u) => u.name === PROPOSE), 'no proposal').toBe(true)
+      const textBefore = messageTexts(message).join('\n')
       expect(textBefore.match(SHOWN_ID_4) ?? [], 'ids in the visible text').toEqual([])
       let project = commitAnswer(prepared.project, 4, { status: 'done', message }, prepared.shown, { at: AT })
       const proposal = project.steps[4].proposals.at(-1)!
@@ -829,7 +866,7 @@ describe('8 · step 4: the chain of one focus group (made-up project)', () => {
       expect(sideEffects.length, 'no side effect').toBeGreaterThan(0)
       projectSchema.parse(project)
       const bus = externalFactors.some((f) => /bus/i.test(f.text))
-      return `${externalFactors.length} factors (${externalFactors.map((f) => f.groupId || 'alle').join(', ')}; bus named: ${bus}); ${sideEffects.length} side effects (${sideEffects.map((s) => s.direction).join(', ')})`
+      return `${externalFactors.length} factors (${externalFactors.map((f) => f.groupId || 'alle').join(', ')}; bus named: ${bus}); ${sideEffects.length} side effects (${sideEffects.map((s) => s.direction).join(', ')}); ${asked(proposal.question, message)}`
     }))
 })
 

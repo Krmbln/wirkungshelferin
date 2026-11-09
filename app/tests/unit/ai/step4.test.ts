@@ -52,7 +52,7 @@ const meta = (p: Project) => ({
 })
 const linkFields = (fields: Record<string, unknown>) => ({ groupId: 'tg1', fromId: 'ou1', toId: 'go1', because: 'weil', assumption: 'Sie kommen', evidence: 'unsicher', critical: false, ...fields })
 const addLink = (fields: Record<string, unknown>, id = 'new:1') => ({ op: 'add', collection: 'links', id, fields: linkFields(fields) })
-const run = (p: Project, changes: unknown[]) => toProposal(4, { summary: 'Kette.', changes }, meta(p))
+const run = (p: Project, changes: unknown[]) => toProposal(4, { summary: 'Kette.', question: 'Passt das so?', changes }, meta(p))
 const errors = (p: Project, changes: unknown[]) => {
   const r = run(p, changes)
   return r.ok ? [] : r.errors

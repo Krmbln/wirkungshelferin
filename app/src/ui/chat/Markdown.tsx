@@ -42,6 +42,19 @@ const components: Components = {
   img: ({ alt }) => <span>{alt ? `[Bild: ${alt}]` : '[Bild]'}</span>,
 }
 
+/** Inline Markdown only (links, emphasis, code) in one paragraph: the question under a card (step 18b). */
+const INLINE = ['a', 'strong', 'em', 'code']
+
+export function InlineMarkdown({ children, className }: { children: string; className?: string }) {
+  return (
+    <p className={className}>
+      <ReactMarkdown urlTransform={safeUrl} components={components} allowedElements={INLINE} unwrapDisallowed>
+        {children}
+      </ReactMarkdown>
+    </p>
+  )
+}
+
 export function Markdown({ children }: { children: string }) {
   return (
     <div className="md">

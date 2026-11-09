@@ -42,7 +42,7 @@ const proposeProfile = (over: Record<string, unknown>) => ({
   type: 'tool_use',
   id: 'toolu_p1',
   name: 'propose_changes',
-  input: { summary: 'Ein erster Entwurf für das Profil.', changes: [{ op: 'update', collection: 'profile', id: 'profile', fields: profileFields(over) }] },
+  input: { summary: 'Ein erster Entwurf für das Profil.', question: 'Passt das so?', changes: [{ op: 'update', collection: 'profile', id: 'profile', fields: profileFields(over) }] },
 })
 const checkWithout1 = () => ({
   type: 'tool_use',

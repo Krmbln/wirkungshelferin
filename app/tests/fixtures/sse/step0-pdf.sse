@@ -1,861 +1,837 @@
 event: message_start
-data: {"type":"message_start","message":{"model":"claude-opus-5-5","id":"msg_011CgqymLiSUFJKPttT72si1","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4,"cache_creation_input_tokens":19854,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":19854},"output_tokens":2,"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}  }
+data: {"type":"message_start","message":{"model":"claude-opus-5-5","id":"msg_011Cgt1AqvsFJ1SPMpBq1Sj6","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4,"cache_creation_input_tokens":2494,"cache_read_input_tokens":17980,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":2494},"output_tokens":8,"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}   }
 
 event: content_block_start
-data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}         }
+data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}    }
 
 event: ping
 data: {"type": "ping"}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":""}      }
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":""}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"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"}      }
+data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"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"}              }
 
 event: content_block_stop
-data: {"type":"content_block_stop","index":0               }
+data: {"type":"content_block_stop","index":0       }
 
 event: content_block_start
-data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""} }
+data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Dan"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Ich habe de"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ke für den Sachberic"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"inen Sachbericht"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ht. Ich habe da"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" gelesen und da"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"raus ein"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"raus ein"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en ersten Entwur"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en ersten Ent"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"f für das Projektprof"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"wurf für das Prof"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"il und"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"il und den Messrahm"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" den Messrahmen g"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en gemacht. Wo"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"emacht. Du"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"her die Angaben stamm"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" siehst ihn neben"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en:\n\n- **Name,"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" dem Ch"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Ort,"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"at.\n\n**Woher die"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Art des Angebots:"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Angaben stammen:"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"** a"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"**\n- **Name,"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"us der "}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Ort,"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ersten Zeile („"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Projektgrenze:"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Offene Fahrradw"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"** a"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"erkstatt im N"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"us der ersten Ze"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"achbarschaftsha"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ile („"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"us Am Weidengr"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Offene Fahrrad"}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"und“).\n- **A"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"werkstatt im"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ktivitäten und"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Nachbarschaftsh"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Teilnehmende:"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"aus Am Weideng"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"** aus der Li"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"rund“).\n- **"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ste der"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Aktivitäten und"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" 40 Nachmitt"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Teilnehmende:"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"age. Zusammengez"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"** aus der"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ählt sind das et"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Li"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"wa 560"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ste der 40 Nach"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Anwesenhei"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"mittage. Zusamm"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ten, 160 reparier"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"engerechnet sind das"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"te und 39 ausg"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":":"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"egebene Räder."}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"\n  - 559 An"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Das Team hat di"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"wesenheiten von"}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ese Zahlen gesch"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Jugendlichen,"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ätzt,"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" also 10–18 pro"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" de"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Nachmittag\n  "}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"shalb steht im"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"- 160 reparierte"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Entwurf „Sch"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Räder\n  - 39"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ätzung“. Ob"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ausgegebene"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" die Zahl"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Räder\n- **Vor"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en ein"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"handene Daten:**"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"zelne Besuche z"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" "}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ählen oder verschied"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Ich habe die dr"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ene Jugendliche,"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ei Zahlen"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" s"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"reihen als v"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"agt der Bericht n"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"orhandene Daten e"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"icht."}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ingetragen. La"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"\n- **Vorhand"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ut Bericht sind es"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ene Daten:** die dr"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Schätzungen des"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ei Zahlen,"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Teams. Das hab"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" die "}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"e ich über"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ihr pro Nachm"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"all dazug"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ittag fest"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"eschrieben."}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"haltet."}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"\n- **Offen:"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"\n\nEini"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"** V"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ges steht nicht im"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ieles ste"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Bericht:"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ht n"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Träger, Team,"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"icht im Bericht,"}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Laufzeit, Ge"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" z"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ldgeber, Zi"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"um Beispiel"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ele und ähnliche"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Träger, Team, La"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Angebote in"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ufzeit, Finan"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" der Nähe. "}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"zierung, Ziele"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Ebenso f"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" und ähnliche Ang"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ehlt, wofür "}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ebote. Di"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ihr den Nachweis"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ese Felder stehen au"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" braucht. Diese"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"f „offen“. Un"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Felder hab"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ter „Noch zu kl"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"e ich au"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ären“ steht je"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"f „offen“ ges"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"weils, wer das"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"etzt und"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" klären kann.\n\n**"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" unter „Noch zu"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"W"}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" klären“ eingetrag"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ichtig:** Die "}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en. Wir g"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"559 s"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ehen sie g"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ind Bes"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"le"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"uche, ke"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ich nacheinander durch"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ine verschiedenen"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":". Zuerst k"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Personen. W"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ommen"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"enn d"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" drei Fragen d"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ie"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"azu, wie es"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"selben Jugendlich"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" b"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en oft kommen, s"}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ei euch in der Prax"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ind es viel weniger"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Person"}          }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en.\n\n**Pra"}  }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"xis-Check,"}        }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Frage 1 von "}    }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"3:** Wie läu"}  }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ft die Teilnahme"}   }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" bei eu"}               }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ch? Kommen und g"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ehen die Jugendl"}     }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ichen, wie s"}          }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ie wollen, oder g"}            }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ibt es eine"}           }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Anmeldung? Und"}          }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" wie viele sind "}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ungefähr Stammg"}     }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"äste, w"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ie viele kommen nur"}         }
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ein paarmal?"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"is läuft."}             }
 
 event: content_block_stop
-data: {"type":"content_block_stop","index":1               }
+data: {"type":"content_block_stop","index":1        }
 
 event: content_block_start
-data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"toolu_01EonByZt3GanFAwC4nXCe6k","name":"propose_changes","input":{},"caller":{"type":"direct"}}              }
+data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"toolu_01WmzSKFuRKK7ov73cz36F1K","name":"propose_changes","input":{},"caller":{"type":"direct"}}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":""}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":""}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"summary\": \"Er"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"summary\": \"Erster Ent"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ster Entwurf für"}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"wurf für Prof"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektprofil und Mess"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"il und Messrahmen"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"rahmen aus dem"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" aus dem Sachb"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Sachbericht;"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ericht. Was"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" was"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" der Bericht nicht"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" der Bericht nicht"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" h"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" h"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ergibt, steht s"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ergibt, ste"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ichtbar als „offen"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ht au"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"“"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"f „offen“."}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" da."}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\", \"changes\": [{\"op\":"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\", \"changes\": ["}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"update\",\"collection\":\"prof"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"op\":\"update\",\"coll"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ile\",\"id\":\"profile\",\""}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ection\":\"profile\",\"id\":"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"fields\":{\"name\":\""}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"profile\",\"fields\":{"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Schraubzeit\",\""}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"name\":\"Schraub"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"organisation\":\"offen\",\""}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"zeit\",\"organisation\":"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"projectBoundary\":\""}            }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"offen\",\"projectBo"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Die offene Fahr"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"undary\":\"Die"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"radwerkstatt"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offene Fahrradw"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Schraubzeit im"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"erkstatt „"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Nachbarschaftsh"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Schraubzeit“"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"aus Am Weideng"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" im Nachbarsch"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"rund. Ob andere"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"aftshaus Am"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Angebote des H"}   }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Weidengrund. "}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"auses dazugehören:"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Ob weitere Angebote"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen\",\"location\":\""}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" des Hauses d"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Nachbarschaftsh"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"azugehören:"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"aus Am Weideng"}   }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen."}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"rund; Stadt"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\",\"location\":\"Nachb"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" und"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"arschaftshaus"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Stadtteil: off"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Am Weidengrund ("}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en\",\"activities\":[\"Off"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Stadt"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ene Fahrradwer"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"/Stadtteil:"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"kstatt für"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen)\",\"activities\":[\""}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Jugendliche an"}   }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Offene Fahrrad"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Nachmittagen: "}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"werkstatt an"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"40 Nachmittage"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Nachmittagen;"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" s"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" im Berichtszeit"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ind im Sachbericht"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"raum 40 Nach"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" dokumentiert."}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"mittage (wie oft"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Wie oft sie statt"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" pro Woche: offen"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"findet (z"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":")\",\"Räder re"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":". B. wöchentl"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"parieren: "}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ich): offen\",\"Räder"}            }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"2–6 Räder p"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" reparieren: 2–"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ro Nachmittag,"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"6 Räder pro"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" z"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Nachmittag, z"}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"usammen etwa 160"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"usammen 160 ("}            }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" ("}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Schätzung des Te"}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Schätzung des Te"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ams)."}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ams);"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" "}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" wer rep"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Ob die Jugendlich"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ariert und wie"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en selbst sch"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" die Jugendlichen"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"rauben o"}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" mitmachen: offen"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"der das"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\",\"Räder ausge"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Team:"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ben: 0–2 "}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen\",\"Räder aus"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Räder pro Nachm"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"geben: 0–2"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ittag, zusammen et"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Räder pro N"}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"wa 39 (Sch"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"achmittag, zusamm"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ätzung des Teams);"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en 39 (Schät"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" an wen und z"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"zung des Teams). An"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"u welchen Beding"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" wen und unter welchen"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ungen: offen\"],\""}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Bedingungen: off"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"participants\":\"Jugend"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en\"],\"participants\":\""}   }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"liche (Alter:"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Jugendliche,"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen)."}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" 10–18 "}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Laut Sachberic"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Anwesende pro N"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ht 10–18 p"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"achmittag, z"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ro Nachmittag,"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"usammen 559 An"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" zusammen etwa "} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"wesenheiten an"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"560 Anwesenhe"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" 40 Nachmitt"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"iten an"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"agen (Schätzung"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" 40 Nachmitt"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" des Teams). Gez"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"agen (Schätzung"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ählt sind Besuche"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" des Teams)."}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":", nicht verschied"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Ob das Bes"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ene Personen. Alter"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"uche oder verschied"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":", Zugang, Te"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ene Personen s"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ilnahmeform und"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ind:"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" An"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen. Teilnah"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"teil der"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"meform (fe"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Stammgäste: off"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ste Gruppe oder"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en\",\"team\":\"offen\",\""}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"duration\":\"offen\",\"fun"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"es Kommen und"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"der\":\"offen\",\"budg"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Gehen, Stammg"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"etRange\":\"\",\"stated"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"äste): offen.\",\"team"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Goals\":[\"off"}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\":\"offen\",\"duration\":"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en\"],\"otherOff"}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"offen\",\""}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ers\":[\"offen\""} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"funder\":\"offen\",\"bud"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"],\"openQuestions\":"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"getRange\":\"offen"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"[\"Träger der"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\",\"statedGoals\":[\""}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" F"}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"offen\"],\"otherO"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ahrradwerkstat"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ffers\":[\"offen\"],"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"t –"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"openQuestions\":[\""}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" klär"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Träger der"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"t das Projektteam\",\""}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Sch"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"W"}            }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"raubzeit –"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ie oft die Werkst"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektleitung\",\""} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"att stattfindet und"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Team:"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" über welchen Zeit"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" w"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"raum s"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"er ar"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ich die 40 Nach"}            }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"beitet m"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"mittage erstrecken"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"it, hauptamtl"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" – klärt das Projekt"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ich, ehrenamt"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"team\",\"Wie viele"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"lich oder auf Hon"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" verschiedene Jug"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"orar –"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"endliche kommen und w"}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektleitung\",\""}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ie reg"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Teilnahm"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"elmäßig – klär"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"eform und Alter der"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"t das Projektteam\",\""}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Jugendlichen;"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Was „"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" zählen die"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Räder ausgege"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Zahlen Besu"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ben“ gen"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"che oder verschiedene"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"au bedeutet ("}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Personen – Team"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"an wen, wof"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" v"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ür) – klärt das"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"or Ort\",\"W"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektteam\",\"W"}   }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ie oft die Wer"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"er im"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"kstatt öffnet"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Team m"}            }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" und welch"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"itarbeitet (ha"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en Zeitraum der"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"upt-, ehren"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Bericht ab"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"amtlich, Honor"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"deckt – Projekt"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ar) – klärt das"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"leitung\",\"Laufz"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektteam\",\"Lauf"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"eit und Geldge"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"zeit und Finanz"}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ber – Projektleitung"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ierung – klärt die"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\",\""}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektleitung b"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Ziele des Projek"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"zw. der Träger\",\""}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ts – Proj"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Ziele des Projek"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ektleitung b"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ts – klärt die"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"zw. Antrag\",\""} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektleitung,"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"An wen und"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" "}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" w"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ggf. aus"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ie Räder ausgeg"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Antrag oder Konz"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"eben werden – Team v"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ept\",\"Ähnliche"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"or Ort\",\"Äh"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Angebote in der N"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"nliche Angebote in"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ähe – klärt das"}}
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" der Nähe – Team"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Projektteam\"]}},"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" vor Ort\"]}"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"op\":\"update\",\"coll"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"},"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ection\":\"frame\",\"id\":"}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"op\":\"update\",\"coll"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"frame\",\"fields\":{"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ection\":\"frame\",\"id\":"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"purpose\":\"offen"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"frame\",\"fields\":{"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\",\"audience\":\"offen\",\""}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"purpose\":\"offen"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"requiredFormat\":\""}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\",\"audience\":\"offen\",\""}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"offen\",\"requiredFig"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"requiredFormat\":\""}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ures\":[\"offen\""}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"offen\",\"requiredFig"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"],\"existingData\":[\""}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ures\":[\"offen\"],\""}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Anwesende Jugend"}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"existingData\":[\"Anw"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"liche pro Nachm"}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"esenheit pro N"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ittag (Sachberic"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"achmittag: Zah"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ht): zählt Besu"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"l der Jugendlich"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"che, nicht verschi"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"en je Nachmittag"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"edene Personen; v"}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" (Schätzung des"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"om Team geschätzt"} }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Teams; "}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\",\""}     }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ob Besuche oder ver"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Reparierte Räder"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"schiedene Personen:"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" pro Nachmittag"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" offen)\",\"Reparier"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" (Sachbericht):"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"te Räder pro N"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Z"}       }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"achmittag: Anz"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ahl der Re"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ahl ("}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"paraturen; vom"}      }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Schätzung des Te"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Team geschätzt\",\""}    }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ams)\",\"Ausgeg"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"Ausgegebene Rä"}           }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ebene Räder pro"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"der pro Nachmitt"}          }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Nachmittag: An"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ag (Sachbericht"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"zahl (Schätz"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"): Zahl der "}         }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ung des Teams)\"]"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ausgegebenen Rä"}               }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"}}]"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"der; vom Team gesch"}        }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":", \"question\": \"Wie läuft die Te"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ätzt\"]}}"}  }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ilnahme bei euch"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"]"}             }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":": Kommen und"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"}"}              }
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" gehen die Jugend"}      }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"lichen,"}             }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" wie sie wollen,"}        }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" oder gibt es eine"}         }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" feste Gruppe m"}            }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"it Anmeldung?"}            }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" Und wie viele s"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ind Stammgäste,"}      }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" wie viele kommen n"}     }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ur ein paarmal?"}     }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"}"}            }
 
 event: content_block_stop
-data: {"type":"content_block_stop","index":2  }
+data: {"type":"content_block_stop","index":2        }
 
 event: message_delta
-data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":4,"cache_creation_input_tokens":19854,"cache_read_input_tokens":0,"output_tokens":3529,"output_tokens_details":{"thinking_tokens":1669},"iterations":[{"input_tokens":4,"output_tokens":3529,"cache_read_input_tokens":0,"cache_creation_input_tokens":19854,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":19854},"type":"message","model":null}]}       }
+data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":4,"cache_creation_input_tokens":2494,"cache_read_input_tokens":17980,"output_tokens":3502,"output_tokens_details":{"thinking_tokens":1694},"iterations":[{"input_tokens":4,"output_tokens":3502,"cache_read_input_tokens":17980,"cache_creation_input_tokens":2494,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":2494},"type":"message","model":null}]}        }
 
 event: message_stop
-data: {"type":"message_stop"          }
+data: {"type":"message_stop"   }
 

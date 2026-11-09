@@ -26,9 +26,19 @@ function project(): Project {
 }
 
 const meta = (p: Project) => ({ seen: structuredClone(stepOf(p, 1).block), toolUseId: 'toolu_1', proposalId: 'p1', at: '2026-11-05T10:00:00.000Z' })
-const call = (changes: unknown[]) => ({ summary: 'Zielgruppen ergänzt.', changes })
+const call = (changes: unknown[]) => ({ summary: 'Zielgruppen ergänzt.', question: 'Passt das so?', changes })
 
 describe('toProposal', () => {
+  it('keeps the one question, trimmed; an empty one costs no card, it just shows no line (step 18b)', () => {
+    const p = project()
+    const add = [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: group({ name: 'Eltern', reach: 'indirect' }) }]
+    const asked = toProposal(1, { ...call(add), question: '  Wer fehlt noch?  ' }, meta(p))
+    expect(asked.ok && asked.proposal.question).toBe('Wer fehlt noch?')
+    const empty = toProposal(1, { ...call(add), question: ' ' }, meta(p))
+    expect(empty.ok).toBe(true)
+    expect(empty.ok && 'question' in empty.proposal).toBe(false)
+  })
+
   it('add: temp id kept, fields as sent; applying hands out the real id', () => {
     const p = project()
     const result = toProposal(1, call([{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: group({ name: 'Eltern', reach: 'indirect' }) }]), meta(p))

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { APP_CHECKED } from '../ai/check'
 import type { LooseBlock } from '../domain/block'
 import { withAppJudged } from '../domain/check'
@@ -122,29 +122,66 @@ function proposal(): Proposal {
 }
 
 function withProposal(): Project {
+  return withMessage(proposal(), STORED_TEXT)
+}
+
+const STORED_TEXT =
+  'Stimmt – zwischen „Sechs bis acht Mädchen kommen“ und dem Ziel fehlt Stufe 3. Ich schlage vor: Die Mädchen kommen wieder und bringen eine Freundin mit.\n\n' +
+  'Die Annahme dazu markiere ich als kritisch: Wird die Gruppe zu groß, kommen nicht alle an die Werkbank.\n\n' +
+  'Passt das zu dem, was ihr an den Nachmittagen seht?'
+
+// ---- Step 18b: the one question under the card -------------------------------------------
+
+const QUESTION = 'Passt das zu dem, was ihr an den Nachmittagen seht?'
+const LONG_QUESTION =
+  'Wenn ihr an die letzten Mädchen-Nachmittage denkt: Kamen die Mädchen eher allein, mit einer Freundin oder mit älteren Geschwistern – und wer von ihnen kam beim nächsten Mal wieder, auch ohne dass ihr nachgefragt habt?'
+
+const asking = (question: string) => ({ ...proposal(), question })
+
+/** The girls' whole chain in one follow-up: the card that is taller than the chat. */
+function chainProposal(): Proposal {
+  return {
+    ...makeProposal(
+      [
+        { op: 'add', collection: 'outputs', tempId: 'new:1', fields: { groupId: 'tg3', level: 3, text: 'Die Mädchen kommen wieder und bringen eine Freundin mit.' } },
+        { op: 'add', collection: 'links', tempId: 'new:2', fields: { groupId: 'tg3', fromId: 'ou4', toId: 'ou5', because: 'Ein fester Termin im Monat lässt sich weitersagen.', assumption: 'Die Termine stehen früh genug fest.', evidence: 'eigene_erfahrung', critical: false } },
+        { op: 'add', collection: 'links', tempId: 'new:3', fields: { groupId: 'tg3', fromId: 'ou5', toId: 'new:1', because: 'Wer sich wohlfühlt, erzählt es weiter.', assumption: 'Die Gruppe bleibt klein genug, dass alle drankommen.', evidence: 'unsicher', critical: true } },
+        { op: 'add', collection: 'links', tempId: 'new:4', fields: { groupId: 'tg3', fromId: 'new:1', toId: 'go4', because: 'Wer öfter kommt, traut sich an schwierigere Reparaturen.', assumption: 'Die Ehrenamtliche lässt sie selbst machen.', evidence: 'unsicher', critical: false } },
+        { op: 'update', collection: 'links', targetId: 'li8', baseRev: 1, fields: { assumption: 'Am Mädchen-Nachmittag sind keine Jungen in der Werkstatt.' } },
+        { op: 'update', collection: 'links', targetId: 'li9', baseRev: 1, fields: { toId: 'go4' } },
+        { op: 'add', collection: 'externalFactors', tempId: 'new:5', fields: { groupId: 'tg3', text: 'Eltern lassen die Mädchen im Winter nachmittags nicht allein los.' } },
+      ],
+      { id: 'p1', summary: 'Die ganze Kette der Mädchen: Stufe 3, die fehlenden Verbindungen und ein Faktor nur für sie.' },
+    ),
+    question: 'Fehlt dir in dieser Kette ein Schritt, den ihr bei den Mädchen beobachtet?',
+  }
+}
+
+/** Step 4 with one exchange: Lukas's turn, then Claude's message (text may be empty) with the card. */
+function withMessage(prop: Proposal, text: string, opts: { arrived?: boolean } = { arrived: true }): Project {
   const p = step4Project()
-  const prop = proposal()
   const messages: StoredMessage[] = [
     { id: 'g1', at, role: 'user', content: [{ type: 'text', text: 'Bei den Mädchen fehlt doch noch, dass sie wiederkommen.' }] },
     {
       id: 'g2',
       at,
       role: 'assistant',
-      content: [
-        {
-          type: 'text',
-          text:
-            'Stimmt – zwischen „Sechs bis acht Mädchen kommen“ und dem Ziel fehlt Stufe 3. Ich schlage vor: Die Mädchen kommen wieder und bringen eine Freundin mit.\n\n' +
-            'Die Annahme dazu markiere ich als kritisch: Wird die Gruppe zu groß, kommen nicht alle an die Werkbank.\n\n' +
-            'Passt das zu dem, was ihr an den Nachmittagen seht?',
-        },
-        { type: 'tool_use', id: prop.toolUseId, name: 'propose_changes', input: {} },
-      ],
+      content: [...(text ? [{ type: 'text' as const, text }] : []), { type: 'tool_use', id: prop.toolUseId, name: 'propose_changes', input: {} }],
     },
   ]
-  p.steps[4].proposals = [prop]
-  p.steps[4].segments = [{ id: 's1', startedAt: at, messages }]
+  p.steps[4].proposals = opts.arrived ? [prop] : []
+  p.steps[4].segments = [{ id: 's1', startedAt: at, messages: opts.arrived ? messages : messages.slice(0, 1) }]
   return p
+}
+
+/** The answer lands after the first paint, like a finished stream: the arrival scroll rule runs. */
+function ArrivalScreen() {
+  const [project, setProject] = useState(() => withMessage(chainProposal(), '', { arrived: false }))
+  useEffect(() => {
+    const timer = setTimeout(() => setProject(withMessage(chainProposal(), '')), 300)
+    return () => clearTimeout(timer)
+  }, [])
+  return <App now={galleryNow} project={project} initialView={{ kind: 'step', step: 4 }} onBlockAction={(a) => setProject((p) => reducer(p, a))} />
 }
 
 function Step4Screen({ start, check }: { start: () => Project; check?: boolean }) {
@@ -170,4 +207,15 @@ export const step4Screens: Record<string, { caption: string; render: () => React
   'step4-critical': { caption: 'Schritt 4: drei kritische Annahmen bei einer Gruppe', render: () => <Step4Screen start={tooCritical} /> },
   'step4-blocked': { caption: 'Schritt 4: geprüft, ⛔ und ⚠ (Annahme fehlt, Verbindung unvollständig)', render: () => <Step4Screen start={() => checked(step4Project())} check /> },
   'step4-proposal': { caption: 'Schritt 4: Vorschlag mit neuer Leistung, Verbindung dorthin und Nebenwirkung', render: () => <Step4Screen start={withProposal} /> },
+  question: {
+    caption: 'Frage unter der Karte: Text, Karte, Frage',
+    render: () => <Step4Screen start={() => withMessage(asking(QUESTION), STORED_TEXT.split('\n\n').slice(0, 2).join('\n\n'))} />,
+  },
+  'question-no-text': { caption: 'Frage unter der Karte: Vorschlag ohne Text (Folgevorschlag)', render: () => <Step4Screen start={() => withMessage(asking(QUESTION), '')} /> },
+  'question-duplicate': {
+    caption: 'Frage unter der Karte: der Text endet mit derselben Frage (nur einmal, unter der Karte)',
+    render: () => <Step4Screen start={() => withMessage(asking(QUESTION), STORED_TEXT.replace('\n\nPasst das', ' Passt das'))} />,
+  },
+  'question-long': { caption: 'Frage unter der Karte: lange Frage', render: () => <Step4Screen start={() => withMessage(asking(LONG_QUESTION), '')} /> },
+  'question-arrival': { caption: 'Frage unter der Karte: hohe Karte kommt an (Kartenanfang oben)', render: () => <ArrivalScreen /> },
 }

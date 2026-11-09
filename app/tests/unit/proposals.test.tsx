@@ -302,7 +302,7 @@ function drivenAi() {
 }
 
 const proposeUse = (id: string, input: unknown) => ({ type: 'tool_use', id, name: 'propose_changes', input })
-const addGroup = { summary: 'Jugendliche aufnehmen.', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: { ...groupFields, sizeEstimate: '' } }] }
+const addGroup = { summary: 'Jugendliche aufnehmen.', question: 'Passt das so?', changes: [{ op: 'add', collection: 'targetGroups', id: 'new:1', fields: { ...groupFields, sizeEstimate: '' } }] }
 
 async function openSession(store = readyStore({ [keys.project]: makeProject() }), driven = drivenAi()) {
   const user = userEvent.setup()
@@ -346,7 +346,7 @@ describe('proposals through the chat (Session)', () => {
   it('malformed tool input: no card, and the next request carries an error result', async () => {
     const { driven, send } = await openSession()
     await send('Für Jugendliche.')
-    await driven.answer([{ type: 'text', text: 'Moment.' }, proposeUse('toolu_bad', { summary: 'kaputt', changes: [{ op: 'add', collection: 'targetGroups', id: 'tg5', fields: { name: 1 } }] })])
+    await driven.answer([{ type: 'text', text: 'Moment.' }, proposeUse('toolu_bad', { summary: 'kaputt', question: 'Passt das so?', changes: [{ op: 'add', collection: 'targetGroups', id: 'tg5', fields: { name: 1 } }] })])
     await screen.findByText('Moment.')
     expect(screen.queryByRole('article', { name: 'Vorschlag' })).toBeNull()
     await send('Und?')
@@ -367,7 +367,7 @@ describe('proposals through the chat (Session)', () => {
     const start = makeProject({ steps: { 1: { block: { targetGroups: [makeItem(1, 'targetGroups', { name: 'Eltern', reach: 'indirect' }, { id: 'tg1' })] } } } })
     const { user, driven, store, send } = await openSession(readyStore({ [keys.project]: start }))
     await send('Eltern sind direkt dabei.')
-    const update = { summary: 'Eltern direkt.', changes: [{ op: 'update', collection: 'targetGroups', id: 'tg1', fields: { name: 'Eltern', description: '', reach: 'direct', isFocus: false, sizeEstimate: '', why: '' } }] }
+    const update = { summary: 'Eltern direkt.', question: 'Passt das so?', changes: [{ op: 'update', collection: 'targetGroups', id: 'tg1', fields: { name: 'Eltern', description: '', reach: 'direct', isFocus: false, sizeEstimate: '', why: '' } }] }
     await driven.answer([proposeUse('toolu_1', update)])
     await screen.findByRole('article', { name: 'Vorschlag' })
 
@@ -512,3 +512,86 @@ describe('proposal card: more paths (review gaps)', () => {
 })
 
 const latestOf = (p: Proposal) => withProposal(p)
+
+// ---- The one question under every card (step 18b, design §6.2) ----------------------------
+
+describe('the question under the card', () => {
+  const message = () => screen.getByRole('article', { name: 'Vorschlag' }).closest('li')!
+  const ask = (question: string) => ({ ...addGroup, question })
+
+  it('shows below the card as the message’s last line, also when the message has no text', async () => {
+    const { driven, send } = await openSession()
+    await send('Für Jugendliche.')
+    await driven.answer([proposeUse('toolu_1', ask('Wer kommt außer ihnen noch?'))])
+    await screen.findByRole('article', { name: 'Vorschlag' })
+    const last = message().lastElementChild!
+    expect(last.tagName).toBe('P')
+    expect(last.className).toBe('msg__question')
+    expect(last.textContent).toBe('Wer kommt außer ihnen noch?')
+    // After the card, not inside it: the card holds what can be applied.
+    expect(screen.getByRole('article', { name: 'Vorschlag' }).contains(last)).toBe(false)
+    expect(screen.getByRole('article', { name: 'Vorschlag' }).compareDocumentPosition(last) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows once when Claude’s text ends with the same question; a different question in the text stays', async () => {
+    const { driven, send } = await openSession()
+    await send('Für Jugendliche.')
+    await driven.answer([{ type: 'text', text: 'Ich nehme die Jugendlichen auf. Wer kommt außer ihnen noch?' }, proposeUse('toolu_1', ask('Wer kommt außer ihnen noch?'))])
+    await screen.findByRole('article', { name: 'Vorschlag' })
+    expect(within(message()).getAllByText(/Wer kommt außer ihnen noch\?/)).toHaveLength(1)
+    expect(within(message()).getByText('Ich nehme die Jugendlichen auf.')).toBeTruthy()
+    expect(message().lastElementChild!.textContent).toBe('Wer kommt außer ihnen noch?')
+
+    await send('Die Eltern.')
+    await driven.answer([{ type: 'text', text: 'Gut. Sind die Eltern direkt dabei?' }, proposeUse('toolu_2', { ...ask('Wer fehlt noch?'), changes: [{ ...addGroup.changes[0], fields: { ...addGroup.changes[0].fields, name: 'Eltern' } }] })])
+    await screen.findByText('Wer fehlt noch?')
+    expect(screen.getByText('Gut. Sind die Eltern direkt dabei?')).toBeTruthy()
+  })
+
+  it('the announcement of the finished message ends with the question, the copy in the text left out', async () => {
+    const { driven, send } = await openSession()
+    await send('Für Jugendliche.')
+    await driven.answer([{ type: 'text', text: 'Ich nehme sie auf.\n\nWer kommt außer ihnen noch?' }, proposeUse('toolu_1', ask('Wer kommt außer ihnen noch?'))])
+    await screen.findByRole('article', { name: 'Vorschlag' })
+    expect(screen.getByTestId('chat-live').textContent).toBe('Wirkungshelferin: Ich nehme sie auf.\n\nWer kommt außer ihnen noch?')
+  })
+
+  it('two cards in one message ask one question: the last card’s', async () => {
+    const { driven, send } = await openSession()
+    await send('Für Jugendliche und Eltern.')
+    const eltern = { ...ask('Und die Eltern?'), changes: [{ ...addGroup.changes[0], fields: { ...addGroup.changes[0].fields, name: 'Eltern' } }] }
+    await driven.answer([proposeUse('toolu_1', ask('Zuerst die Jugendlichen?')), proposeUse('toolu_2', eltern)])
+    await waitFor(() => expect(screen.getAllByRole('article', { name: 'Vorschlag' })).toHaveLength(2))
+    expect(screen.queryByText('Zuerst die Jugendlichen?')).toBeNull()
+    const [one, two] = screen.getAllByRole('article', { name: 'Vorschlag' })
+    expect(one.closest('li')).toBe(two.closest('li'))
+    expect(two.closest('li')!.lastElementChild!.textContent).toBe('Und die Eltern?')
+  })
+
+  it('an empty question shows no line; a reload keeps the question', async () => {
+    const first = await openSession()
+    await first.send('Für Jugendliche.')
+    await first.driven.answer([proposeUse('toolu_1', ask('Wer kommt außer ihnen noch?'))])
+    await screen.findByText('Wer kommt außer ihnen noch?')
+    await waitFor(async () => expect(((await first.store.get(keys.project)) as Project).steps[1].proposals[0]?.question).toBe('Wer kommt außer ihnen noch?'))
+    document.body.innerHTML = ''
+
+    const again = await openSession(reloaded(first.store))
+    expect(await screen.findByText('Wer kommt außer ihnen noch?')).toBeTruthy()
+    await again.send('Weiter.')
+    await again.driven.answer([proposeUse('toolu_2', { ...ask(''), changes: [{ ...addGroup.changes[0], fields: { ...addGroup.changes[0].fields, name: 'Eltern' } }] })])
+    await waitFor(() => expect(screen.getAllByRole('article', { name: 'Vorschlag' })).toHaveLength(2))
+    const second = screen.getAllByRole('article', { name: 'Vorschlag' })[1]
+    expect(second.closest('li')!.querySelector('.msg__question')).toBeNull()
+  })
+
+  it('the question renders inline Markdown only: a step link works, a list doesn’t become one', async () => {
+    const { driven, send } = await openSession()
+    await send('Für Jugendliche.')
+    await driven.answer([proposeUse('toolu_1', ask('Ist das **wirklich** alles?\n\n- eins\n- zwei'))])
+    await screen.findByRole('article', { name: 'Vorschlag' })
+    const line = message().querySelector('.msg__question')!
+    expect(line.querySelector('strong')!.textContent).toBe('wirklich')
+    expect(line.querySelector('ul, li, p')).toBeNull()
+  })
+})

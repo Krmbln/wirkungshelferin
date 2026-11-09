@@ -17,15 +17,15 @@
             "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
             "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
             "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
-            "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
-            "team": "",
-            "funder": "Stiftung Stadtteil Morgen",
             "activities": [
               "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
               "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
               "Kleine Touren in die Umgebung"
             ],
+            "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+            "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
             "duration": "2026–2027",
+            "funder": "Stiftung Stadtteil Morgen",
             "budgetRange": "offen",
             "statedGoals": [
               "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
@@ -46,7 +46,9 @@
             "purpose": "beides",
             "audience": "Stiftung Stadtteil Morgen und das Team",
             "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
-            "requiredFigures": [],
+            "requiredFigures": [
+              "Teilnahmen pro Halbjahr"
+            ],
             "existingData": [
               "Anwesenheitsliste pro Nachmittag",
               "Liste der vergebenen Räder"
@@ -78,15 +80,15 @@
               "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
               "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
               "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
-              "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
-              "team": "",
-              "funder": "Stiftung Stadtteil Morgen",
               "activities": [
                 "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
                 "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
                 "Kleine Touren in die Umgebung"
               ],
+              "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+              "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
               "duration": "2026–2027",
+              "funder": "Stiftung Stadtteil Morgen",
               "budgetRange": "offen",
               "statedGoals": [
                 "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
@@ -107,7 +109,9 @@
               "purpose": "beides",
               "audience": "Stiftung Stadtteil Morgen und das Team",
               "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
-              "requiredFigures": [],
+              "requiredFigures": [
+                "Teilnahmen pro Halbjahr"
+              ],
               "existingData": [
                 "Anwesenheitsliste pro Nachmittag",
                 "Liste der vergebenen Räder"

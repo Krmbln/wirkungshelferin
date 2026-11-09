@@ -37,7 +37,7 @@ function project(): Project {
 
 const causeFields = (fields: Record<string, unknown>) => ({ groupId: 'tg1', parentId: '', text: 'neu', evidence: 'unsicher', notInfluenceable: false, why: '', ...fields })
 const meta = (p: Project) => ({ seen: structuredClone(stepOf(p, 2).block), toolUseId: 'toolu_1', proposalId: 'p1', at: '2026-11-09T10:00:00.000Z', groups: groupsOf(p) })
-const run = (p: Project, changes: unknown[]) => toProposal(2, { summary: 'Baum ergänzt.', changes }, meta(p))
+const run = (p: Project, changes: unknown[]) => toProposal(2, { summary: 'Baum ergänzt.', question: 'Passt das so?', changes }, meta(p))
 const errors = (p: Project, changes: unknown[]) => {
   const r = run(p, changes)
   return r.ok ? [] : r.errors
@@ -45,9 +45,9 @@ const errors = (p: Project, changes: unknown[]) => {
 
 describe('step 2 proposals: what the app refuses back to Claude', () => {
   it('the tool schema carries parentId (strict: required, "" = direct)', () => {
-    const ok = proposeInput(2).safeParse({ summary: 's', changes: [{ op: 'add', collection: 'causes', id: 'new:1', fields: causeFields({}) }] })
+    const ok = proposeInput(2).safeParse({ summary: 's', question: 'q?', changes: [{ op: 'add', collection: 'causes', id: 'new:1', fields: causeFields({}) }] })
     expect(ok.success).toBe(true)
-    const missing = proposeInput(2).safeParse({ summary: 's', changes: [{ op: 'add', collection: 'causes', id: 'new:1', fields: { ...causeFields({}), parentId: undefined } }] })
+    const missing = proposeInput(2).safeParse({ summary: 's', question: 'q?', changes: [{ op: 'add', collection: 'causes', id: 'new:1', fields: { ...causeFields({}), parentId: undefined } }] })
     expect(missing.success).toBe(false)
   })
 

@@ -9,6 +9,7 @@ import { fakeClaude, readStored, startProject, watchProblems, writeStored } from
 
 const draft = sseToolUse('propose_changes', {
   summary: 'Ein erstes Profil aus deinem Bericht.',
+  question: 'Stimmt das so?',
   changes: [{ op: 'update', collection: 'profile', id: 'profile', fields: { name: 'Schraubzeit', organisation: 'Nachbarschaftshaus Am Weidengrund e. V.', projectBoundary: 'offen', location: 'offen', activities: ['offen'], participants: 'offen', team: 'offen', duration: 'offen', funder: 'offen', budgetRange: '', statedGoals: ['offen'], otherOffers: ['offen'], openQuestions: [] } }],
 })
 

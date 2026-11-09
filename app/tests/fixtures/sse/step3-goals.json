@@ -386,7 +386,7 @@
         },
         "segments": [
           {
-            "id": "6e4af2de-dbc9-4ea4-8d3d-0509f5eefeb5",
+            "id": "b62b2f8d-041c-48a8-bda0-1ab1618e647e",
             "startedAt": "2026-11-05T10:00:00.000Z",
             "messages": [
               {
@@ -405,7 +405,7 @@
                     "text": "[Bausteinstand Schritt 3]\ngoals: (leer)\nlevelNotApplicable: (leer)\nlevel7: {\"id\":\"level7\",\"rev\":1,\"editedByUser\":false,\"text\":\"\",\"why\":\"\"}\n⛔ offen:\n- Stufe 6 ist leer · Jugendliche 12–17\n- Stufe 5 ist leer · Jugendliche 12–17\n- Stufe 4 ist leer · Jugendliche 12–17\n- Kein Ziel · Eltern\n- Stufe 7 fehlt"
                   }
                 ],
-                "id": "cd23a6b5-4d69-4ae5-b9f5-9b18b6359167",
+                "id": "7955bdcb-7041-413e-bd9a-d4ac1508b6a9",
                 "at": "2026-11-05T10:00:00.000Z"
               }
             ]

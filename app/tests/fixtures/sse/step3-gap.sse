@@ -1,342 +1,348 @@
 event: message_start
-data: {"type":"message_start","message":{"model":"claude-opus-5-5","id":"msg_011Cgsb2dT1S6cW6LRTEYiJP","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4,"cache_creation_input_tokens":5457,"cache_read_input_tokens":21780,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":5457},"output_tokens":4,"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}   }
+data: {"type":"message_start","message":{"model":"claude-opus-5-5","id":"msg_011Cgt1NLTAEJcB4tyERNZQf","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4,"cache_creation_input_tokens":5991,"cache_read_input_tokens":21911,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":5991},"output_tokens":4,"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}  }
 
 event: content_block_start
-data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}    }
+data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}      }
 
 event: ping
 data: {"type": "ping"}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":""}     }
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":""}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"CAQSyQsKEAgTGAI4AUIIdGhpbmtpbmcSDDY1jyftBKuTOjaruRoM70gujCr++W+4sjAgIjBKwlEBh6eL6S2m89qzsmnfLH+1bNeaaDWxO8ALg85uZA297zmDnHCDcUipiAfQgXYq5gqYrAnQUBgyybtMAxau+0GAmLWxWjP+21jxYCgtcJoOUCgFEEnoaUavNFGdP2s89po5v8ni1hX2LQFIdA09V0xQLq0gLkaUISVciknO3kEIttrEzZZgNh1ykfo/o1Z/kSfYKHHr0U5YRxpDKCjuji3p6UZDEcO9kZdwb2NlYdGwmrWsKq6N/KeF/CjZ38WrR2nJextO2N1wx0owXa1/ceFwRRdw9B6kJAsokISJxQ29JW4zQXSprziDr7b/pYK75iGhUmCBM9QYS3kz95kd57YNqPhSBm1kPQVifomQPnPkzrsdWLvgyVy6Kez1FmdhUkSXVqtTPxHx7iu3Rk7SvOaZUssl3qwLSnHAnP5ZAxK1/w/BcK2hf33FCri/L5Q1UQUDoW/U1m5RQYShlTnG/+IN93UxvSGKhoPcRTU5J1jCVu0WK9zOG0RMEt9EDPbgLobWMIxPDrZCoOthOQmOr2TX/RogveKlJ1LD+WMEETujfxJhtErzkFMFl0VSFqG8CKOQOjOgDIN5JWR+0tuSdKofF5QLf7emYk3BdCdoqpD8+guljJRDX+0bQqdFjxKsnwI4bbiTSO4IhGz+35B7Prf7jvkZd0JOQJ9G7bYH1hsHVoyaaFNkT1cWaWR3Aqlgw04uvNOmMMxaAbfnvMdshZkOJgaBqSg0hs/s99Th9FDaMBZ9sYFYh7sCP6VUDoxHnffYvwS0aDAnXDFI0MhFLFZ6cCGQw231BT3O6IMWfhWt5Gm/K7vcToQ2MSGi21Fri0TU3cN9Rmj7HDzN2AYCz0S0fLL33unJft243osbb88iFJCfdwM/MQ5Go5+mWKbiSnodLD9efahlCqXcWrf/grMHRoUPeRxyRWAeFDoJHCGwEhhIsQ8fTI6a0UjCNFeR5Vw2ZBGKh93Zm/wJvEizn3bXVGZSV0Kv9Tsjvda8Kk9FRlXCG4rvYpq3b+xb3c6E19pqYUOabBVxQ+SP+HWQM8OeuUtxdetq7RdG2tAclEi8WvO+Bhl7FSb7JIJ8/AyHMtSRAIfLERr5d0SLTvH77p5nqWLBFL3IvorkuDnjDK77sSlZ86Bh2udcLILNLuWke0bHKeqdF7E/xvwNJR5GuYIpJzcqlhpeA+PWQFCce4YjPWDZB3v3I89XuACl96AX+TNqFCy6HxFeOxK/eET5AjgmUqmU8S58u4oeMR+hY11bWypPTsFTUkXMoZxVpkcXUp83PcVW59GUHFPcC+PP6viJfS1JQSMD0E8j/wLysU9YUMxxCmg6gRMtATkOOgwBA5RbB5voYIAvBZA2CqTUZ4V570t2Nbn4qnclIVtmSohvXpadlo3JkTQbm77NQ/JTTio1qEfJ+KeWDw1n5dMFYGE/bi7oLoqvhKksZSOAtY9QrJvEfPzBrFvq7nrb490gNcwGWVkiOEkVBcqKbOHOOELbtrd9FcVVG2AYvuFedfSpXPkOqLv2jkfBTmDBZeYCK/xO7CXG8m93zF0F1ljSVKGoYgdhtIAe+2ihoAQ/kfkcRYwtA4K52szQh/z79zZnUGYLNwEzn4pVvpnw9vcdqnS/0y4s+CC3hxhfEZLwdbyN9I/BtHqirDU3v/qD4Ogyr+50OCp0Fhrb/mQbLMo36/8WST3hz8/QIS+KDqs5FqptLlHA8abSaQ9G6zgOCsH33t4d6L3Mv4nCRTz7Q/kr69HT/PSMVQYDleXlev0Tq5m3njhBz9N04evIGknHG5PYE5YoUv5sUKjWZkNbGe6TpTAK5xSUFQNpbPI28IYgtA+2Oyc5SJ6aLlie16FXlMzgwjl7fymEowjRcxBnv5jr1kMhnAjQSiAd6+T8y1w/sE6v0LIdRbdNIxgB"}    }
+data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"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"}        }
 
 event: content_block_stop
-data: {"type":"content_block_stop","index":0    }
+data: {"type":"content_block_stop","index":0            }
 
 event: content_block_start
-data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}            }
+data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Das"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Dass s"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ist "}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ich die Jugendlich"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ein wichtiger Pun"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en s"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"kt. Ich würde"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"icher und willkommen f"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" da"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ühlen, ist wich"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"raus aber kein W"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"tig. Als"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"irkungsziel machen"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" W"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":". H"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"irkungsziel würde"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ier "}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ich es tr"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ist der"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"otzdem nicht a"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Grund:\n\n„"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ufnehmen, und"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Die"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" zwar aus zwei"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Jugendlichen f"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Gründen:\n\n1"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ühlen sich in der"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":". **Es g"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Werkstatt sicher"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ehört au"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" und willkommen“ be"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"f Stufe 3."}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"schreibt, wie eu"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"** Di"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"er Angebot "}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ese Stufe he"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ankommt. Auf der"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ißt:"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Wirkungstrepp"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" „Die Zielgru"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"e "}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ppe nimmt das"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ist das **"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Angebot an und ist z"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Stufe 3**:"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ufrieden.“"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Die Z"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Woh"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ielgruppe nimm"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"lfühlen in der"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"t das Angebot an und"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Werkstatt "}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ist zufrieden."}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ist eine Eigensch"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Das ist e"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"aft e"}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ine wichtige Vora"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ures Angebots. "}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ussetzung."}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Ohne sie k"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Ohne sie k"}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ommt"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ommt"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" niemand wieder und l"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" niemand wieder, und"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ernt au"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" niemand lernt et"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ch nichts. Es "}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"was. Es"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ist also"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ist aber noch keine"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" eine Voraussetz"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Veränderung bei den"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ung für"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Jugendlichen sel"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Wirkung, aber no"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"bst. Ich"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ch keine Ve"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" nehme den"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ränderung im"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Punkt de"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Leben der Jugend"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"shalb für Schritt"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"lichen. In"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" 4 auf. D"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Schritt 4 n"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ort wird er"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ehmen wir es als"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Teil der Kette,"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Leistung auf."}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" etwa so"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Dort ste"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":": „J"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ht es an"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ugendliche fühlen"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" der rich"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" sich willkommen → k"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"tigen Stelle,"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ommen regelmäßig"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" als Gl"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" → lernen re"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ied vor „"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"parieren“. Dort"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"w"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" kön"}   }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"issen und"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"nt ihr "}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" können“.\n2. **"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ihn auch später prüf"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Es fehlt der"}  }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en.\n\nEs kann s"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Bezug zum Probl"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ein, dass "}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"embaum.** Ke"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ihr et"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ine e"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"was Größeres meint"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"urer Ursachen s"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":","}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"agt b"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" zum Beispiel:"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"isher, dass den"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" „Die Jugendl"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Jugendlichen "}             }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ichen haben einen "}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ein sicherer Ort"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Ort, an dem sie d"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" fehlt. Ein"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"azugehören.“"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Ziel bra"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Das wäre eine Ve"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ucht aber e"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ränderung in"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ine Ursache, die es"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ihrem Leben,"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" auflöst.\n\nAn"}               }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" also Stufe 6."}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ders w"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Dafür b"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"äre es, wenn das"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"räuchte es aber im"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" G"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Problembaum eine pass"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"efühl von"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ende Ursache,"} }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Sicherheit etw"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" zum Beispiel „"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"as ist, das den"}    }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Es"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Jugendlichen au"}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" gibt kaum Or"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ch **"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"te in der Siedlung"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"außerhalb** der"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":", an denen sie willk"}          }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Werkstatt fehl"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ommen sind“. Die"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"t. Etwa so"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" fehlt im Moment"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":": Sie haben in"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":". Dann müsst"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" der Siedlung ka"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"et ihr s"}       }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"um"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ie zuerst in Sch"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Orte, an denen sie"} }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ritt 2 ergän"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" will"}          }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"zen."}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"kommen sind. D"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Er"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ann wäre das eine e"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"st dan"}              }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"igene Ursache,"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ach k"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" und s"}     }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ann ich ein Zi"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ie müsste z"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"el daraus mach"}            }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"uerst in den"}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en. [Zu Sch"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Problembaum."}       }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ritt 2](#schrit"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ["}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"t-2)\n\n**"}        }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Zu Schritt "}   }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Geht es eu"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"2](#schritt-2"}}
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ch vor allem um die"}         }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":")\n\nGe"}              }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Stimmung in der Wer"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ht es dir um die"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"kstatt selbst,"}               }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" St"}        }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" oder dar"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"immung in der Werk"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"um, dass den"}           }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"statt sel"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Jugendlichen in"}      }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"bst, oder fehl"}         }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" der Siedlung ins"}             }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"t den Jugendlich"}      }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"gesamt so"}  }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"en in der Siedlung"}           }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ein Ort fehl"}     }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" gr"}            }
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"t?**"}    }
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"undsätzlich ein"}     }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Ort, an dem s"}             }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ie willkommen sind?"} }
 
 event: content_block_stop
-data: {"type":"content_block_stop","index":1             }
+data: {"type":"content_block_stop","index":1        }
 
 event: message_delta
-data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":4,"cache_creation_input_tokens":5457,"cache_read_input_tokens":21780,"output_tokens":962,"output_tokens_details":{"thinking_tokens":320},"iterations":[{"input_tokens":4,"output_tokens":962,"cache_read_input_tokens":21780,"cache_creation_input_tokens":5457,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":5457},"type":"message","model":null}]}           }
+data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":4,"cache_creation_input_tokens":5991,"cache_read_input_tokens":21911,"output_tokens":917,"output_tokens_details":{"thinking_tokens":304},"iterations":[{"input_tokens":4,"output_tokens":917,"cache_read_input_tokens":21911,"cache_creation_input_tokens":5991,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":5991},"type":"message","model":null}]}       }
 
 event: message_stop
-data: {"type":"message_stop"       }
+data: {"type":"message_stop"}
 

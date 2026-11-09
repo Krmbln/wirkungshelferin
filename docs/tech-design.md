@@ -175,8 +175,10 @@ Both tools use `strict: true`, `tool_choice: auto` (forced tool choice isn't sup
     | { op: "add",    collection: "targetGroups", tempId: "new:1", fields: TargetGroupFields }
     | { op: "update", collection: "targetGroups", targetId: "tg1", fields: Partial<TargetGroupFields> }
     | { op: "remove", collection: "targetGroups", targetId: "tg1" }
-    | …one variant per collection of the step > }
+    | …one variant per collection of the step >,
+  question: string }             // step 18b: the one question, shown under the card
 ```
+- *Step 18b (as built):* `question` is required (strict mode always sends it; it adds no optional or union parameter). A tool call ends Claude's message and follow-up proposals often came with no text, so the question lives in the data, not only in the prompt. The stored `Proposal` gets an optional `question` (trimmed; an empty one is dropped, never a refusal). The chat shows it as the message's last line below the card, hides a trailing copy in Claude's text (`ui/chat/question.ts`), and the finished-message announcement ends with it.
 - Every variant has `additionalProperties: false`; the union is generated from the step's Zod schemas.
 - **Temporary IDs:** an `add` carries a `tempId` (`new:1`); other changes in the same proposal may reference it (e.g. a new link pointing to a new output). Applying resolves temp IDs to real IDs.
 - A unit test sends every generated step schema through the strict-mode check of the live contract test (§13). If a step's union is too large for strict mode, that step falls back to `strict: false` with the same Zod validation.
@@ -277,7 +279,7 @@ Item { id: string, rev: number, editedByUser: boolean, why?: string }  // base f
 ChatSegment { id, startedAt, summaryOfPrevious?: string, messages: StoredMessage[] }
 StoredMessage = the API message content blocks as returned (text, thinking, tool_use, tool_result) + local metadata (id, at)
 
-Proposal { id, toolUseId, at, summary, changes: ProposalChange[] }
+Proposal { id, toolUseId, at, summary, question?, changes: ProposalChange[] }
 ProposalChange { id, op, collection, tempId?, targetId?, baseRev?, fields?,
                  state: "open" | "applied" | "rejected",
                  resultId?,                       // add: the real id its temp id resolved to

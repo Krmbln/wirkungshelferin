@@ -50,7 +50,7 @@
         },
         "segments": [
           {
-            "id": "72e59475-0ae1-4eb8-8a4f-e9061a45abb1",
+            "id": "85627ef0-4acd-4e8a-8959-9dd059719a1e",
             "startedAt": "2026-11-05T10:00:00.000Z",
             "messages": [
               {
@@ -73,7 +73,7 @@
                     "text": "[Bausteinstand Schritt 0]\nprofile: {\"id\":\"profile\",\"rev\":1,\"editedByUser\":false,\"name\":\"\",\"organisation\":\"\",\"projectBoundary\":\"\",\"location\":\"\",\"activities\":[],\"participants\":\"\",\"team\":\"\",\"duration\":\"\",\"funder\":\"\",\"statedGoals\":[],\"otherOffers\":[],\"openQuestions\":[]}\nframe: {\"id\":\"frame\",\"rev\":1,\"editedByUser\":false,\"purpose\":\"\",\"audience\":\"\",\"requiredFormat\":\"\",\"requiredFigures\":[],\"existingData\":[]}\nsources:\n- {\"id\":\"src1\",\"rev\":1,\"editedByUser\":true,\"origin\":\"paste\",\"label\":\"Projektskizze\",\"chars\":642,\"at\":\"2026-11-05T10:00:00.000Z\"}"
                   }
                 ],
-                "id": "1558f8e7-f173-43a2-8945-11e0fd1759d0",
+                "id": "3781ffcd-8770-4349-ac8e-cde4b7591cf5",
                 "at": "2026-11-05T10:00:00.000Z",
                 "act": {
                   "kind": "paste",

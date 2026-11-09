@@ -106,6 +106,8 @@ export const proposal = z.strictObject({
   toolUseId: z.string(),
   at: iso,
   summary: z.string(),
+  /** The one question shown under the card (step 18b); missing on proposals stored before. */
+  question: z.string().optional(),
   changes: z.array(proposalChange),
 })
 
