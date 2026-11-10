@@ -26,6 +26,13 @@
   overflow-y: auto;
 }
 
+.workspace__notice {
+  flex: none;
+  padding: var(--space-4) var(--space-6) var(--space-3);
+  /* The block scrolls under a clean edge, like the gate's top line. */
+  border-bottom: 1px solid var(--line);
+}
+
 .workspace__block h2 {
   margin-bottom: var(--space-3);
 }

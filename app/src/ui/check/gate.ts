@@ -66,7 +66,9 @@ export function gateView(project: Project, step: StepId, live = false): GateView
   const state = project.steps[step]
   const check = state.qualityCheck
   const current = checkCurrent(project, step)
-  const rows = check ? judged(step, check, project, state.status === 'confirmed' ? state.confirmedWarnings : []) : { warn: [], ok: [] }
+  // An outdated step left as confirmed keeps its "trotzdem bestätigt" rows (design "Step 21").
+  const kept = state.status === 'confirmed' || (state.status === 'maybe_outdated' && !!state.confirmed && sameBlock(state.confirmed.block, state.block))
+  const rows = check ? judged(step, check, project, kept ? state.confirmedWarnings : []) : { warn: [], ok: [] }
   if (state.status === 'confirmed' && state.confirmed && sameBlock(state.confirmed.block, state.block)) {
     return { kind: 'confirmed', blocking: [], ...(current ? rows : { warn: [], ok: [] }), check: current ? check : undefined, confirmedAt: state.confirmed.at }
   }

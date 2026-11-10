@@ -1,3 +1,4 @@
+import { settled } from '../../domain/outdated'
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { cut, fieldKey, type HardIssue } from '../../domain/check'
 import {
@@ -458,7 +459,7 @@ export function Step6Block({ project, onAction, applied, issues = [], collapsed,
     )
   }
 
-  const note = project.steps[5].status !== 'confirmed' ? 'Schritt 5 ist noch nicht bestätigt – Indikatoren und Pflichtangaben können sich noch ändern.' : ''
+  const note = !settled(project.steps[5]) ? 'Schritt 5 ist noch nicht bestätigt – Indikatoren und Pflichtangaben können sich noch ändern.' : ''
   return (
     <div className="bpanel bplan" ref={panel}>
       {note && <p className="bgroups__note">{note}</p>}

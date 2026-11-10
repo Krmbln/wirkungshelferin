@@ -1608,3 +1608,87 @@ test('step 6 (step 20): coverage from step 5, plan rows as disclosures, picker, 
   await shotColumn('step6-full')
   expect(errors).toEqual([])
 })
+
+test('change handling (step 21): outdated banner, review states, outdated gate, cascade line', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  const banner = page.locator('.workspace__block .outdated')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  const noSideScroll = async () => expect(await page.locator('.workspace__block').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+  const screens = ['outdated', 'outdated-several', 'outdated-frame', 'outdated-frame-plus', 'outdated-running', 'outdated-busy', 'outdated-reviewed', 'outdated-cascade', 'outdated-cascade-one']
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+    for (const screen of screens) {
+      await openScreen(page, screen)
+      await noPageScroll()
+      await noSideScroll()
+      await shotScreen(`${screen}${suffix}`)
+    }
+    // The checked banner keeps to the text plus one line (design: "Nochmal prüfen lassen" inline).
+    await openScreen(page, 'outdated-reviewed')
+    const again = banner.getByRole('button', { name: 'Nochmal prüfen lassen' })
+    const text = banner.locator('.banner__text')
+    expect((await again.boundingBox())!.y + (await again.boundingBox())!.height).toBeLessThanOrEqual((await text.boundingBox())!.y + (await text.boundingBox())!.height + 1)
+    expect((await banner.boundingBox())!.height).toBeLessThan(size.width === 1390 ? 80 : 110)
+  }
+  await page.setViewportSize({ width: 1390, height: 880 })
+
+  // Outdated step 4: the banner sits above the scrolling block, stays while it scrolls, and is no live region.
+  await openScreen(page, 'outdated')
+  await expect(banner).toContainText('Schritt 2 hat sich geändert, seit du diesen Schritt bestätigt hast. Vielleicht passt hier etwas nicht mehr.')
+  await expect(banner.locator('[role="status"], [role="alert"]')).toHaveCount(1) // only the hidden status line
+  await expect(banner.locator('.banner')).not.toHaveAttribute('role')
+  await expect(page.locator('.workspace__scroll .outdated')).toHaveCount(0)
+  const top = (await banner.boundingBox())!.y
+  await page.locator('.workspace__block .workspace__scroll').evaluate((el) => (el.scrollTop = el.scrollHeight))
+  expect((await banner.boundingBox())!.y).toBe(top)
+  await expect(gate.getByText('Bestätigt am 04.11. – seitdem hat sich Schritt 2 geändert.')).toBeVisible()
+  await expect(gate.getByRole('button', { name: 'Bestätigen' })).not.toHaveAttribute('aria-disabled')
+  await expect(page.locator('.btn--primary')).toHaveCount(1)
+  // Keyboard: the step link is the first stop in the block column and shows the ring.
+  const link = banner.getByRole('button', { name: 'Zu Schritt 2' })
+  await link.focus()
+  await page.keyboard.press('Shift+Tab')
+  await page.keyboard.press('Tab')
+  await expect(link).toBeFocused()
+  expect(await link.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
+  await shotScreen('outdated-focus')
+  await link.press('Enter')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Problem/)
+
+  // Wording of several changes and of the frame.
+  await openScreen(page, 'outdated-several')
+  await expect(banner).toContainText('Schritt 0 und Schritt 2 haben sich geändert')
+  await openScreen(page, 'outdated-frame')
+  await expect(banner).toContainText('Der Messrahmen in Schritt 0 hat sich geändert')
+  await openScreen(page, 'outdated-frame-plus')
+  await expect(banner).toContainText('Schritt 0 (Messrahmen) und Schritt 2 haben sich geändert')
+
+  // Running, waiting for another answer, checked (the app line in the chat).
+  await openScreen(page, 'outdated-running')
+  await expect(banner.getByRole('button', { name: 'prüft die Änderung …' })).toHaveAttribute('aria-busy', 'true')
+  await expect(page.locator('.chat__act').getByText('Änderung prüfen lassen: Schritt 2')).toBeVisible()
+  await openScreen(page, 'outdated-busy')
+  await expect(banner.getByText('Warte, bis die Antwort im Chat fertig ist.')).toBeVisible()
+  await openScreen(page, 'outdated-reviewed')
+  await expect(banner).toContainText('Die Antwort der Wirkungshelferin steht im Chat. Passt alles, bestätige unten erneut.')
+  // The app line's icon is muted, not the warn colour (it stays in the history).
+  const icon = page.locator('.chat__act svg').last()
+  expect(await icon.evaluate((el) => getComputedStyle(el).color)).toBe(await page.locator('.chat__act').last().evaluate((el) => getComputedStyle(el).color))
+
+  // The re-confirmed step names what it marked.
+  await openScreen(page, 'outdated-cascade')
+  await expect(gate.getByText('Darauf bauen Schritt 3, 4, 5 und 6 auf – sie sind jetzt als „vielleicht veraltet“ markiert.')).toBeVisible()
+  await expect(banner).toHaveCount(0)
+  for (const s of [3, 4, 5, 6]) await expect(page.getByRole('button', { name: new RegExp(`^${s} .*, vielleicht veraltet$`) })).toBeVisible()
+  await openScreen(page, 'outdated-cascade-one')
+  await expect(gate.getByText('Darauf baut Schritt 6 auf – er ist jetzt als „vielleicht veraltet“ markiert.')).toBeVisible()
+  expect(errors).toEqual([])
+})

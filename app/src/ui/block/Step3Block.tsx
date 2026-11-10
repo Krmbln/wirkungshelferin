@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { isEmptyItem } from '../../domain/block'
+import { settled } from '../../domain/outdated'
 import { fieldKey, type HardIssue } from '../../domain/check'
 import type { Action } from '../../domain/reducer'
 import type { Item } from '../../domain/schemas/blocks'
@@ -378,7 +379,7 @@ export function Step3Block({ project, onAction, applied, issues = [], collapsed,
   const orphanItems = [...goals, ...marks].filter((i) => orphans.includes(i.groupId as string))
   return (
     <div className="bpanel bgroups" ref={panel}>
-      {step1.status !== 'confirmed' && !noGroups && <p className="bgroups__note">Schritt 1 ist noch nicht bestätigt – die Gruppen können sich noch ändern.</p>}
+      {!settled(step1) && !noGroups && <p className="bgroups__note">Schritt 1 ist noch nicht bestätigt – die Gruppen können sich noch ändern.</p>}
       {noGroups || !focus.length ? (
         <div className="bgroups__none">
           <p>{noGroups ? 'Leg in Schritt 1 zuerst Zielgruppen an.' : 'Für diesen Schritt brauchst du 1–2 Fokusgruppen aus Schritt 1.'}</p>

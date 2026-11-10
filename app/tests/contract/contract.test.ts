@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { BetaMessage, BetaToolResultBlockParam, BetaToolUseBlock } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { sdkAiClient, type SendOptions, type SendResult } from '../../src/ai/client'
-import { commitAnswer, prepareAct, prepareTurn } from '../../src/ai/chat'
+import { commitAnswer, prepareAct, prepareTurn, reviewed } from '../../src/ai/chat'
 import { extractPdf } from '../../src/ai/pdf'
 import {
   MESSAGE_ORDER,
@@ -26,6 +26,7 @@ import type { Item } from '../../src/domain/schemas/blocks'
 import { demoProject } from '../../src/domain/demo'
 import { makeItem, makeProject } from '../../src/domain/fixtures'
 import { formFields, isOffen } from '../../src/domain/profile'
+import { markOutdated } from '../../src/domain/outdated'
 import { reducer } from '../../src/domain/reducer'
 import { changeView } from '../../src/domain/proposals'
 import { projectSchema, type Project, type Proposal, type StoredMessage } from '../../src/domain/schemas/project'
@@ -957,35 +958,35 @@ describe('9 · step 5: measurement focus (made-up project)', () => {
 
 const SHOWN_ID_5 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|fq|dc|in|mf|new:)\d+\b/g
 
-describe('10 · step 6: data collection plan (made-up project)', () => {
-  /** Step 5 confirmed: two questions with three indicators, two mandatory figures; step 0 lists existing data. */
-  function step6Start(): Project {
-    const p = step5Start()
-    p.steps[0].block.frame = { ...p.steps[0].block.frame, existingData: ['Anwesenheitsliste (wer an welchem Tag da war)', 'Reparaturbuch (welches Rad, was gemacht)'] }
-    p.steps[0].confirmed = { ...p.steps[0].confirmed!, block: structuredClone(p.steps[0].block) as never }
-    const question = (id: string, text: string, linkIds: string[], goalIds: string[]) =>
-      makeItem(5, 'focusQuestions', { text, reasons: ['kritische_annahme'], audience: 'Vorstand und Stiftung', linkIds, goalIds, why: 'Davon hängt ab, ob wir so weitermachen.' }, { id })
-    const indicator = (id: string, focusQuestionId: string, level: 1 | 5, text: string, baseline: string, target: string) =>
-      makeItem(5, 'indicators', { focusQuestionId, level, text, baseline, target, why: 'Zeigt die Antwort direkt.' }, { id })
-    p.steps[5].block = {
-      focusQuestions: [question('fq1', 'Bleiben die Ehrenamtlichen das ganze Jahr dabei?', ['li1'], []), question('fq2', 'Reparieren die Jugendlichen ihr Rad wirklich selbst?', [], ['go1'])],
-      deferredCandidates: [],
-      indicators: [
-        indicator('in1', 'fq1', 1, 'Anzahl der Öffnungstage, an denen beide Ehrenamtlichen da waren – je Quartal', 'ab jetzt', 'mindestens 20 von 24 Tagen'),
-        indicator('in2', 'fq2', 5, 'Anteil der Stammgäste, die einen Platten selbst flicken – zum Jahresende', 'nachträglich im Dezember (vorher – nachher)', 'mindestens die Hälfte'),
-        indicator('in3', 'fq2', 5, 'Zahl der Räder, die Jugendliche ohne Hilfe wieder fahrbereit machen – je Quartal', 'ab jetzt', '10 je Quartal'),
-      ],
-      mandatoryFigures: [
-        makeItem(5, 'mandatoryFigures', { name: 'Teilnehmende nach Geschlecht', target: '15, davon mindestens 6 Mädchen', unit: 'Personen', sourceNote: 'Teilnahme = mindestens zweimal im Monat' }, { id: 'mf1' }),
-        makeItem(5, 'mandatoryFigures', { name: 'Anzahl offener Werkstatttage', target: '80', unit: 'Tage' }, { id: 'mf2' }),
-      ],
-    } as never
-    p.steps[5].status = 'confirmed'
-    p.steps[5].confirmed = { at: AT, block: structuredClone(p.steps[5].block) as never, basis: { 0: AT, 4: AT } }
-    p.idCounters = { ...p.idCounters, fq: 2, in: 3, mf: 2 }
-    return projectSchema.parse(p)
-  }
+/** Step 5 confirmed: two questions with three indicators, two mandatory figures; step 0 lists existing data. */
+function step6Start(): Project {
+  const p = step5Start()
+  p.steps[0].block.frame = { ...p.steps[0].block.frame, existingData: ['Anwesenheitsliste (wer an welchem Tag da war)', 'Reparaturbuch (welches Rad, was gemacht)'] }
+  p.steps[0].confirmed = { ...p.steps[0].confirmed!, block: structuredClone(p.steps[0].block) as never }
+  const question = (id: string, text: string, linkIds: string[], goalIds: string[]) =>
+    makeItem(5, 'focusQuestions', { text, reasons: ['kritische_annahme'], audience: 'Vorstand und Stiftung', linkIds, goalIds, why: 'Davon hängt ab, ob wir so weitermachen.' }, { id })
+  const indicator = (id: string, focusQuestionId: string, level: 1 | 5, text: string, baseline: string, target: string) =>
+    makeItem(5, 'indicators', { focusQuestionId, level, text, baseline, target, why: 'Zeigt die Antwort direkt.' }, { id })
+  p.steps[5].block = {
+    focusQuestions: [question('fq1', 'Bleiben die Ehrenamtlichen das ganze Jahr dabei?', ['li1'], []), question('fq2', 'Reparieren die Jugendlichen ihr Rad wirklich selbst?', [], ['go1'])],
+    deferredCandidates: [],
+    indicators: [
+      indicator('in1', 'fq1', 1, 'Anzahl der Öffnungstage, an denen beide Ehrenamtlichen da waren – je Quartal', 'ab jetzt', 'mindestens 20 von 24 Tagen'),
+      indicator('in2', 'fq2', 5, 'Anteil der Stammgäste, die einen Platten selbst flicken – zum Jahresende', 'nachträglich im Dezember (vorher – nachher)', 'mindestens die Hälfte'),
+      indicator('in3', 'fq2', 5, 'Zahl der Räder, die Jugendliche ohne Hilfe wieder fahrbereit machen – je Quartal', 'ab jetzt', '10 je Quartal'),
+    ],
+    mandatoryFigures: [
+      makeItem(5, 'mandatoryFigures', { name: 'Teilnehmende nach Geschlecht', target: '15, davon mindestens 6 Mädchen', unit: 'Personen', sourceNote: 'Teilnahme = mindestens zweimal im Monat' }, { id: 'mf1' }),
+      makeItem(5, 'mandatoryFigures', { name: 'Anzahl offener Werkstatttage', target: '80', unit: 'Tage' }, { id: 'mf2' }),
+    ],
+  } as never
+  p.steps[5].status = 'confirmed'
+  p.steps[5].confirmed = { at: AT, block: structuredClone(p.steps[5].block) as never, basis: { 0: AT, 4: AT } }
+  p.idCounters = { ...p.idCounters, fq: 2, in: 3, mf: 2 }
+  return projectSchema.parse(p)
+}
 
+describe('10 · step 6: data collection plan (made-up project)', () => {
   it('opening: the whole plan in one card, every indicator and figure covered, existing data first, no table in the text', () =>
     check('Step 6 opening: one proposal, all covered, refs on every row, no markdown table, no ids', async () => {
       const text = 'Lass uns den Datenerhebungsplan machen.'
@@ -1016,3 +1017,39 @@ describe('10 · step 6: data collection plan (made-up project)', () => {
 })
 
 const SHOWN_ID_6 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|fq|dc|in|mf|pr|new:)\d+\b/g
+
+describe('11 · change handling: "Änderung prüfen lassen" (made-up project)', () => {
+  const LATER = '2026-11-06T10:00:00.000Z'
+
+  /** Steps 4 and 5 confirmed; then step 4 re-confirmed with the critical link li1 changed: step 5 is outdated. */
+  function reviewStart(): Project {
+    const p = step6Start()
+    const previous = p.steps[4].confirmed!
+    const links = p.steps[4].block.links as Item[]
+    links[0] = { ...links[0], rev: 2, editedByUser: true, assumption: 'Seit März macht eine bezahlte Honorarkraft die Werkstatt; die Ehrenamtlichen helfen nur noch gelegentlich mit.', evidence: 'eigene_daten', critical: false }
+    p.steps[4].confirmed = { at: LATER, block: structuredClone(p.steps[4].block) as never, basis: { 0: AT } }
+    markOutdated(p, 4, { at: previous.at, block: previous.block as Record<string, unknown> })
+    expect(p.steps[5].status).toBe('maybe_outdated')
+    return projectSchema.parse(p)
+  }
+
+  it('review: says what changed in step 4 and what it means for step 5; no ids; a question or a valid card', () =>
+    check('Review turn: names the change, no ids, ends with a question or a card with its question', async () => {
+      const prepared = prepareAct(reviewStart(), 5, { kind: 'review' }, { at: LATER })!
+      rec.recordNext('review-step5')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}review-step5.json`, JSON.stringify({ step: 5, project: prepared.project }, null, 2))
+      const shown = messageTexts(message).join('\n')
+      expect(shown.trim(), 'no visible text').not.toBe('')
+      expect(shown.match(SHOWN_ID_6) ?? [], 'ids in the visible text').toEqual([])
+      expect(/honorarkraft|ehrenamtlich/i.test(shown), 'the change is not named').toBe(true)
+      const project = commitAnswer(prepared.project, 5, { status: 'done', message }, prepared.shown, { at: LATER })
+      expect(project.steps[5].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {}, 'invalid tool call').toEqual({})
+      expect(reviewed(project, 5), 'the banner would not show "geprüft"').toBe(true)
+      const [proposal] = project.steps[5].proposals
+      if (proposal) return `card with ${proposal.changes.length} change(s): ${proposal.summary.slice(0, 80)}; ${asked(proposal.question, message)}`
+      expect(shown, 'no question and no card').toContain('?')
+      return `no card; text ${shown.length} chars: ${shown.slice(0, 120).replace(/\n/g, ' ')}`
+    }))
+})

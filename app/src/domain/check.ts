@@ -6,6 +6,7 @@ import type { StepId } from './types'
 import { CRITICAL_MAX, chainOf, criticalLinks, endOf, linkState, type ChainItems } from './chain'
 import { GOAL_LEVELS, treeOf } from './tree'
 import { INDICATOR_MAX, PER_QUESTION_MAX, QUESTION_MAX, candidates, decisionOf, indicatorsOf, orphanIndicators, questionsOf, refsOf } from './focus'
+import { markOutdated } from './outdated'
 import { coverage, hasRefs, isBlankField, needText, needsOf, planRefsOf, rowName, type Need, type PlanField } from './plan'
 
 // Hard blocks (⛔) as code (tech design §7.2, PRD F4): exactly the PRD's three kinds — a
@@ -513,7 +514,7 @@ export function openWarnings(step: StepId, check: QualityCheck, groups: Item[] =
 /**
  * Confirming (PRD F4): only with a check of the current block and no ⛔ left. Stores the
  * snapshot, the earlier steps' confirm times it builds on (F6) and the ⚠ points confirmed
- * anyway. The cascade to later steps on a re-confirm follows in step 21.
+ * anyway. A re-confirm with changed content marks later steps "vielleicht veraltet" (outdated.ts).
  */
 export function confirmStep(project: Project, step: StepId, at: string): Project {
   const state = project.steps[step]
@@ -525,8 +526,11 @@ export function confirmStep(project: Project, step: StepId, at: string): Project
     const confirmedAt = next.steps[earlier as StepId].confirmed?.at
     if (confirmedAt) basis[earlier as StepId] = confirmedAt
   }
+  const previous = s.confirmed
   s.status = 'confirmed'
   s.confirmedWarnings = openWarnings(step, state.qualityCheck, ...issueContext(project))
   s.confirmed = { at, block: structuredClone(s.block) as never, basis }
+  delete s.outdatedBy
+  if (previous) markOutdated(next, step, { at: previous.at, block: previous.block as Record<string, unknown> })
   return next
 }

@@ -5,8 +5,9 @@ import type { Project, StoredMessage } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
 import { groupsOf, hardIssues, issueContext } from '../domain/check'
 import { scrubContacts } from '../domain/contacts'
+import { earlierChanges, stepList, type EarlierChange } from '../domain/outdated'
 import { CHECK_REQUEST, checkEvents, parseCheck } from './check'
-import { contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, sourceText, sourcesText, systemPrompt, withCacheBreakpoint } from './prompt'
+import { blockText, contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, sourceText, sourcesText, systemPrompt, withCacheBreakpoint } from './prompt'
 import { checkErrorToolResult, checkToolResult, errorToolResult, proposalToolResult, toProposal } from './proposal'
 import { MAX_TOKENS, type Call } from './request'
 import { carriedText } from './summarise'
@@ -117,7 +118,7 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
 export const MAX_PASTE = 150_000
 
 /** A button that sends a turn on Lukas's behalf (design §6.2 "App lines"). */
-export type Act = { kind: 'paste' | 'pdf'; label: string; text: string } | { kind: 'interview' } | { kind: 'opening' }
+export type Act = { kind: 'paste' | 'pdf'; label: string; text: string } | { kind: 'interview' } | { kind: 'opening' } | { kind: 'review' }
 
 /** True when a step's chat has no message yet. */
 export const chatEmpty = (project: Project, step: StepId) => !project.steps[step].segments.some((s) => s.messages.length)
@@ -125,12 +126,17 @@ export const chatEmpty = (project: Project, step: StepId) => !project.steps[step
 /**
  * The turn for a button: a paste or a read PDF (step 0) stores the source, then sends it in full once; the
  * interview (step 0, empty chat) and the opening (step 1 after step 0's confirm, empty chat)
- * tell Claude how to begin. Undefined when the act doesn't fit the step's state.
+ * tell Claude how to begin; the review (an outdated step) brings the changed earlier steps. Undefined when the act doesn't fit the step's state.
  */
 export function prepareAct(project: Project, step: StepId, act: Act, meta: TurnMeta): Prepared | undefined {
   if (act.kind === 'opening') {
     if (step !== 1 || !chatEmpty(project, 1) || project.steps[0].status !== 'confirmed') return undefined
     return prepareTurn(project, step, `[App] ${OPENING}`, { ...meta, act: { kind: 'opening' } })
+  }
+  if (act.kind === 'review') {
+    const changes = earlierChanges(project, step)
+    if (!changes.length) return undefined
+    return prepareTurn(project, step, `[App] ${REVIEW}`, { ...meta, source: changesText(changes), act: { kind: 'review', label: stepList(changes.map((c) => c.step)) } })
   }
   if (step !== 0) return undefined
   if (act.kind === 'interview') {
@@ -161,6 +167,21 @@ const INTERVIEW = 'Die Person hat nichts Schriftliches und hat das Interview ges
 const OPENING =
   'Die Person hat Schritt 0 gerade bestätigt und öffnet jetzt Schritt 1. Beginne mit deiner Eröffnung (Leitfaden Schritt 1, Abschnitt 4.1): der erste Entwurf als Vorschlag und eine Frage.'
 
+const REVIEW =
+  'Die Person hat „Änderung prüfen lassen“ gedrückt: Seit dieser Schritt bestätigt wurde, wurde ein früherer Schritt geändert und neu bestätigt. Beide Fassungen stehen direkt über dieser Zeile. Sag knapp, was sich geändert hat und was das für diesen Baustein bedeutet. Muss hier etwas angepasst werden, schlag es als Vorschlag vor. Passt alles noch, sag das und bitte die Person, den Schritt erneut zu bestätigen. Den früheren Schritt änderst du nicht.'
+
+/** Per changed earlier step: the version this step was built on and the one confirmed now (tech design §9). */
+export function changesText(changes: EarlierChange[]): string {
+  const day = (at: string) => at.slice(0, 10)
+  return changes
+    .map(
+      (c) =>
+        `[Schritt ${c.step}, wie bestätigt am ${day(c.then.at)} – darauf baut dieser Schritt auf]\n${blockText(c.step, c.then.block as LooseBlock)}\n\n` +
+        `[Schritt ${c.step} jetzt, bestätigt am ${day(c.now.at)}]\n${blockText(c.step, c.now.block as LooseBlock)}`,
+    )
+    .join('\n\n')
+}
+
 /**
  * The gate's check request (design §6.2): the stored history plus one more user turn asking for
  * report_quality_check, so it reads the cached prefix. Nothing of it is stored; `shown` is the
@@ -180,6 +201,24 @@ export function unanswered(project: Project, step: StepId): boolean {
   const last = storedOf(project, step).at(-1)
   return last?.role === 'user'
 }
+
+/**
+ * The newest "Änderung prüfen lassen" turn is newer than the newest change it covers and got a
+ * complete answer (design "Step 21"): a failed or stopped turn doesn't count.
+ */
+export function reviewed(project: Project, step: StepId): boolean {
+  const newest = earlierChanges(project, step).map((c) => c.now.at).sort().at(-1)
+  if (!newest) return false
+  const messages = project.steps[step].segments.flatMap((s) => s.messages)
+  const turn = messages.findLastIndex((m) => m.act?.kind === 'review')
+  if (turn === -1 || messages[turn].at < newest) return false
+  // Only the answer to this turn counts, not a later answer to another question.
+  const answer = messages.slice(turn + 1).find((m) => m.role === 'assistant')
+  return !!answer && !answer.aborted
+}
+
+/** A "Änderung prüfen lassen" turn is waiting for its answer. */
+export const reviewPending = (project: Project, step: StepId) => storedOf(project, step).at(-1)?.act?.kind === 'review'
 
 /** "Erneut versuchen": the same history once more, nothing new stored. */
 export function prepareRetry(project: Project, step: StepId): Prepared | undefined {

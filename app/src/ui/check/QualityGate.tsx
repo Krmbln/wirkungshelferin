@@ -3,6 +3,7 @@ import { problemText } from '../../ai/errors'
 import { calendarDaysSince } from '../../domain/backup'
 import { hardIssues, issueContext, openWarnings, type FieldTarget } from '../../domain/check'
 import type { LooseBlock } from '../../domain/block'
+import { earlierChanges, outdatedBecauseOf, reachedBy, stepList } from '../../domain/outdated'
 import type { Project, QualityCheck } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
 import { dayText } from '../chat/sessions'
@@ -11,6 +12,7 @@ import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { StatusIcon } from '../components/StatusIcon'
 import { ThinkingIndicator } from '../components/ThinkingIndicator'
+import { changedSubject } from './OutdatedBanner'
 import { blockingText, gateView, okText, warnConfirmText, type JudgedRow } from './gate'
 import type { CheckProblem, CheckRun } from './useCheckRunner'
 import './QualityGate.css'
@@ -47,6 +49,12 @@ const problemLine = (problem: CheckProblem, model: string) =>
 /** "Bestätigt heute" / "gestern" / "am 05.11." */
 const confirmedText = (at: string, now: Date) => `Bestätigt ${calendarDaysSince(at, now) <= 1 ? '' : 'am '}${dayText(at, now)}`
 
+/** The confirm marked later steps (design "Step 21"): "Darauf bauen Schritt 3, 4 und 6 auf – …". */
+const cascadeText = (steps: StepId[]) =>
+  steps.length === 1
+    ? `Darauf baut ${stepList(steps)} auf – er ist jetzt als „vielleicht veraltet“ markiert.`
+    : `Darauf bauen ${stepList(steps)} auf – sie sind jetzt als „vielleicht veraltet“ markiert.`
+
 // The three-state gate at the bottom of the block panel (design §6.2): A "Prüfen und
 // bestätigen", B blocked with the reason and "Zum Feld", C confirm (with the inline question
 // when ⚠ points stay open). After confirming: the backup prompt.
@@ -57,6 +65,8 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
   const [prompt, setPrompt] = useState<'open' | 'saved' | 'handoff' | 'handoff-saved' | null>(null)
   const [okOpen, setOkOpen] = useState(false)
   const [announce, setAnnounce] = useState('')
+  // Set by a confirm that changed content: then the cascade is announced once it shows.
+  const [confirming, setConfirming] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLUListElement>(null)
   const focusNext = useRef<string | null>(null)
@@ -105,13 +115,24 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
   if (asking && view.kind !== 'ready') setAsking(false)
   if (prompt && view.kind !== 'confirmed') setPrompt(null)
 
+  const cascade = view.kind === 'confirmed' ? outdatedBecauseOf(project, step) : []
+  const changes = earlierChanges(project, step)
+  // A screen reader hears what the confirm marked; focus goes on to the backup question.
+  if (confirming && view.kind !== 'ready') {
+    setConfirming(false)
+    if (view.kind === 'confirmed' && cascade.length) setAnnounce(`Bestätigt. ${stepList(cascade)} ${cascade.length === 1 ? 'ist' : 'sind'} jetzt als „vielleicht veraltet“ markiert.`)
+  }
+
   const running = run?.kind === 'running'
   const warnings = view.check ? openWarnings(step, view.check, ...issueContext(project)) : []
 
   function confirm() {
     // Read before confirming: the hand-off is offered while step 1 is still empty.
     const handing = !!handoff
+    const before = project.steps[step].confirmed
     onConfirm()
+    // Only a re-confirm that changed something marks anything: an unchanged one must not announce old marks.
+    setConfirming(!!before && reachedBy(step, before.block as Record<string, unknown>, project.steps[step].block as unknown as Record<string, unknown>).length > 0)
     setAsking(false)
     setPrompt(handing ? 'handoff' : 'open')
     focusNext.current = handing ? '[data-gate="next"]' : '[data-gate="backup"]'
@@ -148,12 +169,19 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
 
       {view.kind === 'unchecked' && <p className="gate__lead">Bevor du bestätigst, prüft die Wirkungshelferin den Baustein.</p>}
       {view.kind === 'changed' && <p className="gate__lead">Geändert seit der Prüfung – erneut prüfen</p>}
+      {changes.length > 0 && project.steps[step].confirmed && (view.kind === 'ready' || view.kind === 'blocked') && (
+        <p className="gate__lead gate__note">
+          {confirmedText(project.steps[step].confirmed.at, now)} – seitdem {changes.length > 1 ? 'haben' : 'hat'} sich{' '}
+          {changedSubject(changes, (s) => `Schritt ${s}`, false)} geändert.
+        </p>
+      )}
       {view.kind === 'confirmed' && (
         <div>
           <p className="gate__confirmed" data-gate="confirmed" tabIndex={-1}>
             <StatusIcon status="done" size={18} tooltip={false} />
             {confirmedText(view.confirmedAt!, now)}
           </p>
+          {cascade.length > 0 && <p className="gate__lead gate__hint">{cascadeText(cascade)}</p>}
           <p className="gate__lead gate__hint">Wenn du etwas änderst, prüfst du neu.</p>
         </div>
       )}
@@ -312,7 +340,7 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
               <Button
                 variant="primary"
                 data-gate="primary"
-                disabledReason={view.kind === 'blocked' ? blockingText(view.blocking.length) : undefined}
+                disabledReason={view.kind === 'blocked' ? blockingText(view.blocking.length) : chatBusy ? 'Warte, bis die Antwort im Chat fertig ist.' : undefined}
                 onClick={() => (warnings.length ? ask() : confirm())}
               >
                 Bestätigen

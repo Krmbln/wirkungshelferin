@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { isEmptyItem } from '../../domain/block'
+import { settled } from '../../domain/outdated'
 import { CRITICAL_MAX, OUTPUT_LEVELS, activityUse, chainItems, chainOf, criticalLinks, endOf, linkState, linksUsing, skippedLevels, unlinked, type ChainItems, type End, type OutputLevel } from '../../domain/chain'
 import { cut, fieldKey, type HardIssue } from '../../domain/check'
 import type { Action } from '../../domain/reducer'
@@ -610,7 +611,7 @@ export function Step4Block({ project, onAction, applied, issues = [], collapsed,
 
   const step1 = project.steps[1]
   const noGroups = !groups.length
-  const unconfirmed = [step1.status !== 'confirmed' && !noGroups ? 1 : 0, project.steps[3].status !== 'confirmed' ? 3 : 0].filter(Boolean)
+  const unconfirmed = [!settled(step1) && !noGroups ? 1 : 0, !settled(project.steps[3]) ? 3 : 0].filter(Boolean)
   const note =
     unconfirmed.length === 2
       ? 'Schritt 1 und 3 sind noch nicht bestätigt – Gruppen und Ziele können sich noch ändern.'

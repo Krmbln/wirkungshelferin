@@ -1,0 +1,46 @@
+/* "Vielleicht veraltet" (design §6.2 "Step 21"): text, then the button on its own line; after the
+   check the same button sits inline at the end of the text as a text button. */
+.outdated__review,
+.outdated .btn-with-reason {
+  display: flex;
+  width: fit-content;
+  margin-top: var(--space-3);
+}
+
+.outdated .btn-with-reason .outdated__review {
+  margin-top: 0;
+}
+
+/* Inline in the sentence: no extra height beyond the line; the hit area still reaches 32 px (§10). */
+.outdated__again {
+  position: relative;
+  min-height: 0;
+  padding: 0;
+  vertical-align: baseline;
+}
+
+.outdated__again::before {
+  position: absolute;
+  inset: -6px -4px;
+  content: '';
+}
+
+/* An earlier step's name reads like a link inside the sentence (the chat's "Zu Schritt N" look). */
+.outdated__link {
+  display: inline;
+  margin-inline: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.outdated__link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

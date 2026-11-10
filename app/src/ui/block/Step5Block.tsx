@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { isEmptyItem } from '../../domain/block'
+import { settled } from '../../domain/outdated'
 import { chainItems, chainOf, endOf, type ChainItems } from '../../domain/chain'
 import { cut, fieldKey, type HardIssue } from '../../domain/check'
 import {
@@ -659,7 +660,7 @@ export function Step5Block({ project, onAction, applied, issues = [], onOpenStep
 
   // ——— Frame ———
 
-  const unconfirmed = [3, 4].filter((s) => project.steps[s as StepId].status !== 'confirmed')
+  const unconfirmed = [3, 4].filter((s) => !settled(project.steps[s as StepId]))
   const note =
     unconfirmed.length === 2
       ? 'Schritt 3 und 4 sind noch nicht bestätigt – Ziele, Kandidaten und Verbindungen können sich noch ändern.'

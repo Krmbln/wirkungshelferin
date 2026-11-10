@@ -145,13 +145,14 @@ export function PasteForm({ draft, busy, note, wait, onChange, onCancel, onSubmi
   )
 }
 
-const ACT_ICON: Record<NonNullable<StoredMessage['act']>['kind'], IconName> = { paste: 'document', pdf: 'document', interview: 'speech', opening: 'statusOk' }
+const ACT_ICON: Record<NonNullable<StoredMessage['act']>['kind'], IconName> = { paste: 'document', pdf: 'document', interview: 'speech', opening: 'statusOk', review: 'refresh' }
 
 /** "Text eingefügt: „Antrag 2026“ · 12.300 Zeichen", "PDF gelesen: „Projektantrag“ · 34.500 Zeichen" */
 export function actText(act: NonNullable<StoredMessage['act']>): string {
   const what = `„${act.label ?? ''}“ · ${(act.chars ?? 0).toLocaleString('de-DE')} Zeichen`
   if (act.kind === 'paste') return `Text eingefügt: ${what}`
   if (act.kind === 'pdf') return `PDF gelesen: ${what}`
+  if (act.kind === 'review') return `Änderung prüfen lassen: ${act.label ?? ''}`
   return act.kind === 'interview' ? 'Interview gestartet' : 'Schritt 0 bestätigt'
 }
 

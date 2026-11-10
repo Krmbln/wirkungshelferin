@@ -68,6 +68,9 @@ export function isEmptyItem(step: StepId, collection: string, item: Item): boole
 }
 
 /** A change to the block moves a fresh or confirmed step to "in Arbeit" (PRD F6: reopening). */
+/** A confirmed version stands: confirmed, or confirmed and "vielleicht veraltet" since (step 21). */
+export const isConfirmed = (status: StepStatus) => status === 'confirmed' || status === 'maybe_outdated'
+
 export function touched(status: StepStatus): StepStatus {
   return status === 'not_started' || status === 'confirmed' ? 'in_progress' : status
 }

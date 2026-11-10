@@ -25,10 +25,10 @@ export const storedMessage = z.strictObject({
   toolErrors: z.record(z.string(), z.array(z.string())).optional(),
   /** Tokens of a complete answer: the whole prompt it read and its output. Decides when a segment rolls over. */
   usage: z.strictObject({ prompt: z.number().int().nonnegative(), output: z.number().int().nonnegative() }).optional(),
-  /** A user turn the app sent for a button Lukas pressed (paste, interview, step 1 opening): shown as an app line. */
+  /** A user turn the app sent for a button Lukas pressed (paste, interview, step 1 opening, review): shown as an app line. */
   act: z
     .strictObject({
-      kind: z.enum(['paste', 'pdf', 'interview', 'opening']),
+      kind: z.enum(['paste', 'pdf', 'interview', 'opening', 'review']),
       label: z.string().optional(),
       chars: z.number().int().nonnegative().optional(),
     })
@@ -126,6 +126,11 @@ function stepState<B extends z.ZodType>(block: B) {
     confirmed: z
       .strictObject({ at: iso, block, basis: z.partialRecord(stepKey, iso) })
       .optional(),
+    /**
+     * Earlier steps re-confirmed with changes since this step was confirmed (PRD F6): each one's
+     * confirmed version this step was built on, for "Änderung prüfen lassen". Cleared on confirm.
+     */
+    outdatedBy: z.partialRecord(stepKey, z.strictObject({ at: iso, block: z.record(z.string(), z.unknown()) })).optional(),
     resume: z.strictObject({ summary: z.string(), nextAction: z.string(), at: iso }).optional(),
     /** The block as the newest stored user turn showed it: base for "unverändert" and for baseRev. */
     sentBlock: block.optional(),
@@ -153,6 +158,14 @@ export const projectSchema = z
     idCounters: z.record(z.string(), z.number().int().min(0)),
   })
   .superRefine((project, ctx) => {
+    // A kept snapshot must still be a valid block of its step: a migration (step 24) that forgets
+    // it fails here instead of in "Änderung prüfen lassen".
+    for (const step of stepIds) {
+      for (const [earlier, snapshot] of Object.entries(project.steps[step].outdatedBy ?? {})) {
+        if (!blockSchemas[Number(earlier) as StepId].safeParse(snapshot.block).success)
+          ctx.addIssue({ code: 'custom', path: ['steps', step, 'outdatedBy', earlier], message: `snapshot of step ${earlier} is no valid block` })
+      }
+    }
     const seen = new Set<string>()
     for (const step of stepIds) {
       const block = project.steps[step].block as Record<string, unknown>

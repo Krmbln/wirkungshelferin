@@ -53,6 +53,8 @@ const shapes = {
   chevronDown: <path d="M5 8l5 5 5-5" />,
   document: <path d="M6 3.5h5.5l3 3V16a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5zM11.5 3.5v3h3M8 10h4.5M8 13h4.5" />,
   speech: <path d="M5.5 4h9A1.5 1.5 0 0 1 16 5.5v6a1.5 1.5 0 0 1-1.5 1.5H9.5L6 16v-3h-.5A1.5 1.5 0 0 1 4 11.5v-6A1.5 1.5 0 0 1 5.5 4z" />,
+  // Change check (step 21): two arrows around a circle.
+  refresh: <path d="M15.5 9A5.5 5.5 0 0 0 5.2 6.5M4.5 3.5v3h3M4.5 11a5.5 5.5 0 0 0 10.3 2.5M15.5 16.5v-3h-3" />,
   pencil: <path d="M12.8 4.7l2.5 2.5L7.5 15l-3.2.7.7-3.2zM11.2 6.3l2.5 2.5" />,
 } satisfies Record<string, ReactNode>
 

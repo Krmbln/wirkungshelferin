@@ -3,7 +3,8 @@ import { flushSync } from 'react-dom'
 import { panelGroupOf, panelKey } from '../domain/tree'
 import { COVERAGE_KEY, initialClosed } from '../domain/plan'
 import type { FieldTarget } from '../domain/check'
-import { chatEmpty, unanswered } from '../ai/chat'
+import { chatEmpty, reviewed, reviewPending, unanswered } from '../ai/chat'
+import { earlierChanges } from '../domain/outdated'
 import { backupState } from '../domain/backup'
 import type { Action } from '../domain/reducer'
 import type { Project } from '../domain/schemas/project'
@@ -17,6 +18,7 @@ import { PDF_WAIT, usePdfImport, type PdfControls, type ReadPdf } from './chat/P
 import type { PasteDraft } from './chat/StartPanel'
 import type { ChatControls } from './chat/useChatRunner'
 import { fieldSelector } from './check/gate'
+import { OutdatedBanner } from './check/OutdatedBanner'
 import { QualityGate, type Handoff } from './check/QualityGate'
 import type { CheckControls } from './check/useCheckRunner'
 import { scrollIntoView } from './proposals/highlight'
@@ -287,6 +289,9 @@ function StepView({
   const [applied, setApplied] = useState<Applied>()
   const [jump, setJump] = useState<{ proposalId: string; n: number }>()
   const state = project.steps[step]
+  const run = chat.runs[step]
+  const chatBusy = !!run && run.kind !== 'failed'
+  const changes = earlierChanges(project, step)
   const clearJump = useCallback(() => setJump(undefined), [])
   const openPaste = () => onPasteChange({ ...paste, open: true })
   // Confirming step 0 while step 1's chat is empty starts its first draft at once (PRD §3).
@@ -313,6 +318,18 @@ function StepView({
   return (
     <StepWorkspace
       step={steps[step]}
+      notice={
+        changes.length > 0 && (
+          <OutdatedBanner
+            changes={changes}
+            reviewed={reviewed(project, step)}
+            running={chatBusy && (reviewPending(project, step) || (run.kind === 'summarising' && run.act?.kind === 'review'))}
+            chatBusy={chatBusy}
+            onReview={() => chat.act(step, { kind: 'review' })}
+            onOpenStep={onOpenStep}
+          />
+        )
+      }
       check={
         <QualityGate
           project={project}
@@ -320,7 +337,7 @@ function StepView({
           now={now}
           model={model}
           run={check.runs[step]}
-          chatBusy={!!chat.runs[step] && chat.runs[step]?.kind !== 'failed'}
+          chatBusy={chatBusy}
           onCheck={() => check.check(step)}
           onConfirm={confirm}
           handoff={handoff}

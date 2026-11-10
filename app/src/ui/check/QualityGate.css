@@ -20,6 +20,10 @@
   outline: none;
 }
 
+.gate__note {
+  font: var(--text-small);
+}
+
 .gate__hint {
   margin-top: var(--space-1);
   font: var(--text-small);
