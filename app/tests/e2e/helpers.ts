@@ -38,8 +38,19 @@ export async function completeSetup(page: Page, key: string): Promise<void> {
 
 type Answer = { status: number; body: string; contentType: string }
 
-/** Answers every request to api.anthropic.com from the test; returns the requests made. */
-export async function fakeClaude(page: Page, respond: () => Answer | Promise<Answer>): Promise<Request[]> {
+/** The home summary every fake answers by default (step 22): made-up, valid structured output. */
+export const FAKE_RESUME = { summary: 'Zwei Zielgruppen stehen, die Beteiligten fehlen noch.', nextAction: 'Beantworte im Chat, wer bei euch mitredet.' }
+
+/**
+ * Answers every request to api.anthropic.com from the test; returns the requests made. The home
+ * summary (a request with `output_config.format`, written in the background after Lukas leaves a
+ * step) gets `FAKE_RESUME` and is collected in `resumes` instead, so specs count chat turns only.
+ */
+export async function fakeClaude(
+  page: Page,
+  respond: () => Answer | Promise<Answer>,
+  resumes: Request[] = [],
+): Promise<Request[]> {
   const requests: Request[] = []
   await page.route('https://api.anthropic.com/**', async (route) => {
     const request = route.request()
@@ -50,6 +61,11 @@ export async function fakeClaude(page: Page, respond: () => Answer | Promise<Ans
       'access-control-allow-headers': (await request.headerValue('access-control-request-headers')) ?? '*',
     }
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
+    if ((request.postDataJSON() as { output_config?: { format?: unknown } }).output_config?.format) {
+      resumes.push(request)
+      const body = sseAnswer('end_turn', JSON.stringify(FAKE_RESUME))
+      return route.fulfill({ status: 200, body, headers: { ...cors, 'content-type': 'text/event-stream' } }).catch(() => undefined)
+    }
     requests.push(request)
     const { status, body, contentType } = await respond()
     // A request the page stopped meanwhile ("Stopp") can't be answered any more.
@@ -63,14 +79,18 @@ export async function fakeClaude(page: Page, respond: () => Answer | Promise<Ans
  * tests/fixtures/sse (made-up content, recorded by `npm run contract`); the last one repeats.
  * `hold` keeps a request open that long first, so the test can press "Stopp" in between.
  */
-export async function replayClaude(page: Page, names: string[], { hold = {} }: { hold?: Record<number, number> } = {}) {
+export async function replayClaude(page: Page, names: string[], { hold = {}, resumes }: { hold?: Record<number, number>; resumes?: Request[] } = {}) {
   let n = 0
-  return fakeClaude(page, async () => {
-    const i = n++
-    if (hold[i]) await new Promise((resolve) => setTimeout(resolve, hold[i]))
-    const body = await readFile(`${FIXTURE_DIR}${names[Math.min(i, names.length - 1)]}.sse`, 'utf8')
-    return { status: 200, body, contentType: 'text/event-stream' }
-  })
+  return fakeClaude(
+    page,
+    async () => {
+      const i = n++
+      if (hold[i]) await new Promise((resolve) => setTimeout(resolve, hold[i]))
+      const body = await readFile(`${FIXTURE_DIR}${names[Math.min(i, names.length - 1)]}.sse`, 'utf8')
+      return { status: 200, body, contentType: 'text/event-stream' }
+    },
+    resumes,
+  )
 }
 
 // Collects CSP violations and console errors from the moment the page starts.

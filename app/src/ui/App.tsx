@@ -31,6 +31,8 @@ import { Settings, type SettingsProps } from './frame/Settings'
 import { Sidebar } from './frame/Sidebar'
 import { StepWorkspace } from './frame/StepWorkspace'
 import { statusesOf, steps, type View } from './steps'
+import type { ResumeControls } from './useResumeRunner'
+import { resumeDue } from '../domain/resume'
 import { useNow } from './useNow'
 import './App.css'
 
@@ -62,6 +64,10 @@ type Props = {
   check?: CheckControls
   /** Reads a PDF's text (Session: extractPdf); without it step 0 offers no PDF upload. */
   readPdf?: ReadPdf
+  /** The home summary (Session's runner); the gallery passes a fixed state. */
+  resume?: ResumeControls
+  /** The step on screen, or undefined: Session counts changes there as Lukas's work. */
+  onViewChange?: (step: StepId | undefined) => void
 }
 
 const noop = () => {}
@@ -69,6 +75,7 @@ const resolved = async () => {}
 const connected = async () => ({ ok: true }) as const
 const idleChat: ChatControls = { runs: {}, send: noop, act: noop, stop: noop, retry: noop }
 const idleCheck: CheckControls = { runs: {}, check: async () => undefined }
+const idleResume: ResumeControls = { write: noop }
 
 // No router (tech design §2): app state decides the view.
 export function App({
@@ -90,8 +97,23 @@ export function App({
   onBlockAction = noop,
   check = idleCheck,
   readPdf,
+  resume = idleResume,
+  onViewChange = noop,
 }: Props) {
   const [view, setView] = useState<View>(initialView)
+  const viewStep = view.kind === 'step' ? view.step : undefined
+  useEffect(() => {
+    onViewChange(viewStep)
+  }, [viewStep, onViewChange])
+  // The home summary is written once its step is off screen and nothing of it still runs, so it
+  // includes the answer (design "Step 22"). Also at start: Lukas most often leaves by closing the tab.
+  const due = resumeDue(project)
+  const dueRun = due === undefined ? undefined : chat.runs[due]
+  const dueBusy = (!!dueRun && dueRun.kind !== 'failed') || (due !== undefined && check.runs[due]?.kind === 'running')
+  const { write: writeResume } = resume
+  useEffect(() => {
+    if (due !== undefined && due !== viewStep && !dueBusy) writeResume(due)
+  }, [due, viewStep, dueBusy, writeResume, resume.writing])
   // Kept here, so a step switch doesn't lose a paste being prepared (design §6.2, step 14).
   const [paste, setPaste] = useState<PasteState>({ open: false, draft: { label: '', text: '' } })
   // Step 0's confirm started step 1's first draft in this session: step 0 shows the hand-off.
@@ -169,7 +191,9 @@ export function App({
         <PageHeader title={header.title} meta={header.meta} headingRef={heading} savedAt={savedAt} />
         {view.kind === 'home' && (
           <Home
-            statuses={statuses}
+            project={project}
+            now={now}
+            writing={resume.writing}
             backup={backup}
             onOpenStep={(step) => setView({ kind: 'step', step })}
             onSaveBackup={onSaveBackup}

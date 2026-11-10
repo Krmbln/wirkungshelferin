@@ -3,6 +3,7 @@ import { sdkAiClient, type AiClient } from '../ai/client'
 import { extractPdf } from '../ai/pdf'
 import { withBackupTime } from '../domain/backup'
 import { newProject } from '../domain/document'
+import { activityChanged, markActive } from '../domain/resume'
 import { reducer, type Action } from '../domain/reducer'
 import type { Project } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
@@ -17,6 +18,7 @@ import { App } from './App'
 import type { ReadPdf } from './chat/PdfImport'
 import { useChatRunner, type DraftKeeper } from './chat/useChatRunner'
 import { useCheckRunner } from './check/useCheckRunner'
+import { useResumeRunner } from './useResumeRunner'
 import { EmptyState } from './screens/EmptyState'
 import { LoadError } from './screens/LoadError'
 import { SecondTab } from './screens/SecondTab'
@@ -53,6 +55,8 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
   const [savedAt, setSavedAt] = useState<number>()
   const [saveFailed, setSaveFailed] = useState(false)
   const [drafts, setDrafts] = useState<Drafts>({})
+  /** The step on screen (App reports it): changes there count as Lukas's work. */
+  const viewStep = useRef<StepId>(undefined)
   /** The newest project, for changes that land later (a streamed answer). */
   const current = useRef<Project | null>(null)
   if (phase.kind === 'ready') current.current = phase.project
@@ -167,10 +171,14 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
    */
   const change = useCallback(
     (fn: (project: Project) => Project, { now = false }: { now?: boolean } = {}) => {
-      if (!current.current) return
-      const next = fn(current.current)
+      const before = current.current
+      if (!before) return
+      let next = fn(before)
       // Nothing changed (e.g. an edit that left the text as it was): nothing to save.
-      if (next === current.current) return
+      if (next === before) return
+      // Work in the step on screen makes it the last active step, in the same save (design "Step 22").
+      const step = viewStep.current
+      if (step !== undefined && activityChanged(before, next, step)) next = markActive(next, step, new Date().toISOString())
       update(next)
       if (now) void autosave.flush()
     },
@@ -206,6 +214,10 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
   const editBlock = useCallback((action: Action) => change((p) => reducer(p, action), { now: true }), [change])
   const chat = useChatRunner({ ai, settings, project: readProject, change, drafts: draftKeeper })
   const check = useCheckRunner({ ai, settings, project: readProject, change })
+  const resume = useResumeRunner({ ai, settings, project: readProject, change })
+  const changeView = useCallback((step: StepId | undefined) => {
+    viewStep.current = step
+  }, [])
   const readPdf = useCallback<ReadPdf>((base64, options) => extractPdf(ai, settings, base64, options), [ai, settings])
 
   // Starting or loading a project is a deliberate act: saved at once, not after the pause.
@@ -300,6 +312,8 @@ export function Session({ store, locks = navigator.locks, reload = () => window.
       onBlockAction={editBlock}
       check={check}
       readPdf={readPdf}
+      resume={resume}
+      onViewChange={changeView}
     />
   )
 }

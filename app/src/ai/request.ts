@@ -1,4 +1,4 @@
-import type { BetaMessageParam, BetaMessageStreamParams, BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages'
+import type { BetaJSONOutputFormat, BetaMessageParam, BetaMessageStreamParams, BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type { Effort, Settings } from '../storage/settings'
 
 // The options every call sends (tech design §6.1, §6.2). The connection test uses exactly
@@ -12,6 +12,8 @@ export const MAX_TOKENS = {
   chat: 16_000,
   check: 8_000,
   summary: 4_000,
+  /** The home card's summary (step 22): two short fields at effort low. */
+  resume: 2_000,
   pdf: 32_000,
   connectionTest: 256,
 } as const
@@ -24,9 +26,11 @@ export type Call = {
   tools?: BetaTool[]
   /** Overrides the setting for mechanical calls (PDF extraction). */
   effort?: Effort
+  /** Structured output: the answer's text is JSON of this schema (the home summary). */
+  format?: BetaJSONOutputFormat
 }
 
-export function requestParams(settings: Settings, { system, messages, maxTokens, tools, effort }: Call): BetaMessageStreamParams {
+export function requestParams(settings: Settings, { system, messages, maxTokens, tools, effort, format }: Call): BetaMessageStreamParams {
   return {
     model: settings.model,
     max_tokens: maxTokens,
@@ -34,7 +38,7 @@ export function requestParams(settings: Settings, { system, messages, maxTokens,
     fallbacks: 'default',
     // Adaptive is the only mode on this model; sent explicitly so every call states it.
     thinking: { type: 'adaptive' },
-    output_config: { effort: effort ?? settings.effort },
+    output_config: { effort: effort ?? settings.effort, ...(format && { format }) },
     ...(tools && { tools, tool_choice: { type: 'auto' } }),
     // Lukas often pauses longer than 5 minutes between turns.
     system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral', ttl: '1h' } }],

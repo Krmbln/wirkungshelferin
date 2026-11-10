@@ -56,17 +56,9 @@ export function statusesOf(project: Project): StepStatuses {
   return Object.fromEntries(stepIds.map((s) => [s, uiStatus[project.steps[s].status]])) as StepStatuses
 }
 
-/** The first step that isn't confirmed; null when all are. Refined in step 22. */
+/** The first step in method order that isn't confirmed (outdated counts as not); null when all are (design §6.1). */
 export function recommendedStep(statuses: StepStatuses): StepId | null {
   return steps.find((s) => statuses[s.id] !== 'done')?.id ?? null
-}
-
-/** One-line status on the home page (design §6.1). Dates come with the stored project. */
-export const homeStatusLine: Record<StepStatus, string> = {
-  todo: 'noch nicht begonnen',
-  progress: 'in Arbeit',
-  done: 'bestätigt',
-  stale: 'vielleicht veraltet – prüfen',
 }
 
 export type View = { kind: 'home' } | { kind: 'step'; step: StepId } | { kind: 'settings' }

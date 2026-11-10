@@ -1692,3 +1692,57 @@ test('change handling (step 21): outdated banner, review states, outdated gate, 
   await expect(gate.getByText('Darauf baut Schritt 6 auf – er ist jetzt als „vielleicht veraltet“ markiert.')).toBeVisible()
   expect(errors).toEqual([])
 })
+
+test('home complete (step 22): card states, long texts, Weiter stays put during the swap', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const card = page.locator('.home__resume')
+  const weiter = card.getByRole('button', { name: 'Weiter' })
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  const noSideScroll = async () => expect(await card.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+  const weiterY = async (screen: string) => {
+    await openScreen(page, screen)
+    return (await weiter.boundingBox())!.y
+  }
+  const screens = ['home-resume', 'home-resume-long', 'home-fallback', 'home-writing', 'home-unanswered', 'home-confirmed', 'home-confirmed-outdated', 'home-ahead', 'home-done']
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+    for (const screen of screens) {
+      await openScreen(page, screen)
+      await noPageScroll()
+      await noSideScroll()
+      await expect(page.locator('.btn--primary')).toHaveCount(screen === 'home-done' ? 0 : 1)
+      await shotScreen(`${screen}${suffix}`)
+    }
+    // C → D → B: the reserved body height keeps Weiter where it was (UI/UX H2); it may only move down.
+    const fallback = await weiterY('home-fallback')
+    const writing = await weiterY('home-writing')
+    const summary = await weiterY('home-resume')
+    expect(writing).toBe(fallback)
+    expect(summary).toBeGreaterThanOrEqual(writing)
+    if (size.width === 1390) expect(summary).toBe(writing)
+    // The cut summary ends on a whole word.
+    await openScreen(page, 'home-resume-long')
+    await expect(card.locator('.home__body p').first()).toHaveText(/\S …$/)
+    // Design check: E keeps its natural height (no swap there), its confirmed line is a 13 px
+    // status line; in B the next-action line stands 8 px apart; F has no eyebrow.
+    await openScreen(page, 'home-confirmed')
+    expect(await card.locator('.home__body').evaluate((el) => getComputedStyle(el).minHeight)).toBe('auto')
+    expect(await card.locator('.home__confirmed').evaluate((el) => getComputedStyle(el).fontSize)).toBe('13px')
+    await openScreen(page, 'home-resume')
+    expect(await card.locator('.home__next').evaluate((el) => getComputedStyle(el).marginTop)).toBe('8px')
+    await openScreen(page, 'home-done')
+    await expect(card.locator('.home__eyebrow')).toHaveCount(0)
+    // Card and chip can name different steps.
+    await openScreen(page, 'home-ahead')
+    await expect(card.getByRole('heading', { level: 2 })).toHaveText(/^Schritt 3 · /)
+    await expect(page.locator('.home__row', { has: page.locator('.home__recommended') })).toContainText('1 · ')
+  }
+  expect(errors).toEqual([])
+})

@@ -20,6 +20,10 @@ import {
 } from '../../src/ai/prompt'
 import { checkToolResult, errorToolResult, proposalToolResult, toProposal } from '../../src/ai/proposal'
 import { MAX_TOKENS } from '../../src/ai/request'
+import { resumeCall, resumeFrom } from '../../src/ai/resume'
+import { markActive } from '../../src/domain/resume'
+import { CARD_LIMITS } from '../../src/ui/home'
+import { withChat } from '../resume'
 import { CHECK, PROPOSE, stepTools } from '../../src/ai/tools'
 import { stepOf, type LooseBlock } from '../../src/domain/block'
 import type { Item } from '../../src/domain/schemas/blocks'
@@ -1051,5 +1055,34 @@ describe('11 · change handling: "Änderung prüfen lassen" (made-up project)', 
       if (proposal) return `card with ${proposal.changes.length} change(s): ${proposal.summary.slice(0, 80)}; ${asked(proposal.question, message)}`
       expect(shown, 'no question and no card').toContain('?')
       return `no card; text ${shown.length} chars: ${shown.slice(0, 120).replace(/\n/g, ' ')}`
+    }))
+})
+
+describe('12 · home summary: "Wo du aufgehört hast" (made-up project)', () => {
+  it('structured output with summary and next action; short, no ids, no Markdown, no deadlines', () =>
+    check('Home summary: valid JSON, both fields within the card limits, no ids or Markdown', async () => {
+      const at = (min: number) => `2026-11-06T10:${String(min).padStart(2, '0')}:00.000Z`
+      const p = withChat(step6Start(), 5, [
+        { role: 'user', text: 'Können wir bei den Ehrenamtlichen nicht einfach am Jahresende fragen, ob sie dabei waren?', at: at(0) },
+        {
+          role: 'assistant',
+          text: 'Am Jahresende erinnert sich niemand mehr genau an einzelne Tage. Ihr führt schon eine Anwesenheitsliste – daraus lässt sich je Quartal ablesen, an wie vielen Öffnungstagen beide da waren. Für die zweite Frage fehlt noch der Ausgangswert: Wisst ihr heute ungefähr, wie viele Stammgäste einen Platten selbst flicken können?',
+          at: at(1),
+        },
+      ])
+      const project = markActive(p, 5, at(2))
+      const call = resumeCall(project, 5)
+      rec.recordNext('resume-step5')
+      const message = done(await ai.send(settings, call))
+      await rec.flushed()
+      const text = resumeFrom(message)
+      expect(text, `no usable answer (stop ${message.stop_reason})`).toBeDefined()
+      const { summary, nextAction } = text!
+      expect(summary.length, 'summary longer than the card shows').toBeLessThanOrEqual(CARD_LIMITS.summary)
+      expect(nextAction.length, 'next action longer than the card shows').toBeLessThanOrEqual(CARD_LIMITS.nextAction)
+      expect(`${summary} ${nextAction}`.match(SHOWN_ID_6) ?? [], 'ids in the text').toEqual([])
+      expect(/[*#`[\]]/.test(`${summary}${nextAction}`), 'Markdown in the text').toBe(false)
+      expect(/frist|termin|bis zum|bis ende/i.test(`${summary} ${nextAction}`), 'deadline talk').toBe(false)
+      return `summary ${summary.length} chars: ${summary} · next ${nextAction.length}: ${nextAction}`
     }))
 })

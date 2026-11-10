@@ -36,6 +36,7 @@ Run: 2026-11-09 20:46 UTC · model claude-opus-5-5 · effort medium
 | ✓ | Step 5 follow-up: 1–2 indicators per question, baseline + target, question field filled | 2 indicators (2 per question; levels 4,5); no text; question: Was würdet ihr anders machen, wenn sich zeigt, dass kaum jemand das Rad zu Hause selbst re |
 | ✓ | Step 6 opening: one proposal, all covered, refs on every row, no markdown table, no ids | 4 rows (fields filled of 5: 5/5/5/5); sources Anwesenheitsliste (vorhanden); Anwesenheitsliste (vorhanden); Reparaturbuch (vorhanden); Stammgäste (wer mindestens zwe; text 1363 chars; question: Steht auf eurer Anwesenheitsliste schon, welche Ehrenamtlichen an dem Tag da waren, oder m |
 | ✓ | Review turn: names the change, no ids, ends with a question or a card with its question | card with 1 change(s): Die Lernfrage zu den Ehrenamtlichen fällt weg, weil seit März eine Honorarkraft ; text 1341 chars; question: Soll an die Stelle der gestrichenen Frage eine neue treten, etwa ob die Honorarkraft die J |
+| ✓ | Home summary: valid JSON, both fields within the card limits, no ids or Markdown | summary 227 chars: Du hast zwei Fokusfragen bestätigt: ob die Ehrenamtlichen das ganze Jahr bleiben und ob die Jugendlichen ihr Rad selbst reparieren, dazu drei Indikatoren und zwei Pflichtzahlen. Beim Platten-Flicken fehlt noch der Ausgangswert. · next 92: Beantworte im Chat, wie viele Stammgäste heute ungefähr einen Platten selbst flicken können. |
 
 - Shape A `system-between` ([user: tool_results] → [system: events] → [user: text]): refused ({"type":"error","error":{"type":"invalid_request_error","message":"messages.3: role 'system' must precede an 'assistant' message or end the array; the directive-only form (content: [] with output_conf)
 - Shape B `system-after` ([user: tool_results + text] → [system: events]): accepted
@@ -51,3 +52,5 @@ Added 2026-11-10 (step 19, run alone with `-t "9 · step 5"`): the two step 5 ro
 Added 2026-11-10 (step 20, run alone with `-t "10 · step 6"`): the step 6 row above · 1 call · **≈ $0.31** (a first attempt was refused for API credit before any output, no cost).
 
 Added 2026-11-10 (step 21, run alone with `-t "11 · change"`): the review row above · 1 call · **≈ $0.27**.
+
+Added 2026-11-10 (step 22, run alone with `-t "12 · home"`): the home summary row above · 1 call · **≈ $0.01**.

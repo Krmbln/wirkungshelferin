@@ -23,8 +23,41 @@
   color: var(--text-muted);
 }
 
-.home__lead {
+.home__body {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
   margin-bottom: var(--space-2);
+}
+
+/* 6 body lines reserved in B, C, D, so the summary replacing the fallback doesn't move Weiter (design "Step 22";
+   real summaries run 3 lines + 2 lines of next action). */
+.home__body--swap {
+  min-height: calc(6 * 24px);
+}
+
+/* Where he is, then what to do: the next-action line stands apart (design check). */
+.home__next {
+  margin-top: var(--space-2);
+}
+
+/* A status line, like the D line: 13 px (design check). */
+.home__confirmed {
+  margin-top: var(--space-3);
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.home__muted {
+  color: var(--text-muted);
+}
+
+.home__body strong {
+  font-weight: 600;
+}
+
+.home__writing {
+  font: var(--text-small);
   color: var(--text-muted);
 }
 
