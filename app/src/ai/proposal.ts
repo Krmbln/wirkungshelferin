@@ -6,6 +6,7 @@ import type { StepId } from '../domain/types'
 import { FOCUS_REASONS, type Item } from '../domain/schemas/blocks'
 import { endOf } from '../domain/chain'
 import { INDICATOR_MAX, PER_QUESTION_MAX, QUESTION_MAX, isCandidate } from '../domain/focus'
+import { needsOf } from '../domain/plan'
 import { MAX_DEPTH, NON_FOCUS_KEEPS, TREES, depthOf, heightOf } from '../domain/tree'
 import { proposeInput, type ProposeInput } from './tools'
 
@@ -27,11 +28,13 @@ export type ToProposal = {
   step3?: LooseBlock
   /** Step 4's block now: step 5's questions test its links, deferrals name its candidates. */
   step4?: LooseBlock
+  /** Step 5's block now: step 6's plan rows belong to its indicators and mandatory figures. */
+  step5?: LooseBlock
 }
 
 export type ProposalResult = { ok: true; proposal: Proposal } | { ok: false; errors: string[] }
 
-export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [], step2, step3, step4 }: ToProposal): ProposalResult {
+export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [], step2, step3, step4, step5 }: ToProposal): ProposalResult {
   const parsed = proposeInput(step).safeParse(input)
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`) }
@@ -92,6 +95,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
 
   if (!errors.length) errors.push(...groupErrors(step, seen, result, groups, step2, step3))
   if (!errors.length && step === 5) errors.push(...focusErrors(seen, result, groups, step3, step4))
+  if (!errors.length && step === 6) errors.push(...planErrors(seen, result, step5))
   if (errors.length) return { ok: false, errors }
   if (!result.length) return { ok: false, errors: ['Der Vorschlag ändert nichts am Baustein.'] }
   // An empty question is no reason to lose the card (design §6.2 "Step 18b"): it just shows no line.
@@ -205,6 +209,28 @@ function focusErrors(seen: LooseBlock, changes: ProposalChange[], groups: Item[]
       if (questions.some((q) => (q.linkIds as string[]).includes(item.linkId as string)))
         errors.push(`Änderung ${n}: Eine Lernfrage prüft ${item.linkId} schon; eine Annahme ist aufgenommen oder zurückgestellt, nicht beides.`)
     }
+  }
+  return [...new Set(errors)]
+}
+
+/**
+ * Step 6 (design §6.2 "Step 20"): a plan row names at least one reference — step 5 indicators
+ * (whose question exists) or mandatory figures — and none twice. Rows have no limit; coverage
+ * is derived by the app.
+ */
+function planErrors(seen: LooseBlock, changes: ProposalChange[], step5?: LooseBlock): string[] {
+  const { after, touched } = applied(seen, changes)
+  const all = needsOf(step5 ?? {})
+  const errors: string[] = []
+  for (const { n, collection, id } of touched) {
+    const row = after[collection]?.find((x) => x.id === id)
+    if (!row || collection !== 'planRows') continue
+    const indicators = (row.indicatorIds as string[]) ?? []
+    const figures = (row.mandatoryFigureIds as string[]) ?? []
+    if (!indicators.length && !figures.length) errors.push(`Änderung ${n}: Jede Planzeile gehört zu mindestens einem Indikator (indicatorIds) oder einer Pflichtangabe (mandatoryFigureIds) aus Schritt 5.`)
+    for (const ref of indicators) if (!all.some((x) => x.kind === 'indicator' && x.item.id === ref)) errors.push(`Änderung ${n}: indicatorIds "${ref}" ist kein Indikator einer Lernfrage aus Schritt 5.`)
+    for (const ref of figures) if (!all.some((x) => x.kind === 'figure' && x.item.id === ref)) errors.push(`Änderung ${n}: mandatoryFigureIds "${ref}" ist keine Pflichtangabe aus Schritt 5.`)
+    if (new Set(indicators).size < indicators.length || new Set(figures).size < figures.length) errors.push(`Änderung ${n}: Ein Verweis steht doppelt in derselben Planzeile.`)
   }
   return [...new Set(errors)]
 }

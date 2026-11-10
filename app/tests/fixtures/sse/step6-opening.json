@@ -1,0 +1,1000 @@
+{
+  "step": 6,
+  "project": {
+    "schemaVersion": 1,
+    "createdAt": "2026-11-02T10:00:00.000Z",
+    "updatedAt": "2026-11-02T10:00:00.000Z",
+    "privacyNoteSeen": true,
+    "steps": {
+      "0": {
+        "status": "confirmed",
+        "block": {
+          "profile": {
+            "id": "profile",
+            "rev": 1,
+            "editedByUser": false,
+            "name": "Schraubzeit – offene Fahrradwerkstatt für Jugendliche",
+            "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
+            "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
+            "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
+            "activities": [
+              "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
+              "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
+              "Kleine Touren in die Umgebung"
+            ],
+            "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+            "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
+            "duration": "2026–2027",
+            "funder": "Stiftung Stadtteil Morgen",
+            "budgetRange": "offen",
+            "statedGoals": [
+              "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
+              "Jugendliche können ihr Rad selbst instand halten"
+            ],
+            "otherOffers": [
+              "Jugendclub im Einkaufszentrum (abends)",
+              "Sportverein mit Fußball und Boxen"
+            ],
+            "openQuestions": [
+              "Erwartet die Stiftung Angaben über die Teilnahmezahlen hinaus?"
+            ]
+          },
+          "frame": {
+            "id": "frame",
+            "rev": 1,
+            "editedByUser": false,
+            "purpose": "beides",
+            "audience": "Stiftung Stadtteil Morgen und das Team",
+            "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
+            "requiredFigures": [
+              "Teilnehmende nach Geschlecht",
+              "Anzahl offener Werkstatttage"
+            ],
+            "existingData": [
+              "Anwesenheitsliste (wer an welchem Tag da war)",
+              "Reparaturbuch (welches Rad, was gemacht)"
+            ]
+          },
+          "sources": [
+            {
+              "id": "src1",
+              "rev": 1,
+              "editedByUser": false,
+              "origin": "paste",
+              "label": "Projektskizze (eingefügt)",
+              "text": "Schraubzeit ist eine offene Fahrradwerkstatt im Nachbarschaftshaus …",
+              "at": "2026-11-01T10:00:00.000Z"
+            }
+          ]
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-02T10:00:00.000Z",
+          "block": {
+            "profile": {
+              "id": "profile",
+              "rev": 1,
+              "editedByUser": false,
+              "name": "Schraubzeit – offene Fahrradwerkstatt für Jugendliche",
+              "organisation": "Nachbarschaftshaus Am Weidengrund e. V.",
+              "projectBoundary": "Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.",
+              "location": "Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)",
+              "activities": [
+                "Offene Werkstatt: eigene Räder reparieren mit Anleitung",
+                "Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten",
+                "Kleine Touren in die Umgebung"
+              ],
+              "participants": "Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag",
+              "team": "Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus",
+              "duration": "2026–2027",
+              "funder": "Stiftung Stadtteil Morgen",
+              "budgetRange": "offen",
+              "statedGoals": [
+                "Jugendliche werden mobiler und kommen auch in andere Stadtteile",
+                "Jugendliche können ihr Rad selbst instand halten"
+              ],
+              "otherOffers": [
+                "Jugendclub im Einkaufszentrum (abends)",
+                "Sportverein mit Fußball und Boxen"
+              ],
+              "openQuestions": [
+                "Erwartet die Stiftung Angaben über die Teilnahmezahlen hinaus?"
+              ]
+            },
+            "frame": {
+              "id": "frame",
+              "rev": 1,
+              "editedByUser": false,
+              "purpose": "beides",
+              "audience": "Stiftung Stadtteil Morgen und das Team",
+              "requiredFormat": "Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr",
+              "requiredFigures": [
+                "Teilnehmende nach Geschlecht",
+                "Anzahl offener Werkstatttage"
+              ],
+              "existingData": [
+                "Anwesenheitsliste (wer an welchem Tag da war)",
+                "Reparaturbuch (welches Rad, was gemacht)"
+              ]
+            },
+            "sources": [
+              {
+                "id": "src1",
+                "rev": 1,
+                "editedByUser": false,
+                "origin": "paste",
+                "label": "Projektskizze (eingefügt)",
+                "text": "Schraubzeit ist eine offene Fahrradwerkstatt im Nachbarschaftshaus …",
+                "at": "2026-11-01T10:00:00.000Z"
+              }
+            ]
+          },
+          "basis": {}
+        }
+      },
+      "1": {
+        "status": "confirmed",
+        "block": {
+          "challenge": {
+            "id": "challenge",
+            "rev": 1,
+            "editedByUser": false,
+            "why": "Aus Schritt 0.",
+            "text": "Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus."
+          },
+          "targetGroups": [
+            {
+              "id": "tg1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Hauptwirkung.",
+              "name": "Jugendliche 12–17",
+              "description": "Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.",
+              "reach": "direct",
+              "isFocus": true
+            },
+            {
+              "id": "tg2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Ohne sie kommen die Jüngeren nicht.",
+              "name": "Eltern",
+              "description": "Erlauben das Kommen.",
+              "reach": "indirect",
+              "isFocus": false
+            }
+          ],
+          "stakeholders": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-05T10:00:00.000Z",
+          "block": {
+            "challenge": {
+              "id": "challenge",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Aus Schritt 0.",
+              "text": "Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus."
+            },
+            "targetGroups": [
+              {
+                "id": "tg1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Hauptwirkung.",
+                "name": "Jugendliche 12–17",
+                "description": "Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.",
+                "reach": "direct",
+                "isFocus": true
+              },
+              {
+                "id": "tg2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Ohne sie kommen die Jüngeren nicht.",
+                "name": "Eltern",
+                "description": "Erlauben das Kommen.",
+                "reach": "indirect",
+                "isFocus": false
+              }
+            ],
+            "stakeholders": []
+          },
+          "basis": {
+            "0": "2026-11-05T10:00:00.000Z"
+          }
+        }
+      },
+      "2": {
+        "status": "confirmed",
+        "block": {
+          "problems": [
+            {
+              "id": "pb1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Erzählen sie selbst.",
+              "groupId": "tg1",
+              "coreProblem": "Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen."
+            },
+            {
+              "id": "pb2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Fragen beim Sommerfest.",
+              "groupId": "tg2",
+              "coreProblem": "Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen."
+            }
+          ],
+          "causes": [
+            {
+              "id": "ca1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Beobachtung.",
+              "groupId": "tg1",
+              "parentId": "",
+              "text": "Viele haben kein funktionierendes Rad.",
+              "evidence": "eigene_erfahrung",
+              "notInfluenceable": false
+            },
+            {
+              "id": "ca2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Fahrplan.",
+              "groupId": "tg1",
+              "parentId": "ca1",
+              "text": "Der Bus fährt nachmittags nur stündlich.",
+              "evidence": "eigene_daten",
+              "notInfluenceable": true
+            },
+            {
+              "id": "ca3",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Vermutung.",
+              "groupId": "tg1",
+              "parentId": "",
+              "text": "Kaum Erwachsene zeigen ihnen handwerkliche Dinge.",
+              "evidence": "unsicher",
+              "notInfluenceable": false
+            }
+          ],
+          "consequences": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-05T10:00:00.000Z",
+          "block": {
+            "problems": [
+              {
+                "id": "pb1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Erzählen sie selbst.",
+                "groupId": "tg1",
+                "coreProblem": "Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen."
+              },
+              {
+                "id": "pb2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Fragen beim Sommerfest.",
+                "groupId": "tg2",
+                "coreProblem": "Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen."
+              }
+            ],
+            "causes": [
+              {
+                "id": "ca1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Beobachtung.",
+                "groupId": "tg1",
+                "parentId": "",
+                "text": "Viele haben kein funktionierendes Rad.",
+                "evidence": "eigene_erfahrung",
+                "notInfluenceable": false
+              },
+              {
+                "id": "ca2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Fahrplan.",
+                "groupId": "tg1",
+                "parentId": "ca1",
+                "text": "Der Bus fährt nachmittags nur stündlich.",
+                "evidence": "eigene_daten",
+                "notInfluenceable": true
+              },
+              {
+                "id": "ca3",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Vermutung.",
+                "groupId": "tg1",
+                "parentId": "",
+                "text": "Kaum Erwachsene zeigen ihnen handwerkliche Dinge.",
+                "evidence": "unsicher",
+                "notInfluenceable": false
+              }
+            ],
+            "consequences": []
+          },
+          "basis": {
+            "0": "2026-11-05T10:00:00.000Z"
+          }
+        }
+      },
+      "3": {
+        "status": "confirmed",
+        "block": {
+          "goals": [
+            {
+              "id": "go1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Aus dem Problembaum.",
+              "groupId": "tg1",
+              "level": 4,
+              "text": "Die Jugendlichen können einen Platten flicken und die Bremsen einstellen.",
+              "causeIds": [
+                "ca3"
+              ],
+              "timeFrame": "bis Ende 2027"
+            },
+            {
+              "id": "go2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Aus dem Problembaum.",
+              "groupId": "tg1",
+              "level": 5,
+              "text": "Die Jugendlichen reparieren ihr Rad selbst, statt es stehen zu lassen.",
+              "causeIds": [
+                "ca1",
+                "ca3"
+              ],
+              "timeFrame": "bis Ende 2027"
+            },
+            {
+              "id": "go3",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Aus dem Problembaum.",
+              "groupId": "tg1",
+              "level": 6,
+              "text": "Die Jugendlichen sind nachmittags mit dem eigenen Rad unterwegs.",
+              "causeIds": [
+                "ca1"
+              ],
+              "timeFrame": "bis Ende 2027"
+            },
+            {
+              "id": "go4",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Dann lassen sie die Jüngeren kommen.",
+              "groupId": "tg2",
+              "level": 4,
+              "text": "Eltern wissen, was ihre Kinder in der Werkstatt lernen.",
+              "causeIds": [],
+              "timeFrame": "bis Ende 2026"
+            }
+          ],
+          "levelNotApplicable": [],
+          "level7": {
+            "id": "level7",
+            "rev": 1,
+            "editedByUser": false,
+            "why": "Aus der Herausforderung.",
+            "text": "Das Projekt trägt dazu bei, dass Jugendliche in der Siedlung eigene Wege gehen."
+          }
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-05T10:00:00.000Z",
+          "block": {
+            "goals": [
+              {
+                "id": "go1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Aus dem Problembaum.",
+                "groupId": "tg1",
+                "level": 4,
+                "text": "Die Jugendlichen können einen Platten flicken und die Bremsen einstellen.",
+                "causeIds": [
+                  "ca3"
+                ],
+                "timeFrame": "bis Ende 2027"
+              },
+              {
+                "id": "go2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Aus dem Problembaum.",
+                "groupId": "tg1",
+                "level": 5,
+                "text": "Die Jugendlichen reparieren ihr Rad selbst, statt es stehen zu lassen.",
+                "causeIds": [
+                  "ca1",
+                  "ca3"
+                ],
+                "timeFrame": "bis Ende 2027"
+              },
+              {
+                "id": "go3",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Aus dem Problembaum.",
+                "groupId": "tg1",
+                "level": 6,
+                "text": "Die Jugendlichen sind nachmittags mit dem eigenen Rad unterwegs.",
+                "causeIds": [
+                  "ca1"
+                ],
+                "timeFrame": "bis Ende 2027"
+              },
+              {
+                "id": "go4",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Dann lassen sie die Jüngeren kommen.",
+                "groupId": "tg2",
+                "level": 4,
+                "text": "Eltern wissen, was ihre Kinder in der Werkstatt lernen.",
+                "causeIds": [],
+                "timeFrame": "bis Ende 2026"
+              }
+            ],
+            "levelNotApplicable": [],
+            "level7": {
+              "id": "level7",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Aus der Herausforderung.",
+              "text": "Das Projekt trägt dazu bei, dass Jugendliche in der Siedlung eigene Wege gehen."
+            }
+          },
+          "basis": {
+            "0": "2026-11-05T10:00:00.000Z"
+          }
+        }
+      },
+      "4": {
+        "status": "confirmed",
+        "block": {
+          "resources": [
+            {
+              "id": "rs1",
+              "rev": 1,
+              "editedByUser": false,
+              "text": "Zwei Ehrenamtliche aus dem Fahrradclub"
+            },
+            {
+              "id": "rs2",
+              "rev": 1,
+              "editedByUser": false,
+              "text": "Kellerraum mit Werkbank"
+            }
+          ],
+          "activities": [
+            {
+              "id": "ac1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Damit die Jugendlichen einen festen Ort zum Schrauben haben.",
+              "text": "Offene Werkstatt dienstags und donnerstags, 15–18 Uhr"
+            },
+            {
+              "id": "ac2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Damit die Eltern wissen, was ihre Kinder lernen.",
+              "text": "Elternbrief zu Beginn des Halbjahrs"
+            }
+          ],
+          "outputs": [
+            {
+              "id": "ou1",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "level": 1,
+              "text": "Die Werkstatt hat zweimal pro Woche offen."
+            },
+            {
+              "id": "ou2",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "level": 2,
+              "text": "Etwa 15 Jugendliche kommen regelmäßig."
+            },
+            {
+              "id": "ou3",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "level": 3,
+              "text": "Sie arbeiten an ihrem eigenen Rad."
+            }
+          ],
+          "links": [
+            {
+              "id": "li1",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "fromId": "ac1",
+              "toId": "ou1",
+              "because": "Mechanismus aus der Werkstatt.",
+              "assumption": "Die zwei Ehrenamtlichen bleiben das ganze Jahr dabei.",
+              "evidence": "eigene_erfahrung",
+              "critical": true
+            },
+            {
+              "id": "li2",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "fromId": "ou1",
+              "toId": "ou2",
+              "because": "Mechanismus aus der Werkstatt.",
+              "assumption": "Die Zeiten sprechen sich herum.",
+              "evidence": "eigene_daten",
+              "critical": false
+            },
+            {
+              "id": "li3",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "fromId": "ou2",
+              "toId": "ou3",
+              "because": "Mechanismus aus der Werkstatt.",
+              "assumption": "Es gibt genug Ersatzteile.",
+              "evidence": "eigene_daten",
+              "critical": false
+            },
+            {
+              "id": "li4",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "fromId": "ou3",
+              "toId": "go1",
+              "because": "Mechanismus aus der Werkstatt.",
+              "assumption": "Die Ehrenamtlichen lassen sie selbst machen.",
+              "evidence": "eigene_daten",
+              "critical": true
+            },
+            {
+              "id": "li5",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "fromId": "go1",
+              "toId": "go2",
+              "because": "Mechanismus aus der Werkstatt.",
+              "assumption": "Zu Hause gibt es etwas Werkzeug.",
+              "evidence": "unsicher",
+              "critical": false
+            },
+            {
+              "id": "li6",
+              "rev": 1,
+              "editedByUser": false,
+              "groupId": "tg1",
+              "fromId": "go2",
+              "toId": "go3",
+              "because": "Mechanismus aus der Werkstatt.",
+              "assumption": "Die Wege sind mit dem Rad sicher genug.",
+              "evidence": "forschung",
+              "critical": false
+            }
+          ],
+          "externalFactors": [],
+          "sideEffects": []
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-05T10:00:00.000Z",
+          "block": {
+            "resources": [
+              {
+                "id": "rs1",
+                "rev": 1,
+                "editedByUser": false,
+                "text": "Zwei Ehrenamtliche aus dem Fahrradclub"
+              },
+              {
+                "id": "rs2",
+                "rev": 1,
+                "editedByUser": false,
+                "text": "Kellerraum mit Werkbank"
+              }
+            ],
+            "activities": [
+              {
+                "id": "ac1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Damit die Jugendlichen einen festen Ort zum Schrauben haben.",
+                "text": "Offene Werkstatt dienstags und donnerstags, 15–18 Uhr"
+              },
+              {
+                "id": "ac2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Damit die Eltern wissen, was ihre Kinder lernen.",
+                "text": "Elternbrief zu Beginn des Halbjahrs"
+              }
+            ],
+            "outputs": [
+              {
+                "id": "ou1",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "level": 1,
+                "text": "Die Werkstatt hat zweimal pro Woche offen."
+              },
+              {
+                "id": "ou2",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "level": 2,
+                "text": "Etwa 15 Jugendliche kommen regelmäßig."
+              },
+              {
+                "id": "ou3",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "level": 3,
+                "text": "Sie arbeiten an ihrem eigenen Rad."
+              }
+            ],
+            "links": [
+              {
+                "id": "li1",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "fromId": "ac1",
+                "toId": "ou1",
+                "because": "Mechanismus aus der Werkstatt.",
+                "assumption": "Die zwei Ehrenamtlichen bleiben das ganze Jahr dabei.",
+                "evidence": "eigene_erfahrung",
+                "critical": true
+              },
+              {
+                "id": "li2",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "fromId": "ou1",
+                "toId": "ou2",
+                "because": "Mechanismus aus der Werkstatt.",
+                "assumption": "Die Zeiten sprechen sich herum.",
+                "evidence": "eigene_daten",
+                "critical": false
+              },
+              {
+                "id": "li3",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "fromId": "ou2",
+                "toId": "ou3",
+                "because": "Mechanismus aus der Werkstatt.",
+                "assumption": "Es gibt genug Ersatzteile.",
+                "evidence": "eigene_daten",
+                "critical": false
+              },
+              {
+                "id": "li4",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "fromId": "ou3",
+                "toId": "go1",
+                "because": "Mechanismus aus der Werkstatt.",
+                "assumption": "Die Ehrenamtlichen lassen sie selbst machen.",
+                "evidence": "eigene_daten",
+                "critical": true
+              },
+              {
+                "id": "li5",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "fromId": "go1",
+                "toId": "go2",
+                "because": "Mechanismus aus der Werkstatt.",
+                "assumption": "Zu Hause gibt es etwas Werkzeug.",
+                "evidence": "unsicher",
+                "critical": false
+              },
+              {
+                "id": "li6",
+                "rev": 1,
+                "editedByUser": false,
+                "groupId": "tg1",
+                "fromId": "go2",
+                "toId": "go3",
+                "because": "Mechanismus aus der Werkstatt.",
+                "assumption": "Die Wege sind mit dem Rad sicher genug.",
+                "evidence": "forschung",
+                "critical": false
+              }
+            ],
+            "externalFactors": [],
+            "sideEffects": []
+          },
+          "basis": {
+            "0": "2026-11-05T10:00:00.000Z"
+          }
+        }
+      },
+      "5": {
+        "status": "confirmed",
+        "block": {
+          "focusQuestions": [
+            {
+              "id": "fq1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Davon hängt ab, ob wir so weitermachen.",
+              "text": "Bleiben die Ehrenamtlichen das ganze Jahr dabei?",
+              "reasons": [
+                "kritische_annahme"
+              ],
+              "audience": "Vorstand und Stiftung",
+              "linkIds": [
+                "li1"
+              ],
+              "goalIds": []
+            },
+            {
+              "id": "fq2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Davon hängt ab, ob wir so weitermachen.",
+              "text": "Reparieren die Jugendlichen ihr Rad wirklich selbst?",
+              "reasons": [
+                "kritische_annahme"
+              ],
+              "audience": "Vorstand und Stiftung",
+              "linkIds": [],
+              "goalIds": [
+                "go1"
+              ]
+            }
+          ],
+          "deferredCandidates": [],
+          "indicators": [
+            {
+              "id": "in1",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Zeigt die Antwort direkt.",
+              "text": "Anzahl der Öffnungstage, an denen beide Ehrenamtlichen da waren – je Quartal",
+              "level": 1,
+              "focusQuestionId": "fq1",
+              "baseline": "ab jetzt",
+              "target": "mindestens 20 von 24 Tagen"
+            },
+            {
+              "id": "in2",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Zeigt die Antwort direkt.",
+              "text": "Anteil der Stammgäste, die einen Platten selbst flicken – zum Jahresende",
+              "level": 5,
+              "focusQuestionId": "fq2",
+              "baseline": "nachträglich im Dezember (vorher – nachher)",
+              "target": "mindestens die Hälfte"
+            },
+            {
+              "id": "in3",
+              "rev": 1,
+              "editedByUser": false,
+              "why": "Zeigt die Antwort direkt.",
+              "text": "Zahl der Räder, die Jugendliche ohne Hilfe wieder fahrbereit machen – je Quartal",
+              "level": 5,
+              "focusQuestionId": "fq2",
+              "baseline": "ab jetzt",
+              "target": "10 je Quartal"
+            }
+          ],
+          "mandatoryFigures": [
+            {
+              "id": "mf1",
+              "rev": 1,
+              "editedByUser": false,
+              "name": "Teilnehmende nach Geschlecht",
+              "target": "15, davon mindestens 6 Mädchen",
+              "unit": "Personen",
+              "sourceNote": "Teilnahme = mindestens zweimal im Monat"
+            },
+            {
+              "id": "mf2",
+              "rev": 1,
+              "editedByUser": false,
+              "name": "Anzahl offener Werkstatttage",
+              "target": "80",
+              "unit": "Tage"
+            }
+          ]
+        },
+        "segments": [],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "confirmed": {
+          "at": "2026-11-05T10:00:00.000Z",
+          "block": {
+            "focusQuestions": [
+              {
+                "id": "fq1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Davon hängt ab, ob wir so weitermachen.",
+                "text": "Bleiben die Ehrenamtlichen das ganze Jahr dabei?",
+                "reasons": [
+                  "kritische_annahme"
+                ],
+                "audience": "Vorstand und Stiftung",
+                "linkIds": [
+                  "li1"
+                ],
+                "goalIds": []
+              },
+              {
+                "id": "fq2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Davon hängt ab, ob wir so weitermachen.",
+                "text": "Reparieren die Jugendlichen ihr Rad wirklich selbst?",
+                "reasons": [
+                  "kritische_annahme"
+                ],
+                "audience": "Vorstand und Stiftung",
+                "linkIds": [],
+                "goalIds": [
+                  "go1"
+                ]
+              }
+            ],
+            "deferredCandidates": [],
+            "indicators": [
+              {
+                "id": "in1",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Zeigt die Antwort direkt.",
+                "text": "Anzahl der Öffnungstage, an denen beide Ehrenamtlichen da waren – je Quartal",
+                "level": 1,
+                "focusQuestionId": "fq1",
+                "baseline": "ab jetzt",
+                "target": "mindestens 20 von 24 Tagen"
+              },
+              {
+                "id": "in2",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Zeigt die Antwort direkt.",
+                "text": "Anteil der Stammgäste, die einen Platten selbst flicken – zum Jahresende",
+                "level": 5,
+                "focusQuestionId": "fq2",
+                "baseline": "nachträglich im Dezember (vorher – nachher)",
+                "target": "mindestens die Hälfte"
+              },
+              {
+                "id": "in3",
+                "rev": 1,
+                "editedByUser": false,
+                "why": "Zeigt die Antwort direkt.",
+                "text": "Zahl der Räder, die Jugendliche ohne Hilfe wieder fahrbereit machen – je Quartal",
+                "level": 5,
+                "focusQuestionId": "fq2",
+                "baseline": "ab jetzt",
+                "target": "10 je Quartal"
+              }
+            ],
+            "mandatoryFigures": [
+              {
+                "id": "mf1",
+                "rev": 1,
+                "editedByUser": false,
+                "name": "Teilnehmende nach Geschlecht",
+                "target": "15, davon mindestens 6 Mädchen",
+                "unit": "Personen",
+                "sourceNote": "Teilnahme = mindestens zweimal im Monat"
+              },
+              {
+                "id": "mf2",
+                "rev": 1,
+                "editedByUser": false,
+                "name": "Anzahl offener Werkstatttage",
+                "target": "80",
+                "unit": "Tage"
+              }
+            ]
+          },
+          "basis": {
+            "0": "2026-11-05T10:00:00.000Z",
+            "4": "2026-11-05T10:00:00.000Z"
+          }
+        }
+      },
+      "6": {
+        "status": "not_started",
+        "block": {
+          "planRows": []
+        },
+        "segments": [
+          {
+            "id": "19e2765a-44d3-48a6-aa6d-b6d193b95691",
+            "startedAt": "2026-11-05T10:00:00.000Z",
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n## Schritt 0 (bestätigt am 2026-11-02)\nprofile: {\"id\":\"profile\",\"rev\":1,\"editedByUser\":false,\"name\":\"Schraubzeit – offene Fahrradwerkstatt für Jugendliche\",\"organisation\":\"Nachbarschaftshaus Am Weidengrund e. V.\",\"projectBoundary\":\"Die offene Werkstatt am Dienstag- und Donnerstagnachmittag; nicht die Ferienkurse.\",\"location\":\"Weidengrund-Siedlung (Großwohnsiedlung am Stadtrand)\",\"activities\":[\"Offene Werkstatt: eigene Räder reparieren mit Anleitung\",\"Aufbereitung gespendeter Räder, die Jugendliche nach 20 Stunden Mitarbeit behalten\",\"Kleine Touren in die Umgebung\"],\"participants\":\"Jugendliche von 12 bis 17 Jahren aus der Siedlung, im Schnitt 15 pro Nachmittag\",\"team\":\"Eine Fahrradmechanikerin auf Honorar, zwei Ehrenamtliche aus dem Nachbarschaftshaus\",\"duration\":\"2026–2027\",\"funder\":\"Stiftung Stadtteil Morgen\",\"budgetRange\":\"offen\",\"statedGoals\":[\"Jugendliche werden mobiler und kommen auch in andere Stadtteile\",\"Jugendliche können ihr Rad selbst instand halten\"],\"otherOffers\":[\"Jugendclub im Einkaufszentrum (abends)\",\"Sportverein mit Fußball und Boxen\"],\"openQuestions\":[\"Erwartet die Stiftung Angaben über die Teilnahmezahlen hinaus?\"]}\nframe: {\"id\":\"frame\",\"rev\":1,\"editedByUser\":false,\"purpose\":\"beides\",\"audience\":\"Stiftung Stadtteil Morgen und das Team\",\"requiredFormat\":\"Kurzer Sachbericht mit Teilnahmezahlen pro Halbjahr\",\"requiredFigures\":[\"Teilnehmende nach Geschlecht\",\"Anzahl offener Werkstatttage\"],\"existingData\":[\"Anwesenheitsliste (wer an welchem Tag da war)\",\"Reparaturbuch (welches Rad, was gemacht)\"]}\nsources:\n- {\"id\":\"src1\",\"rev\":1,\"editedByUser\":false,\"origin\":\"paste\",\"label\":\"Projektskizze (eingefügt)\",\"chars\":68,\"at\":\"2026-11-01T10:00:00.000Z\"}\n\n## Schritt 1 (bestätigt am 2026-11-05)\nchallenge: {\"id\":\"challenge\",\"rev\":1,\"editedByUser\":false,\"text\":\"Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus.\",\"why\":\"Aus Schritt 0.\"}\ntargetGroups:\n- {\"id\":\"tg1\",\"rev\":1,\"editedByUser\":false,\"name\":\"Jugendliche 12–17\",\"description\":\"Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.\",\"reach\":\"direct\",\"isFocus\":true,\"why\":\"Hauptwirkung.\"}\n- {\"id\":\"tg2\",\"rev\":1,\"editedByUser\":false,\"name\":\"Eltern\",\"description\":\"Erlauben das Kommen.\",\"reach\":\"indirect\",\"isFocus\":false,\"why\":\"Ohne sie kommen die Jüngeren nicht.\"}\nstakeholders: (leer)\n\n## Schritt 2 (bestätigt am 2026-11-05)\nproblems:\n- {\"id\":\"pb1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"coreProblem\":\"Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen.\",\"why\":\"Erzählen sie selbst.\"}\n- {\"id\":\"pb2\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg2\",\"coreProblem\":\"Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen.\",\"why\":\"Fragen beim Sommerfest.\"}\ncauses:\n- {\"id\":\"ca1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"\",\"text\":\"Viele haben kein funktionierendes Rad.\",\"evidence\":\"eigene_erfahrung\",\"notInfluenceable\":false,\"why\":\"Beobachtung.\"}\n- {\"id\":\"ca2\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"ca1\",\"text\":\"Der Bus fährt nachmittags nur stündlich.\",\"evidence\":\"eigene_daten\",\"notInfluenceable\":true,\"why\":\"Fahrplan.\"}\n- {\"id\":\"ca3\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"parentId\":\"\",\"text\":\"Kaum Erwachsene zeigen ihnen handwerkliche Dinge.\",\"evidence\":\"unsicher\",\"notInfluenceable\":false,\"why\":\"Vermutung.\"}\nconsequences: (leer)\n\n## Schritt 3 (bestätigt am 2026-11-05)\ngoals:\n- {\"id\":\"go1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"level\":4,\"text\":\"Die Jugendlichen können einen Platten flicken und die Bremsen einstellen.\",\"causeIds\":[\"ca3\"],\"timeFrame\":\"bis Ende 2027\",\"why\":\"Aus dem Problembaum.\"}\n- {\"id\":\"go2\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"level\":5,\"text\":\"Die Jugendlichen reparieren ihr Rad selbst, statt es stehen zu lassen.\",\"causeIds\":[\"ca1\",\"ca3\"],\"timeFrame\":\"bis Ende 2027\",\"why\":\"Aus dem Problembaum.\"}\n- {\"id\":\"go3\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"level\":6,\"text\":\"Die Jugendlichen sind nachmittags mit dem eigenen Rad unterwegs.\",\"causeIds\":[\"ca1\"],\"timeFrame\":\"bis Ende 2027\",\"why\":\"Aus dem Problembaum.\"}\n- {\"id\":\"go4\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg2\",\"level\":4,\"text\":\"Eltern wissen, was ihre Kinder in der Werkstatt lernen.\",\"causeIds\":[],\"timeFrame\":\"bis Ende 2026\",\"why\":\"Dann lassen sie die Jüngeren kommen.\"}\nlevelNotApplicable: (leer)\nlevel7: {\"id\":\"level7\",\"rev\":1,\"editedByUser\":false,\"text\":\"Das Projekt trägt dazu bei, dass Jugendliche in der Siedlung eigene Wege gehen.\",\"why\":\"Aus der Herausforderung.\"}\n\n## Schritt 4 (bestätigt am 2026-11-05)\nresources:\n- {\"id\":\"rs1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Zwei Ehrenamtliche aus dem Fahrradclub\"}\n- {\"id\":\"rs2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Kellerraum mit Werkbank\"}\nactivities:\n- {\"id\":\"ac1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Offene Werkstatt dienstags und donnerstags, 15–18 Uhr\",\"why\":\"Damit die Jugendlichen einen festen Ort zum Schrauben haben.\"}\n- {\"id\":\"ac2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Elternbrief zu Beginn des Halbjahrs\",\"why\":\"Damit die Eltern wissen, was ihre Kinder lernen.\"}\noutputs:\n- {\"id\":\"ou1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"level\":1,\"text\":\"Die Werkstatt hat zweimal pro Woche offen.\"}\n- {\"id\":\"ou2\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"level\":2,\"text\":\"Etwa 15 Jugendliche kommen regelmäßig.\"}\n- {\"id\":\"ou3\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"level\":3,\"text\":\"Sie arbeiten an ihrem eigenen Rad.\"}\nlinks:\n- {\"id\":\"li1\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"fromId\":\"ac1\",\"toId\":\"ou1\",\"because\":\"Mechanismus aus der Werkstatt.\",\"assumption\":\"Die zwei Ehrenamtlichen bleiben das ganze Jahr dabei.\",\"evidence\":\"eigene_erfahrung\",\"critical\":true}\n- {\"id\":\"li2\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"fromId\":\"ou1\",\"toId\":\"ou2\",\"because\":\"Mechanismus aus der Werkstatt.\",\"assumption\":\"Die Zeiten sprechen sich herum.\",\"evidence\":\"eigene_daten\",\"critical\":false}\n- {\"id\":\"li3\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"fromId\":\"ou2\",\"toId\":\"ou3\",\"because\":\"Mechanismus aus der Werkstatt.\",\"assumption\":\"Es gibt genug Ersatzteile.\",\"evidence\":\"eigene_daten\",\"critical\":false}\n- {\"id\":\"li4\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"fromId\":\"ou3\",\"toId\":\"go1\",\"because\":\"Mechanismus aus der Werkstatt.\",\"assumption\":\"Die Ehrenamtlichen lassen sie selbst machen.\",\"evidence\":\"eigene_daten\",\"critical\":true}\n- {\"id\":\"li5\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"fromId\":\"go1\",\"toId\":\"go2\",\"because\":\"Mechanismus aus der Werkstatt.\",\"assumption\":\"Zu Hause gibt es etwas Werkzeug.\",\"evidence\":\"unsicher\",\"critical\":false}\n- {\"id\":\"li6\",\"rev\":1,\"editedByUser\":false,\"groupId\":\"tg1\",\"fromId\":\"go2\",\"toId\":\"go3\",\"because\":\"Mechanismus aus der Werkstatt.\",\"assumption\":\"Die Wege sind mit dem Rad sicher genug.\",\"evidence\":\"forschung\",\"critical\":false}\nexternalFactors: (leer)\nsideEffects: (leer)\n\n## Schritt 5 (bestätigt am 2026-11-05)\nfocusQuestions:\n- {\"id\":\"fq1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Bleiben die Ehrenamtlichen das ganze Jahr dabei?\",\"reasons\":[\"kritische_annahme\"],\"audience\":\"Vorstand und Stiftung\",\"linkIds\":[\"li1\"],\"goalIds\":[],\"why\":\"Davon hängt ab, ob wir so weitermachen.\"}\n- {\"id\":\"fq2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Reparieren die Jugendlichen ihr Rad wirklich selbst?\",\"reasons\":[\"kritische_annahme\"],\"audience\":\"Vorstand und Stiftung\",\"linkIds\":[],\"goalIds\":[\"go1\"],\"why\":\"Davon hängt ab, ob wir so weitermachen.\"}\ndeferredCandidates: (leer)\nindicators:\n- {\"id\":\"in1\",\"rev\":1,\"editedByUser\":false,\"text\":\"Anzahl der Öffnungstage, an denen beide Ehrenamtlichen da waren – je Quartal\",\"level\":1,\"focusQuestionId\":\"fq1\",\"baseline\":\"ab jetzt\",\"target\":\"mindestens 20 von 24 Tagen\",\"why\":\"Zeigt die Antwort direkt.\"}\n- {\"id\":\"in2\",\"rev\":1,\"editedByUser\":false,\"text\":\"Anteil der Stammgäste, die einen Platten selbst flicken – zum Jahresende\",\"level\":5,\"focusQuestionId\":\"fq2\",\"baseline\":\"nachträglich im Dezember (vorher – nachher)\",\"target\":\"mindestens die Hälfte\",\"why\":\"Zeigt die Antwort direkt.\"}\n- {\"id\":\"in3\",\"rev\":1,\"editedByUser\":false,\"text\":\"Zahl der Räder, die Jugendliche ohne Hilfe wieder fahrbereit machen – je Quartal\",\"level\":5,\"focusQuestionId\":\"fq2\",\"baseline\":\"ab jetzt\",\"target\":\"10 je Quartal\",\"why\":\"Zeigt die Antwort direkt.\"}\nmandatoryFigures:\n- {\"id\":\"mf1\",\"rev\":1,\"editedByUser\":false,\"name\":\"Teilnehmende nach Geschlecht\",\"target\":\"15, davon mindestens 6 Mädchen\",\"unit\":\"Personen\",\"sourceNote\":\"Teilnahme = mindestens zweimal im Monat\"}\n- {\"id\":\"mf2\",\"rev\":1,\"editedByUser\":false,\"name\":\"Anzahl offener Werkstatttage\",\"target\":\"80\",\"unit\":\"Tage\"}"
+                  },
+                  {
+                    "type": "text",
+                    "text": "Lass uns den Datenerhebungsplan machen."
+                  },
+                  {
+                    "type": "text",
+                    "text": "[Bausteinstand Schritt 6]\nplanRows: (leer)"
+                  }
+                ],
+                "id": "b8b5a6fc-84c5-4376-ba0a-2c4ae2c6c6d0",
+                "at": "2026-11-05T10:00:00.000Z"
+              }
+            ]
+          }
+        ],
+        "proposals": [],
+        "confirmedWarnings": [],
+        "sentBlock": {
+          "planRows": []
+        }
+      }
+    },
+    "idCounters": {
+      "src": 1,
+      "tg": 2,
+      "pb": 2,
+      "ca": 3,
+      "go": 4,
+      "rs": 2,
+      "ac": 2,
+      "ou": 3,
+      "li": 6,
+      "fq": 2,
+      "in": 3,
+      "mf": 2
+    }
+  }
+}

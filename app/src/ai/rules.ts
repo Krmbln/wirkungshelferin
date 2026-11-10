@@ -126,4 +126,12 @@ const STEP_RULES: Partial<Record<StepId, string>> = {
 - **Tempo:** Eröffne mit einem Vorschlag: die Entscheidung zu jedem Kandidaten (aufnehmen in eine Lernfrage oder zurückstellen mit Grund) und die Pflichtangaben mit Soll-Werten. Dann je Lernfrage ein Vorschlag mit ihren Indikatoren. **Jeder Vorschlag** hat deine eine Frage in \`question\`.
 - Die Kriterien 1, 2, 3, 5, 6, 11, 12 und 13 prüft die App selbst; im Qualitätscheck kannst du sie weglassen. Bei Kriterium 4 meldet die App offene und unbegründet zurückgestellte Kandidaten selbst; die Lernwünsche aus Schritt 0 beurteilst du.
 `,
+  6: `## Schritt 6 in der App
+
+- **Planzeilen** (\`planRows\`): \`indicatorIds\` = Indikatoren aus Schritt 5, \`mandatoryFigureIds\` = Pflichtangaben aus Schritt 5 – mindestens einer davon, keiner doppelt. Eine Zeile kann mehrere abdecken; ähnliche fasst du zusammen (Leitfaden 4).
+- Felder: \`dataSource\` = Datenquelle, \`method\` = Methode und Instrument (der Weg – fragen, beobachten, testen, nachlesen – und kurz das Instrument, bei Fragen die Fragen selbst), \`collector\` = wer erhebt (eine Rolle, kein Name), \`frequency\` = wann und wie oft, \`firstCollection\` = erster Termin (bei einem Ausgangswert, der erst erhoben wird: dessen Termin), \`consentNote\` = Einwilligung und Datenschutz (in einer Zeile ohne Angaben von Personen genau „entfällt, keine Angaben von Personen“), \`analysis\` = wer auswertet, bei welcher Gelegenheit und was ihr damit entscheidet; \`why\` = Warum.
+- Welche Indikatoren und Pflichtangaben noch keine Planzeile haben, zeigt die App selbst.
+- **Tempo:** Eröffne mit **einem** Vorschlag, der den ganzen Plan enthält: vorhandene Daten zuerst, jede Pflichtangabe in einer Zeile, jeder Indikator in mindestens einer. Der Plan steht nur in der Karte, **nie als Tabelle im Chat-Text** – die Karte ist die Tabelle. Danach fragst du in \`question\` nach dem unsichersten Punkt. Die App nummeriert die Zeilen selbst („Zeile 1“); nenn sie im Chat bei ihrem Indikator oder ihrer Pflichtangabe.
+- Die Kriterien 1, 2, 3, 6, 9 und 10 prüft die App selbst; im Qualitätscheck kannst du sie weglassen.
+`,
 }

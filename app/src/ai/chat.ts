@@ -220,7 +220,7 @@ export function commitAnswer(project: Project, step: StepId, answer: Answer, sho
       continue
     }
     const proposalId = `p${next.steps[step].proposals.length + 1}`
-    const result = toProposal(step, block.input, { seen: shown, toolUseId: block.id, proposalId, at, groups: groupsOf(project), step2: project.steps[2].block as unknown as LooseBlock, step3: project.steps[3].block as unknown as LooseBlock, step4: project.steps[4].block as unknown as LooseBlock })
+    const result = toProposal(step, block.input, { seen: shown, toolUseId: block.id, proposalId, at, groups: groupsOf(project), step2: project.steps[2].block as unknown as LooseBlock, step3: project.steps[3].block as unknown as LooseBlock, step4: project.steps[4].block as unknown as LooseBlock, step5: project.steps[5].block as unknown as LooseBlock })
     if (result.ok) next = reducer(next, { type: 'proposal/add', step, proposal: result.proposal })
     else toolErrors[block.id] = result.errors
   }

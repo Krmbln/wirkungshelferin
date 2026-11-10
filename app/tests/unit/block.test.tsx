@@ -305,11 +305,3 @@ describe('block parts', () => {
     expect(screen.getByText('Verweis fehlt')).toBeTruthy()
   })
 })
-
-describe('block panel: other steps', () => {
-  it('steps without a block yet keep the placeholder', async () => {
-    const { user } = openHarness()
-    await user.click(screen.getByRole('button', { name: /^6 / }))
-    expect(within(screen.getByRole('region', { name: 'Baustein' })).getByText(/Noch leer – hier entsteht/)).toBeTruthy()
-  })
-})

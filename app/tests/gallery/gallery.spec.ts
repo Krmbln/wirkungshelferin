@@ -1487,3 +1487,124 @@ test('step 5 (step 19): candidates, question records with indicators, limits, pi
   await shotScreen('step5-picker-960')
   expect(errors).toEqual([])
 })
+
+test('step 6 (step 20): coverage from step 5, plan rows as disclosures, picker, check, card, full plan', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  const column = page.locator('.workspace__block .workspace__scroll')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  const noSideScroll = async () => expect(await column.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+  /** The whole block column, one shot per screenful. */
+  const shotColumn = async (name: string) => {
+    await column.evaluate((el) => (el.scrollTop = 0))
+    await shotScreen(name)
+    const height = await column.evaluate((el) => el.scrollHeight)
+    const step = (await column.evaluate((el) => el.clientHeight)) - 60
+    for (let top = step, i = 1; top < height; top += step, i++) {
+      await column.evaluate((el, y) => (el.scrollTop = y), top)
+      await page.waitForTimeout(50)
+      await noSideScroll()
+      await shotScreen(`${name}-${i}`)
+    }
+  }
+  const openRow = (id: string) => page.locator(`[data-row-toggle="${id}"]`).click()
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+    // Four rows start closed; the first is opened to show every field.
+    await openScreen(page, 'step6')
+    await expect(page.locator('[data-row-toggle]')).toHaveCount(4)
+    await openRow('pr1')
+    await noPageScroll()
+    await noSideScroll()
+    await shotColumn(`step6${suffix}`)
+    for (const screen of ['step6-full', 'step6-empty', 'step6-none', 'step6-blocked', 'step6-proposal']) {
+      await openScreen(page, screen)
+      await noPageScroll()
+      await noSideScroll()
+      await shotScreen(`${screen}${suffix}`)
+    }
+  }
+  await page.setViewportSize({ width: 1390, height: 880 })
+
+  // Coverage: one indicator still without a row; closed rows keep their references, summary and "Noch leer".
+  await openScreen(page, 'step6')
+  await expect(page.locator('[data-coverage="in2"]').getByText('noch ohne Planzeile')).toBeVisible()
+  await expect(page.locator('[data-coverage="in1"]')).toContainText('In Zeile 1 und 3')
+  await expect(page.locator('[data-coverage] .bitem__remove')).toHaveCount(0)
+  const closed = page.locator('[data-item-id="pr3"]')
+  await expect(closed.getByText('Noch leer: Erster Termin, Einwilligung und Datenschutz, Auswertung und Nutzung, Warum?')).toBeVisible()
+  // A closed row's chips take at most two lines each.
+  for (const chip of await closed.locator('.refchip--level').all()) expect((await chip.boundingBox())!.height).toBeLessThan(60)
+
+  // The picker: in place, grouped by question, another row's cover shown; Esc back to the toggle.
+  await page.locator('[data-picker-toggle="pr4"]').click()
+  const picker = page.locator('[data-picker="pr4"]')
+  await expect(picker.getByRole('checkbox').first()).toBeFocused()
+  await expect(picker.getByText('· in Zeile 1 und 3')).toBeVisible()
+  await expect(picker.getByText('Verweis fehlt (gelöscht)')).toBeVisible()
+  await picker.evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await noSideScroll()
+  await shotScreen('step6-picker')
+  await page.keyboard.press('Escape')
+  await expect(picker).toHaveCount(0)
+  await expect(page.locator('[data-picker-toggle="pr4"]')).toBeFocused()
+
+  // Removing a row: one undo line, the coverage line switches at once.
+  await page.getByRole('button', { name: 'Planzeile „Anzahl reparierter Räder“ entfernen' }).click()
+  await expect(page.getByText('Planzeile „Anzahl reparierter Räder“ entfernt.')).toBeVisible()
+  await expect(page.locator('[data-coverage="mf3"]').getByText('noch ohne Planzeile')).toBeVisible()
+  await page.getByRole('button', { name: 'Rückgängig' }).scrollIntoViewIfNeeded()
+  await shotScreen('step6-undo')
+
+  // "Planzeile anlegen": a new row, open, cursor in Datenquelle with the step 0 hint under it.
+  await openScreen(page, 'step6')
+  await page.locator('[data-coverage="in2"]').getByRole('button', { name: /^Planzeile anlegen/ }).click()
+  await expect(page.locator('[data-item-id="pr5"] [data-field="dataSource"] textarea')).toBeFocused()
+  await expect(page.locator('[data-item-id="pr5"]').getByText(/^Aus Schritt 0 vorhanden: Anwesenheitsliste/)).toBeVisible()
+  await expect(page.locator('[data-item-id="pr5"]').getByText(/^Ausgangswert laut Schritt 5: nachträglich/)).toBeVisible()
+  await shotScreen('step6-created')
+
+  // Check: ⛔ rows first, then the app's grouped ⚠; Zum Feld opens a closed row.
+  await openScreen(page, 'step6-blocked')
+  await expect(gate.getByText(/^Warum fehlt: Zeile 1 „Anzahl der Öffnungstage, an denen …“$/)).toBeVisible()
+  await expect(page.locator('[data-item-id="pr2"] .refchip--missing')).toHaveCount(2)
+  await expect(gate.getByText('Verweis fehlt: Zeile 2 „Anwesenheitsliste und Anmeldebogen“')).toBeAttached()
+  await expect(gate.getByText('Indikator ohne Planzeile: „Anteil der Stammgäste, die ihr Rad nach einer …“')).toBeAttached()
+  await gate.locator('.gate__rows').evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await shotScreen('step6-blocked-warn')
+  await gate.getByRole('button', { name: /^Zum Feld: Warum fehlt: Zeile 1/ }).click()
+  await expect(page.locator('[data-row-toggle="pr1"]')).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.locator('[data-item-id="pr1"] [data-field="why"] textarea')).toBeFocused()
+  await gate.getByRole('button', { name: /^Zum Feld: Indikator ohne Planzeile/ }).click()
+  await expect(page.locator('[data-coverage="in2"]').getByRole('button', { name: /^Planzeile anlegen/ })).toBeFocused()
+  await noPageScroll()
+
+  // The card: rows by what they cover, the four facts as meta, never a row number; focus on a row outlines the closed head.
+  await openScreen(page, 'step6-proposal')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  await expect(card.getByText('für „Anteil der Stammgäste, die ihr Rad …“')).toBeVisible()
+  await expect(card.getByText(/Zeile \d/)).toHaveCount(0)
+  await card.getByRole('button', { name: /^Übernehmen: Ändern/ }).focus()
+  const head = page.locator('[data-group-header="pr3"]')
+  await expect(head).toHaveAttribute('data-outlined', '')
+  // The outline must show, not only be set (design check step 20).
+  expect(await head.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none')
+  await expect(page.locator('[data-row-toggle="pr3"]')).toHaveAttribute('aria-expanded', 'false')
+  await shotScreen('step6-proposal-focus')
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = 0))
+  await shotScreen('step6-proposal')
+
+  // Full plan: 7 closed rows and the coverage list folded away.
+  await openScreen(page, 'step6-full')
+  await expect(page.getByText('Alle 6 Indikatoren und 3 Pflichtangaben haben eine Planzeile.')).toBeVisible()
+  await expect(page.locator('[data-coverage]')).toHaveCount(0)
+  await shotColumn('step6-full')
+  expect(errors).toEqual([])
+})

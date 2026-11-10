@@ -872,34 +872,34 @@ describe('8 · step 4: the chain of one focus group (made-up project)', () => {
 
 const SHOWN_ID_4 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|new:)\d+\b/g
 
-describe('9 · step 5: measurement focus (made-up project)', () => {
-  /** Step 4 confirmed with a chain: li1 critical on own experience (a candidate), li4 critical on own data (none); two mandatory figures in step 0. */
-  function step5Start(): Project {
-    const p = step4Start()
-    p.steps[0].block.frame = { ...p.steps[0].block.frame, purpose: 'beides', requiredFigures: ['Teilnehmende nach Geschlecht', 'Anzahl offener Werkstatttage'] }
-    // Claude reads the confirmed snapshot of other steps, so it must say the same.
-    p.steps[0].confirmed = { ...p.steps[0].confirmed!, block: structuredClone(p.steps[0].block) as never }
-    const output = (id: string, level: 1 | 2 | 3, text: string) => makeItem(4, 'outputs', { groupId: 'tg1', level, text }, { id })
-    const link = (id: string, fromId: string, toId: string, assumption: string, evidence: Evidence, critical = false) =>
-      makeItem(4, 'links', { groupId: 'tg1', fromId, toId, because: 'Mechanismus aus der Werkstatt.', assumption, evidence, critical }, { id })
-    p.steps[4].block = {
-      ...p.steps[4].block,
-      outputs: [output('ou1', 1, 'Die Werkstatt hat zweimal pro Woche offen.'), output('ou2', 2, 'Etwa 15 Jugendliche kommen regelmäßig.'), output('ou3', 3, 'Sie arbeiten an ihrem eigenen Rad.')],
-      links: [
-        link('li1', 'ac1', 'ou1', 'Die zwei Ehrenamtlichen bleiben das ganze Jahr dabei.', 'eigene_erfahrung', true),
-        link('li2', 'ou1', 'ou2', 'Die Zeiten sprechen sich herum.', 'eigene_daten'),
-        link('li3', 'ou2', 'ou3', 'Es gibt genug Ersatzteile.', 'eigene_daten'),
-        link('li4', 'ou3', 'go1', 'Die Ehrenamtlichen lassen sie selbst machen.', 'eigene_daten', true),
-        link('li5', 'go1', 'go2', 'Zu Hause gibt es etwas Werkzeug.', 'unsicher'),
-        link('li6', 'go2', 'go3', 'Die Wege sind mit dem Rad sicher genug.', 'forschung'),
-      ],
-    } as never
-    p.steps[4].status = 'confirmed'
-    p.steps[4].confirmed = { at: AT, block: structuredClone(p.steps[4].block) as never, basis: { 0: AT } }
-    p.idCounters = { ...p.idCounters, ou: 3, li: 6 }
-    return projectSchema.parse(p)
-  }
+/** Step 4 confirmed with a chain: li1 critical on own experience (a candidate), li4 critical on own data (none); two mandatory figures in step 0. */
+function step5Start(): Project {
+  const p = step4Start()
+  p.steps[0].block.frame = { ...p.steps[0].block.frame, purpose: 'beides', requiredFigures: ['Teilnehmende nach Geschlecht', 'Anzahl offener Werkstatttage'] }
+  // Claude reads the confirmed snapshot of other steps, so it must say the same.
+  p.steps[0].confirmed = { ...p.steps[0].confirmed!, block: structuredClone(p.steps[0].block) as never }
+  const output = (id: string, level: 1 | 2 | 3, text: string) => makeItem(4, 'outputs', { groupId: 'tg1', level, text }, { id })
+  const link = (id: string, fromId: string, toId: string, assumption: string, evidence: Evidence, critical = false) =>
+    makeItem(4, 'links', { groupId: 'tg1', fromId, toId, because: 'Mechanismus aus der Werkstatt.', assumption, evidence, critical }, { id })
+  p.steps[4].block = {
+    ...p.steps[4].block,
+    outputs: [output('ou1', 1, 'Die Werkstatt hat zweimal pro Woche offen.'), output('ou2', 2, 'Etwa 15 Jugendliche kommen regelmäßig.'), output('ou3', 3, 'Sie arbeiten an ihrem eigenen Rad.')],
+    links: [
+      link('li1', 'ac1', 'ou1', 'Die zwei Ehrenamtlichen bleiben das ganze Jahr dabei.', 'eigene_erfahrung', true),
+      link('li2', 'ou1', 'ou2', 'Die Zeiten sprechen sich herum.', 'eigene_daten'),
+      link('li3', 'ou2', 'ou3', 'Es gibt genug Ersatzteile.', 'eigene_daten'),
+      link('li4', 'ou3', 'go1', 'Die Ehrenamtlichen lassen sie selbst machen.', 'eigene_daten', true),
+      link('li5', 'go1', 'go2', 'Zu Hause gibt es etwas Werkzeug.', 'unsicher'),
+      link('li6', 'go2', 'go3', 'Die Wege sind mit dem Rad sicher genug.', 'forschung'),
+    ],
+  } as never
+  p.steps[4].status = 'confirmed'
+  p.steps[4].confirmed = { at: AT, block: structuredClone(p.steps[4].block) as never, basis: { 0: AT } }
+  p.idCounters = { ...p.idCounters, ou: 3, li: 6 }
+  return projectSchema.parse(p)
+}
 
+describe('9 · step 5: measurement focus (made-up project)', () => {
   let after: Project | undefined
   it('opening: each candidate decided (question or deferral with a reason), mandatory figures with targets, text first', () =>
     check('Step 5 opening: li1 decided, figures with targets, no figure as an indicator, no ids', async () => {
@@ -956,3 +956,63 @@ describe('9 · step 5: measurement focus (made-up project)', () => {
 })
 
 const SHOWN_ID_5 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|fq|dc|in|mf|new:)\d+\b/g
+
+describe('10 · step 6: data collection plan (made-up project)', () => {
+  /** Step 5 confirmed: two questions with three indicators, two mandatory figures; step 0 lists existing data. */
+  function step6Start(): Project {
+    const p = step5Start()
+    p.steps[0].block.frame = { ...p.steps[0].block.frame, existingData: ['Anwesenheitsliste (wer an welchem Tag da war)', 'Reparaturbuch (welches Rad, was gemacht)'] }
+    p.steps[0].confirmed = { ...p.steps[0].confirmed!, block: structuredClone(p.steps[0].block) as never }
+    const question = (id: string, text: string, linkIds: string[], goalIds: string[]) =>
+      makeItem(5, 'focusQuestions', { text, reasons: ['kritische_annahme'], audience: 'Vorstand und Stiftung', linkIds, goalIds, why: 'Davon hängt ab, ob wir so weitermachen.' }, { id })
+    const indicator = (id: string, focusQuestionId: string, level: 1 | 5, text: string, baseline: string, target: string) =>
+      makeItem(5, 'indicators', { focusQuestionId, level, text, baseline, target, why: 'Zeigt die Antwort direkt.' }, { id })
+    p.steps[5].block = {
+      focusQuestions: [question('fq1', 'Bleiben die Ehrenamtlichen das ganze Jahr dabei?', ['li1'], []), question('fq2', 'Reparieren die Jugendlichen ihr Rad wirklich selbst?', [], ['go1'])],
+      deferredCandidates: [],
+      indicators: [
+        indicator('in1', 'fq1', 1, 'Anzahl der Öffnungstage, an denen beide Ehrenamtlichen da waren – je Quartal', 'ab jetzt', 'mindestens 20 von 24 Tagen'),
+        indicator('in2', 'fq2', 5, 'Anteil der Stammgäste, die einen Platten selbst flicken – zum Jahresende', 'nachträglich im Dezember (vorher – nachher)', 'mindestens die Hälfte'),
+        indicator('in3', 'fq2', 5, 'Zahl der Räder, die Jugendliche ohne Hilfe wieder fahrbereit machen – je Quartal', 'ab jetzt', '10 je Quartal'),
+      ],
+      mandatoryFigures: [
+        makeItem(5, 'mandatoryFigures', { name: 'Teilnehmende nach Geschlecht', target: '15, davon mindestens 6 Mädchen', unit: 'Personen', sourceNote: 'Teilnahme = mindestens zweimal im Monat' }, { id: 'mf1' }),
+        makeItem(5, 'mandatoryFigures', { name: 'Anzahl offener Werkstatttage', target: '80', unit: 'Tage' }, { id: 'mf2' }),
+      ],
+    } as never
+    p.steps[5].status = 'confirmed'
+    p.steps[5].confirmed = { at: AT, block: structuredClone(p.steps[5].block) as never, basis: { 0: AT, 4: AT } }
+    p.idCounters = { ...p.idCounters, fq: 2, in: 3, mf: 2 }
+    return projectSchema.parse(p)
+  }
+
+  it('opening: the whole plan in one card, every indicator and figure covered, existing data first, no table in the text', () =>
+    check('Step 6 opening: one proposal, all covered, refs on every row, no markdown table, no ids', async () => {
+      const text = 'Lass uns den Datenerhebungsplan machen.'
+      const prepared = prepareTurn(step6Start(), 6, text, { at: AT })
+      rec.recordNext('step6-opening')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}step6-opening.json`, JSON.stringify({ step: 6, project: prepared.project }, null, 2))
+      const shown = messageTexts(message).join('\n')
+      expect(toolUses(message).some((u) => u.name === PROPOSE), 'no proposal').toBe(true)
+      expect(shown.match(SHOWN_ID_6) ?? [], 'ids in the visible text').toEqual([])
+      expect(/^\s*\|.*\|\s*$/m.test(shown), 'a markdown table in the text').toBe(false)
+      let project = commitAnswer(prepared.project, 6, { status: 'done', message }, prepared.shown, { at: AT })
+      const [proposal] = project.steps[6].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[6].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 6, proposalId: proposal.id })
+      const rows = project.steps[6].block.planRows
+      const covered = (kind: 'indicatorIds' | 'mandatoryFigureIds', id: string) => rows.some((r) => r[kind].includes(id))
+      expect(['in1', 'in2', 'in3'].filter((id) => !covered('indicatorIds', id)), 'indicators without a row').toEqual([])
+      expect(['mf1', 'mf2'].filter((id) => !covered('mandatoryFigureIds', id)), 'figures without a row').toEqual([])
+      expect(rows.every((r) => r.dataSource.trim() && r.method.trim()), 'a row without source or method').toBe(true)
+      expect(rows.every((r) => r.why?.trim()), 'a row without its Why').toBe(true)
+      expect(rows.some((r) => /anwesenheit|reparaturbuch/i.test(r.dataSource)), 'existing data not used').toBe(true)
+      projectSchema.parse(project)
+      const filled = rows.map((r) => ['collector', 'frequency', 'firstCollection', 'consentNote', 'analysis'].filter((f) => (r[f as keyof typeof r] as string).trim()).length).join('/')
+      return `${rows.length} rows (fields filled of 5: ${filled}); sources ${rows.map((r) => r.dataSource.slice(0, 30)).join('; ')}; ${asked(proposal.question, message)}`
+    }))
+})
+
+const SHOWN_ID_6 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|fq|dc|in|mf|pr|new:)\d+\b/g

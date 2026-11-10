@@ -83,11 +83,13 @@ export function fieldSelector(target: FieldTarget): string {
   if (target.field === 'add' || !target.id) return `[data-add="${CSS.escape(target.collection)}"]`
   // Step 5: a candidate is decided on its derived row (its first button).
   if (target.collection === 'candidates') return `[data-candidate="${CSS.escape(target.id)}"] [data-field="decide"] button`
+  // Step 6: an uncovered indicator or figure gets its row via "Planzeile anlegen".
+  if (target.collection === 'coverage') return `[data-coverage="${CSS.escape(target.id)}"] [data-field="create"] button`
   const item = `[data-item-id="${CSS.escape(target.id)}"]`
   if (target.field === 'isFocus') return `${item} [data-field="isFocus"]`
   const field = `${item} [data-field="${CSS.escape(target.field)}"]`
   // Step 3: a goal's links have no text input; "Ursache wählen" is the field. Step 4: a link's
-  // ends are chosen with "Verbindung wählen" / "Ändern"; step 5: a question's "Bezug wählen".
+  // ends are chosen with "Verbindung wählen" / "Ändern"; steps 5–6: a question's or row's "Bezug wählen".
   if (target.field === 'causeIds' || target.field === 'ends' || target.field === 'refs') return `${field} button`
   return `${field} textarea, ${field} input`
 }

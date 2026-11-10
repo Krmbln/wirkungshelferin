@@ -16,12 +16,21 @@ import { Step2Block } from './Step2Block'
 import { Step3Block } from './Step3Block'
 import { Step4Block } from './Step4Block'
 import { Step5Block } from './Step5Block'
+import { Step6Block } from './Step6Block'
+import { BULK_OPEN_MAX } from '../../domain/plan'
 import { panelGroupOf } from '../../domain/tree'
 import { FORMS, formEmpty, type FormName } from '../../domain/profile'
 import type { Item } from '../../domain/schemas/blocks'
 import type { ProposalChange } from '../../domain/schemas/project'
 import { issueKey } from '../../domain/check'
 import { stillOpen } from '../check/gate'
+
+/**
+ * New collapsed keys, or an update of the current ones. Updates queue (React state updaters), so
+ * the panel and a block changing keys in the same commit never overwrite each other (step 20:
+ * Übernehmen opens a row while the block closes the coverage list).
+ */
+export type CollapsedChange = string[] | ((keys: string[]) => string[])
 
 /** Changes just applied from a card; `n` makes a repeat count as new. */
 export type Applied = { proposalId: string; changeIds: string[]; n: number }
@@ -41,9 +50,9 @@ type Props = {
   onPaste?: () => void
   /** "+ PDF hochladen" in step 0's Quellen (step 15). */
   pdf?: PdfControls
-  /** Steps 2–4: collapsed group keys (App keeps them per step) and how to change them. */
+  /** Steps 2–4: collapsed group keys; step 6: closed rows and coverage list (App keeps them per step). */
   collapsed?: string[]
-  onCollapsedChange?: (keys: string[]) => void
+  onCollapsedChange?: (change: CollapsedChange) => void
   onOpenStep?: (step: StepId) => void
 }
 
@@ -70,7 +79,7 @@ function changedFormFields(step: StepId, change: ProposalChange): string[] | und
   return before && !formEmpty(before, change.collection as FormName) ? Object.keys(change.fields ?? {}) : undefined
 }
 
-// The step's block, editable (design §6.2). Steps 2–6 follow in steps 16–20.
+// The step's block, editable (design §6.2).
 // Outline and highlight are set on the item's element by id, so every block gets them.
 export function BlockPanel({
   project,
@@ -95,9 +104,8 @@ export function BlockPanel({
   function reveal(id: string) {
     const group = panelGroupOf(project, step, id)
     if (!group || !latest.current.includes(group) || !onCollapsedChange) return
-    const next = latest.current.filter((k) => k !== group)
-    latest.current = next
-    flushSync(() => onCollapsedChange(next))
+    latest.current = latest.current.filter((k) => k !== group)
+    flushSync(() => onCollapsedChange((keys) => keys.filter((k) => k !== group)))
   }
 
   useEffect(() => {
@@ -111,7 +119,9 @@ export function BlockPanel({
   }, [outlined, project, collapsed])
 
   useEffect(() => {
-    if (outlined?.scroll) reveal(outlined.id)
+    // Step 6: keyboard focus on a card row only outlines a closed row's head and scrolls to it
+    // (tabbing through a long card must not open every record, design "Step 20").
+    if (outlined?.scroll && step !== 6) reveal(outlined.id)
     const el = outlined?.scroll ? targetEls(panel.current, outlined.id, outlined.fields)[0] : undefined
     if (el) scrollIntoView(scrollTarget(el))
   }, [outlined])
@@ -119,11 +129,18 @@ export function BlockPanel({
   useEffect(() => {
     if (!applied) return
     const proposal = project.steps[step].proposals.find((p) => p.id === applied.proposalId)
-    for (const id of applied.changeIds) {
+    const done = applied.changeIds.flatMap((id) => {
       const change = proposal?.changes.find((c) => c.id === id)
       const target = proposal && change?.state === 'applied' ? targetItemId(proposal, change) : undefined
-      if (target) reveal(target)
-    }
+      return target ? [{ change: change!, target }] : []
+    })
+    // Step 6: applying more than two rows at once opens none; new ones start closed (design "Step 20").
+    if (step === 6 && done.length > BULK_OPEN_MAX) {
+      const added = done.filter((d) => d.change.op === 'add').map((d) => d.target)
+      const close = (keys: string[]) => [...keys.filter((k) => !added.includes(k)), ...added]
+      latest.current = close(latest.current)
+      if (onCollapsedChange) flushSync(() => onCollapsedChange(close))
+    } else done.forEach((d) => reveal(d.target))
     const els = applied.changeIds
       .map((id) => proposal?.changes.find((c) => c.id === id))
       .flatMap((change) => {
@@ -182,7 +199,15 @@ export function BlockPanel({
       ) : step === 5 ? (
         <Step5Block project={project} onAction={onAction} applied={applied} issues={stillOpen(project, 5, liveIssues)} onOpenStep={(s) => onOpenStep?.(s)} />
       ) : (
-        <p className="placeholder">Noch leer – hier entsteht der Baustein für diesen Schritt.</p>
+        <Step6Block
+          project={project}
+          onAction={onAction}
+          applied={applied}
+          issues={stillOpen(project, 6, liveIssues)}
+          collapsed={collapsed}
+          onCollapsedChange={(change) => onCollapsedChange?.(change)}
+          onOpenStep={(s) => onOpenStep?.(s)}
+        />
       )}
     </div>
   )

@@ -6,10 +6,11 @@ import type { StepId } from './types'
 import { CRITICAL_MAX, chainOf, criticalLinks, endOf, linkState, type ChainItems } from './chain'
 import { GOAL_LEVELS, treeOf } from './tree'
 import { INDICATOR_MAX, PER_QUESTION_MAX, QUESTION_MAX, candidates, decisionOf, indicatorsOf, orphanIndicators, questionsOf, refsOf } from './focus'
+import { coverage, hasRefs, isBlankField, needText, needsOf, planRefsOf, rowName, type Need, type PlanField } from './plan'
 
 // Hard blocks (⛔) as code (tech design §7.2, PRD F4): exactly the PRD's three kinds — a
 // missing Why, a step's number limits, mandatory links. Everything else is ⚠ and comes from
-// the assistant's rubric judgement (report_quality_check). Steps 0 and 2–6 get theirs in
+// the assistant's rubric judgement (report_quality_check). Steps 0 and 2–6 got theirs in
 // steps 14–20.
 
 /**
@@ -38,6 +39,7 @@ export const HARD_CRITERIA: Partial<
   3: { why: '10', levels: '4', link: '5', level7: '8', nonFocus: '9' },
   4: { why: '11', because: '4', assumption: '5', focus: '1' },
   5: { why: '13', focus: '1', link: '2', indicators: '5', orphan: '6' },
+  6: { why: '10', link: '1' },
 }
 
 /**
@@ -62,6 +64,7 @@ export function appJudged(step: StepId, block: LooseBlock, project?: Project): A
   if (step === 3) return project ? step3Judged(block, project) : []
   if (step === 4) return project ? step4Judged(block, project) : []
   if (step === 5) return project ? step5Judged(block, project) : []
+  if (step === 6) return project ? step6Judged(block, project) : []
   if (step !== 0) return []
   const leer = leerFields(block)
   if (!leer.length) return [{ criterion: '1', result: 'ok', note: 'Jedes Feld ist ausgefüllt oder offen.' }]
@@ -101,7 +104,7 @@ function step3Judged(block: LooseBlock, project: Project): AppJudged[] {
 
 /** Criteria Claude may leave out because the app owns them (hard rules and app-judged ones). */
 export function appOwned(step: StepId): string[] {
-  const appIds: Partial<Record<StepId, string[]>> = { 0: ['1'], 3: ['5', '6'], 4: ['6'], 5: ['2', '3', '11', '12'] }
+  const appIds: Partial<Record<StepId, string[]>> = { 0: ['1'], 3: ['5', '6'], 4: ['6'], 5: ['2', '3', '11', '12'], 6: ['1', '2', '3', '6', '9'] }
   const shared = SHARED[step] ?? []
   return [...new Set([...Object.values(HARD_CRITERIA[step] ?? {}), ...(appIds[step] ?? [])])].filter((id) => !shared.includes(id))
 }
@@ -193,6 +196,55 @@ function step5Judged(block: LooseBlock, project: Project): AppJudged[] {
   ]
 }
 
+/**
+ * Step 6 (design §6.2 "Step 20"), one row per criterion with "(und n weitere)": 1 = only
+ * deleted references left, 2 = an indicator or mandatory figure without a plan row, 3 / 6 / 9 =
+ * a field missing (Zum Feld goes to the first empty one of the criterion's fields).
+ */
+function step6Judged(block: LooseBlock, project: Project): AppJudged[] {
+  const rows = (block.planRows as Item[]) ?? []
+  const more = (n: number) => (n > 1 ? ` (und ${n - 1} weitere)` : '')
+  type Finding = { note: string; target: FieldTarget }
+  const row = (criterion: string, found: Finding[], ok: string): AppJudged =>
+    found.length ? { criterion, result: 'warn', note: `${found[0].note}${more(found.length)}`, target: found[0].target } : { criterion, result: 'ok', note: ok }
+  const all = needsOf(project.steps[5].block as unknown as LooseBlock)
+  const name = (r: Item) => `Zeile ${rows.indexOf(r) + 1} ${rowName(all, r)}`
+  const at = (r: Item, field: string): FieldTarget => ({ collection: 'planRows', id: r.id, field })
+  const missing = (criterion: string, fields: PlanField[], text: string, ok: string) =>
+    row(
+      criterion,
+      rows.flatMap((r) => {
+        const first = fields.find((f) => isBlankField(r, f))
+        return first ? [{ note: `${text}: ${name(r)}`, target: at(r, first) }] : []
+      }),
+      ok,
+    )
+  const broken = rows.filter((r) => hasRefs(r) && !planRefsOf(all, r).some((ref) => ref.need)).map((r) => ({ note: `Verweis fehlt: ${name(r)}`, target: at(r, 'refs') }))
+  const open = coverage(project, rows).filter((c) => !c.rows.length)
+  const label = (text: string) => (text.trim() ? `„${cut(text, 50)}“` : 'ohne Text')
+  const uncovered = (kind: 'indicator' | 'figure') =>
+    open
+      .filter((c) => c.need.kind === kind)
+      .map((c) => ({ note: `${kind === 'indicator' ? 'Indikator' : 'Pflichtangabe'} ohne Planzeile: ${label(needText(c.need))}`, target: { collection: 'coverage', id: c.need.item.id, field: 'create' } }))
+  const indicators = uncovered('indicator')
+  const figures = uncovered('figure')
+  // One criterion, one line per kind ("Indikator" is masculine: "und 1 weiterer"); Zum Feld goes to the first.
+  const lines = [
+    indicators.length && `${indicators[0].note}${indicators.length === 2 ? ' (und 1 weiterer)' : more(indicators.length)}`,
+    figures.length && `${figures[0].note}${more(figures.length)}`,
+  ].filter(Boolean)
+  const coverageRow: AppJudged = lines.length
+    ? { criterion: '2', result: 'warn', note: lines.join('\n'), target: (indicators[0] ?? figures[0]).target }
+    : { criterion: '2', result: 'ok', note: 'Jeder Indikator und jede Pflichtangabe hat eine Planzeile.' }
+  return [
+    row('1', broken, 'Jede Planzeile gehört zu einem Indikator oder einer Pflichtangabe, die es gibt.'),
+    coverageRow,
+    missing('3', ['dataSource', 'method'], 'Datenquelle oder Methode fehlt', 'Jede Zeile hat Datenquelle und Methode.'),
+    missing('6', ['collector', 'frequency', 'firstCollection'], 'Wer, wann oder erster Termin fehlt', 'Jede Zeile hat eine erhebende Rolle, Zeitpunkte und einen ersten Termin.'),
+    missing('9', ['analysis'], 'Auswertung fehlt', 'Jede Zeile nennt, wer auswertet, wann und wofür.'),
+  ]
+}
+
 const chainItemsOf = (block: LooseBlock, goals: Item[]): Omit<ChainItems, 'marks'> => ({
   activities: (block.activities as Item[]) ?? [],
   outputs: (block.outputs as Item[]) ?? [],
@@ -222,13 +274,15 @@ export function cut(text: string, n: number): string {
  * The ⛔ issues of a step's block, in panel order. `groups` = step 1's target groups now
  * (steps 2–4 are judged per focus group), `problems` = step 2's core problems now (step 3:
  * a non-focus group's goals link to its core problem), `goals` = step 3's goals now (step 4's
- * links end there). Callers pass all three via `issueContext`.
+ * links end there), `needs` = step 5's indicators and figures (step 6 names its rows by them).
+ * Callers pass all four via `issueContext`.
  */
-export function hardIssues(step: StepId, block: LooseBlock, groups: Item[] = [], problems: Item[] = [], goals: Item[] = []): HardIssue[] {
+export function hardIssues(step: StepId, block: LooseBlock, groups: Item[] = [], problems: Item[] = [], goals: Item[] = [], needs: Need[] = []): HardIssue[] {
   if (step === 2) return step2Issues(block, groups)
   if (step === 4) return step4Issues(block, groups, goals)
   if (step === 3) return step3Issues(block, groups, problems)
   if (step === 5) return step5Issues(block)
+  if (step === 6) return step6Issues(block, needs)
   if (step !== 1) return []
   const ids = HARD_CRITERIA[1]!
   const issues: HardIssue[] = []
@@ -398,6 +452,22 @@ function step5Issues(block: LooseBlock): HardIssue[] {
   return issues
 }
 
+/**
+ * Step 6 (design §6.2 "Step 20"): criteria 1 (no reference ever set; a deleted one is the app's
+ * ⚠) and 10 (Why) as code, in row order. `needs` = step 5's indicators and figures (rowName).
+ */
+function step6Issues(block: LooseBlock, needs: Need[]): HardIssue[] {
+  const ids = HARD_CRITERIA[6]!
+  const rows = (block.planRows as Item[]) ?? []
+  const issues: HardIssue[] = []
+  rows.forEach((r, n) => {
+    const name = `Zeile ${n + 1} ${rowName(needs, r)}`
+    if (!hasRefs(r)) issues.push({ criterion: ids.link!, text: `Planzeile ohne Bezug: ${name}`, target: { collection: 'planRows', id: r.id, field: 'refs' } })
+    if (empty(r.why)) issues.push({ criterion: ids.why, text: `Warum fehlt: ${name}`, target: { collection: 'planRows', id: r.id, field: 'why' } })
+  })
+  return issues
+}
+
 /** One key per field, shared by the gate's rows and the block's ⛔ field markers. */
 export const fieldKey = (collection: string, id: string | undefined, field: FieldTarget['field']) => `${collection}:${id ?? ''}:${field}`
 export const issueKey = (issue: HardIssue) => fieldKey(issue.target.collection, issue.target.id, issue.target.field)
@@ -406,10 +476,11 @@ export const issueKey = (issue: HardIssue) => fieldKey(issue.target.collection, 
 export const groupsOf = (project: Project): Item[] => project.steps[1].block.targetGroups as Item[]
 
 /** What hardIssues and openWarnings need besides the block: `hardIssues(step, block, ...issueContext(project))`. */
-export const issueContext = (project: Project): [Item[], Item[], Item[]] => [
+export const issueContext = (project: Project): [Item[], Item[], Item[], Need[]] => [
   groupsOf(project),
   project.steps[2].block.problems as Item[],
   project.steps[3].block.goals as Item[],
+  needsOf(project.steps[5].block as unknown as LooseBlock),
 ]
 
 /** JSON with sorted keys, so two blocks compare by content, not by key order. */
@@ -434,8 +505,8 @@ export function checkCurrent(project: Project, step: StepId): boolean {
 }
 
 /** Criteria the assistant marked ⚠ and no hard rule blocks: what confirming stores as "trotzdem bestätigt". */
-export function openWarnings(step: StepId, check: QualityCheck, groups: Item[] = [], problems: Item[] = [], goals: Item[] = []): string[] {
-  const blocked = new Set(hardIssues(step, check.block as LooseBlock, groups, problems, goals).map((i) => i.criterion))
+export function openWarnings(step: StepId, check: QualityCheck, groups: Item[] = [], problems: Item[] = [], goals: Item[] = [], needs: Need[] = []): string[] {
+  const blocked = new Set(hardIssues(step, check.block as LooseBlock, groups, problems, goals, needs).map((i) => i.criterion))
   return check.results.filter((r) => r.result === 'warn' && !blocked.has(r.criterion)).map((r) => r.criterion)
 }
 

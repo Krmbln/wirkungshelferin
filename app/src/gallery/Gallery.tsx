@@ -32,6 +32,7 @@ import { step2Screens } from './step2Screens'
 import { step3Screens } from './step3Screens'
 import { step4Screens } from './step4Screens'
 import { step5Screens } from './step5Screens'
+import { step6Screens } from './step6Screens'
 import { InlineText } from '../ui/block/InlineText'
 import { ReferenceChip, UndoLine, WhyField } from '../ui/block/parts'
 import './Gallery.css'
@@ -184,6 +185,7 @@ export const screens: Record<string, { caption: string; render: () => ReactNode 
   ...step3Screens,
   ...step4Screens,
   ...step5Screens,
+  ...step6Screens,
   'setup-key-only': {
     caption: 'Einrichtung nach „Backup laden“ in einem neuen Chrome: nur der Schlüssel',
     render: () => <GallerySetup project={backedUp} />,

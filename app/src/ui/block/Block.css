@@ -499,7 +499,9 @@
   border-bottom-color: var(--line);
 }
 
-.bgroup__head[data-outlined] {
+.bgroup__head[data-outlined],
+.bprow__headline[data-outlined],
+.bcoverage .bsection__head[data-outlined] {
   box-shadow: inset 0 0 0 2px var(--accent);
   border-radius: var(--radius);
 }
@@ -1189,4 +1191,106 @@
 .borphans .bsection__head h4 {
   font: 600 13px/18px var(--font);
   color: var(--text-muted);
+}
+
+/* Step 6 (design §6.2 "Step 20"): the coverage list (a disclosure) and plan rows as disclosure records. */
+.bcoverage .bsection__head h3 {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bprow__headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  /* Room for the outline ring, so it never sits on the text. */
+  margin: 0 calc(-1 * var(--space-1));
+  padding: 0 var(--space-1);
+}
+
+.bpicker__meta {
+  white-space: nowrap;
+}
+
+.bprow__head {
+  margin: 0;
+}
+
+.bprow__refs {
+  margin-top: 0;
+}
+
+.bprow__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: 600 13px/18px var(--font);
+  cursor: pointer;
+}
+
+.bprow__toggle svg {
+  flex: none;
+}
+
+/* Closed: each reference at most two lines, so a closed record stays short and the name stays
+   readable at 960 px (full text in the title and once open; design check step 20). */
+.bprow--closed .bquestion__chips .refchip--level {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.bprow__summary {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-1) 0 0;
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.bprow__body {
+  padding-bottom: var(--space-2);
+}
+
+.bprow__norefs {
+  padding-bottom: 0;
+}
+
+.bprow__hint {
+  margin: 2px 0 0;
+  padding: 0;
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.bprow__baselines {
+  margin-bottom: var(--space-2);
+  list-style: none;
+}
+
+.bpicker__question {
+  min-inline-size: 0;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.bpicker__question legend {
+  padding: 0;
+  color: var(--text-muted);
+}
+
+.bpicker__question ul {
+  padding-left: var(--space-3);
+}
+
+/* Without anything from step 5 the heading is no disclosure: it keeps the chevron's place. */
+.bcoverage--none .bsection__head h3 {
+  padding-left: calc(16px + var(--space-2));
 }

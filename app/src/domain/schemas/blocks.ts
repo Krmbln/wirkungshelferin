@@ -119,6 +119,7 @@ const step5 = z.strictObject({
   mandatoryFigures: many({ name: text, target: text, unit: text.optional(), sourceNote: text.optional() }),
 })
 
+// Step 6 (design §6.2 "Step 20"): fields in the form's order, so cards list them the same way.
 const step6 = z.strictObject({
   planRows: many({
     indicatorIds: refs,
@@ -127,9 +128,9 @@ const step6 = z.strictObject({
     method: text,
     collector: text,
     frequency: text,
+    firstCollection: text,
     consentNote: text,
     analysis: text,
-    firstCollection: text,
   }),
 })
 

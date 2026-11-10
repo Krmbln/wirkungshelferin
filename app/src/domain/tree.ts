@@ -128,8 +128,10 @@ export function reattachChildren(list: Item[], restored: Item, moved: string[]):
 /**
  * The panel group an item (or a not yet created core problem "problem:tg1") sits in: its focus
  * group's id, "other" (non-focus groups) or "orphans"; undefined outside steps 2–4 lists.
+ * Step 6: a plan row is its own disclosure (design "Step 20"), so its key is its id.
  */
 export function panelGroupOf(project: Project, step: StepId, id: string): string | undefined {
+  if (step === 6) return (project.steps[6].block.planRows as Item[]).some((r) => r.id === id) ? id : undefined
   if (!NON_FOCUS_KEEPS[step]) return undefined
   let groupId = id.startsWith('problem:') ? id.slice('problem:'.length) : undefined
   if (!groupId) {

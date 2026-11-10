@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { panelGroupOf, panelKey } from '../domain/tree'
+import { COVERAGE_KEY, initialClosed } from '../domain/plan'
 import type { FieldTarget } from '../domain/check'
 import { chatEmpty, unanswered } from '../ai/chat'
 import { backupState } from '../domain/backup'
@@ -10,7 +11,7 @@ import type { StepId } from '../domain/types'
 import type { Drafts } from '../storage/drafts'
 import { defaultSettings, type Settings as SettingsValue } from '../storage/settings'
 import { stepIntro } from '../guide/intro'
-import { BlockPanel, type Applied } from './block/BlockPanel'
+import { BlockPanel, type Applied, type CollapsedChange } from './block/BlockPanel'
 import { Chat } from './chat/Chat'
 import { PDF_WAIT, usePdfImport, type PdfControls, type ReadPdf } from './chat/PdfImport'
 import type { PasteDraft } from './chat/StartPanel'
@@ -93,8 +94,13 @@ export function App({
   const [paste, setPaste] = useState<PasteState>({ open: false, draft: { label: '', text: '' } })
   // Step 0's confirm started step 1's first draft in this session: step 0 shows the hand-off.
   const [handoffStarted, setHandoffStarted] = useState(false)
-  // Collapsed groups of steps 2–4: screen state, kept per step while the app is open.
+  // Collapsed groups of steps 2–4 (step 6: closed rows and coverage list): screen state, kept per step while the app is open.
   const [collapsed, setCollapsed] = useState<Partial<Record<StepId, string[]>>>({})
+  // Step 6 starts with more than two rows closed (design "Step 20"); stored on first view, so rows added later start open.
+  const step6Shown = view.kind === 'step' && view.step === 6
+  useEffect(() => {
+    if (step6Shown && !collapsed[6]) setCollapsed((c) => ({ ...c, 6: initialClosed(project) }))
+  }, [step6Shown])
   // Here too, so a PDF being read survives a step switch (design §6.2, step 15).
   const pdf = usePdfImport(
     readPdf,
@@ -187,8 +193,14 @@ export function App({
             handoffStarted={handoffStarted}
             onHandoffStarted={() => setHandoffStarted(true)}
             onOpenStep={(step) => setView({ kind: 'step', step })}
-            collapsed={collapsed[view.step] ?? []}
-            onCollapsedChange={(keys) => setCollapsed((c) => ({ ...c, [view.step]: keys }))}
+            collapsed={collapsed[view.step] ?? (view.step === 6 ? initialClosed(project) : [])}
+            onCollapsedChange={(change) =>
+              setCollapsed((c) => {
+                const step = view.step
+                const now = c[step] ?? (step === 6 ? initialClosed(project) : [])
+                return { ...c, [step]: typeof change === 'function' ? change(now) : change }
+              })
+            }
           />
         )}
         {view.kind === 'settings' && (
@@ -227,7 +239,7 @@ type StepViewProps = {
   onHandoffStarted: () => void
   onOpenStep: (step: StepId) => void
   collapsed: string[]
-  onCollapsedChange: (keys: string[]) => void
+  onCollapsedChange: (change: CollapsedChange) => void
 }
 
 type PasteState = { open: boolean; draft: PasteDraft; note?: string }
@@ -284,8 +296,9 @@ function StepView({
   /** "Zum Feld" (or "Zu Schritt 1" when the fix lies there); a collapsed group opens first. */
   function goToField(target: FieldTarget) {
     if (target.step !== undefined && target.step !== step) return onOpenStep(target.step)
-    const group = target.group ? panelKey(project, target.group) : target.id ? panelGroupOf(project, step, target.id) : undefined
-    if (group && collapsed.includes(group)) flushSync(() => onCollapsedChange(collapsed.filter((k) => k !== group)))
+    const group =
+      target.collection === 'coverage' ? COVERAGE_KEY : target.group ? panelKey(project, target.group) : target.id ? panelGroupOf(project, step, target.id) : undefined
+    if (group && collapsed.includes(group)) flushSync(() => onCollapsedChange((keys) => keys.filter((k) => k !== group)))
     focusField(target)
   }
 
@@ -301,22 +314,20 @@ function StepView({
     <StepWorkspace
       step={steps[step]}
       check={
-        step <= 5 ? (
-          <QualityGate
-            project={project}
-            step={step}
-            now={now}
-            model={model}
-            run={check.runs[step]}
-            chatBusy={!!chat.runs[step] && chat.runs[step]?.kind !== 'failed'}
-            onCheck={() => check.check(step)}
-            onConfirm={confirm}
-            handoff={handoff}
-            onGoToField={goToField}
-            onSaveBackup={onSaveBackup}
-            onOpenSettings={onOpenSettings}
-          />
-        ) : undefined
+        <QualityGate
+          project={project}
+          step={step}
+          now={now}
+          model={model}
+          run={check.runs[step]}
+          chatBusy={!!chat.runs[step] && chat.runs[step]?.kind !== 'failed'}
+          onCheck={() => check.check(step)}
+          onConfirm={confirm}
+          handoff={handoff}
+          onGoToField={goToField}
+          onSaveBackup={onSaveBackup}
+          onOpenSettings={onOpenSettings}
+        />
       }
       block={
         <BlockPanel

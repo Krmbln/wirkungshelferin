@@ -3,6 +3,7 @@ import { endOf } from '../../domain/chain'
 import { cut } from '../../domain/check'
 import { canUndo, changeView, type ChangeView, type StaleReason } from '../../domain/proposals'
 import { INDICATOR_MAX, PER_QUESTION_MAX, QUESTION_MAX, indicatorsOf, type Full } from '../../domain/focus'
+import { summaryFacts } from '../../domain/plan'
 import { collectionMeta, type Item } from '../../domain/schemas/blocks'
 import type { Project, Proposal, ProposalChange } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
@@ -10,7 +11,7 @@ import type { ChipKind } from '../components/Chip'
 import { FORM_LABELS, FORMS, formEmpty, isBlank, isOffen, type FormName } from '../../domain/profile'
 
 // What a proposal row says (design §6.2 "Proposal card"). Pure, so the wording is tested
-// without rendering. Field labels for steps 2–6 follow with their blocks (steps 16–20).
+// without rendering. Field labels for steps 2–6 came with their blocks (steps 16–20).
 
 type FieldInfo = {
   label: string
@@ -176,7 +177,25 @@ const info: { [S in StepId]: Record<string, CollectionInfo> } = {
       fields: { name: { label: 'Pflichtangabe' }, target: { label: 'Soll-Wert', ref: true }, unit: { label: 'Einheit', ref: true }, sourceNote: { label: 'Festlegung' } },
     },
   },
-  6: { planRows: { noun: 'Erhebung', main: 'method' } },
+  // Step 6 (design "Step 20"): never a row number; a row is named by what it covers.
+  6: {
+    planRows: {
+      noun: 'Planzeile',
+      main: '',
+      fields: {
+        indicatorIds: { label: 'für', ref: true },
+        mandatoryFigureIds: { label: 'für', ref: true },
+        dataSource: { label: 'Datenquelle', ref: true },
+        method: { label: 'Methode und Instrument', ref: true },
+        collector: { label: 'Wer erhebt', ref: true },
+        frequency: { label: 'Wann und wie oft', ref: true },
+        firstCollection: { label: 'Erster Termin' },
+        consentNote: { label: 'Einwilligung und Datenschutz' },
+        analysis: { label: 'Auswertung und Nutzung' },
+        why,
+      },
+    },
+  },
 }
 
 function collectionInfo(step: StepId, collection: string): CollectionInfo {
@@ -260,7 +279,12 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     }
     const under = parentText(project, step, proposal, change.collection, fields.parentId)
     if (under) meta.push(`unter „${cut(under, 40)}“`)
-    const goal = { ...goalText(project, step, change.collection, fields), ...chainText(project, step, proposal, change.collection, fields), ...focusText(project, step, proposal, change.collection, fields) }
+    const goal = {
+      ...goalText(project, step, change.collection, fields),
+      ...chainText(project, step, proposal, change.collection, fields),
+      ...focusText(project, step, proposal, change.collection, fields),
+      ...planText(project, step, fields),
+    }
     // A link's "weil … · Annahme" comes before its evidence and mark (design "Step 18").
     if (goal.meta) (change.collection === 'links' ? meta.unshift(goal.meta) : meta.push(goal.meta))
     return {
@@ -287,6 +311,7 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     ...goalText(project, step, change.collection, before ?? {}),
     ...chainText(project, step, proposal, change.collection, before ?? {}),
     ...focusText(project, step, proposal, change.collection, before ?? {}),
+    ...planText(project, step, before ?? {}),
   }
   // A singleton named by its own text (Stufe 7): its ÄNDERN line already shows old and new, so
   // no name line repeating the old one (design check step 17).
@@ -296,16 +321,21 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     const text = parentText(project, step, proposal, change.collection, id)
     return text ? `unter „${cut(text, 40)}“` : change.collection === 'causes' ? 'direkte Ursache' : 'direkte Folge'
   }
+  // Step 6: the same for what a plan row covers (indicators and mandatory figures, one "für" line).
+  const covers = (item: Record<string, unknown> | undefined, over: Record<string, unknown> = {}) =>
+    coversText(project, over.indicatorIds ?? item?.indicatorIds, over.mandatoryFigureIds ?? item?.mandatoryFigureIds)
   // Step 5: links and goals a question tests are one "Prüft" line, whichever of the two changed.
   const tests = (item: Record<string, unknown> | undefined, over: Record<string, unknown> = {}) =>
     refsText(project, proposal, over.linkIds ?? item?.linkIds, over.goalIds ?? item?.goalIds)
   const lines =
     change.op === 'update'
       ? Object.entries(fields)
-          .filter(([field]) => field !== 'groupId' && !(field === 'goalIds' && 'linkIds' in fields))
+          .filter(([field]) => field !== 'groupId' && !(field === 'goalIds' && 'linkIds' in fields) && !(field === 'mandatoryFigureIds' && 'indicatorIds' in fields))
           .map(([field, value]) =>
             field === 'linkIds' || field === 'goalIds'
               ? { label: 'Prüft', before: tests(before), after: tests(before, fields) || '(leer)' }
+              : field === 'indicatorIds' || field === 'mandatoryFigureIds'
+                ? { label: 'für', before: covers(before), after: covers(before, fields) || '(leer)' }
               : field === 'focusQuestionId'
                 ? { label: 'Frage', before: questionText(project, proposal, before?.focusQuestionId), after: questionText(project, proposal, value) }
                 : field === 'parentId'
@@ -380,6 +410,33 @@ function focusText(project: Project, step: StepId, proposal: Proposal, collectio
   }
   if (collection === 'mandatoryFigures') return { meta: join([fields.target && `Soll: ${cut(fields.target as string, 40)}`, fields.unit && cut(fields.unit as string, 40)]) }
   return {}
+}
+
+/** Step 6 rows (design "Step 20"): named by what they cover, meta = the summary line's four facts. */
+function planText(project: Project, step: StepId, fields: Record<string, unknown>): { main?: string; meta?: string } {
+  if (step !== 6) return {}
+  const covers = coversText(project, fields.indicatorIds, fields.mandatoryFigureIds, 2)
+  const facts = summaryFacts(fields as Item)
+  return { main: covers ? `für ${covers}` : 'ohne Bezug', meta: facts.join(' · ') || undefined }
+}
+
+/** What a plan row covers in words: „indicator“ and Pflichtangabe „…“; a deleted one is "Verweis fehlt". */
+function coversText(project: Project, indicatorIds: unknown, figureIds: unknown, max = Infinity): string {
+  const block = project.steps[5].block
+  const ids = (value: unknown) => (Array.isArray(value) ? value : []) as string[]
+  const names = [
+    ...ids(indicatorIds).map((id) => {
+      const item = (block.indicators as Item[]).find((i) => i.id === id)
+      return item ? `„${cut((item.text as string) || 'ohne Text', 40)}“` : 'Verweis fehlt'
+    }),
+    ...ids(figureIds).map((id) => {
+      const item = (block.mandatoryFigures as Item[]).find((f) => f.id === id)
+      return item ? `Pflichtangabe „${cut((item.name as string) || 'ohne Namen', 40)}“` : 'Verweis fehlt'
+    }),
+  ]
+  if (names.length === 2 && max >= 2) return names.join(' und ')
+  const shown = names.slice(0, max).join(', ')
+  return names.length > max ? `${shown} + ${names.length - max} weitere` : shown
 }
 
 /** "zu „Wie oft …“" — a question by its text, never its number; one this proposal creates is "zu neuer Frage". */
