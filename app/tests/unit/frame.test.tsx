@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { makeProject, makeProjectWithStatuses } from '../../src/domain/fixtures'
+import { FIXTURE_TIME, makeProject, makeProjectWithStatuses } from '../../src/domain/fixtures'
 import { App } from '../../src/ui/App'
 import { guideFiles } from '../../src/guide'
 import { guideTitle, recommendedStep, statusesOf, steps } from '../../src/ui/steps'
@@ -126,7 +126,8 @@ describe('status icons', () => {
 describe('keyboard', () => {
   it('Tab follows reading order: sidebar, then the page', async () => {
     const user = userEvent.setup()
-    render(<App project={fresh} />)
+    // Clock pinned: more than 7 days after the fixture's creation the backup reminder adds a button.
+    render(<App project={fresh} now={new Date(FIXTURE_TIME)} />)
     const names: string[] = []
     for (let i = 0; i < 11; i++) {
       await user.tab()
