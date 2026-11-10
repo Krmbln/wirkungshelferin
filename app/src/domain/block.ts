@@ -52,9 +52,10 @@ export function newItem(step: StepId, collection: string, id: string, fields: Re
 
 /**
  * Where an item sits, not what it says: a row added by hand under a group, a parent or at a level
- * (steps 2–4) gets these at once, and is still empty (step 17; step 16's rows never went again).
+ * (steps 2–4), or under a question (step 5 indicators) gets these at once, and is still empty
+ * (step 17; step 16's rows never went again).
  */
-const PLACEMENT = new Set(['groupId', 'parentId', 'level'])
+const PLACEMENT = new Set(['groupId', 'parentId', 'level', 'focusQuestionId'])
 
 /** True if no field holds anything beyond its empty value (the Why included); placement doesn't count. */
 export function isEmptyItem(step: StepId, collection: string, item: Item): boolean {

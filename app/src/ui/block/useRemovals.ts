@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Action } from '../../domain/reducer'
+import type { Dependent } from '../../domain/focus'
 import type { Item } from '../../domain/schemas/blocks'
 
 // The 10-second "Rückgängig" after a removal (design §7.6). Screen state only: a reload or
@@ -21,6 +22,11 @@ export type Removal = {
   slot?: number
   /** Said after "„…“ entfernt." */
   note?: string
+  /** Step 5: a question's indicators went with it; the undo brings them back. */
+  dependents?: Dependent[]
+  /** Between the label and "entfernt." ("und 2 Indikatoren"); `quoted: false` for a label that is no item text. */
+  suffix?: string
+  quoted?: boolean
 }
 
 export function useRemovals(onExpire?: (removal: Removal) => void) {

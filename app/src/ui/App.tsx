@@ -301,7 +301,7 @@ function StepView({
     <StepWorkspace
       step={steps[step]}
       check={
-        step <= 4 ? (
+        step <= 5 ? (
           <QualityGate
             project={project}
             step={step}

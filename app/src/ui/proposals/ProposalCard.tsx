@@ -5,7 +5,7 @@ import type { StepId } from '../../domain/types'
 import { Button } from '../components/Button'
 import { Chip, chipLabels } from '../components/Chip'
 import { Icon } from '../components/Icon'
-import { blockedText, openCount, proposalRows, staleText, targetItemId, type FieldLine, type Row } from './describe'
+import { blockedText, limitText, openCount, proposalRows, staleText, targetItemId, type FieldLine, type Row } from './describe'
 import { highlight, scrollIntoView } from './highlight'
 import './ProposalCard.css'
 
@@ -235,7 +235,7 @@ function ProposalRow({ project, step, proposal, row, onApply, onReject, onUndo, 
               variant="secondary"
               className="prow__apply"
               aria-label={`Übernehmen: ${what}`}
-              disabledReason={view.kind === 'blocked' ? blockedText(project, step, proposal, view.needs) : undefined}
+              disabledReason={view.kind === 'blocked' ? ('full' in view ? limitText(project, proposal, change, view.full) : blockedText(project, step, proposal, view.needs)) : undefined}
               onClick={onApply}
             >
               Übernehmen

@@ -95,10 +95,15 @@ const step4 = z.strictObject({
   sideEffects: many({ text, affectedGroup: text, direction: z.enum(['negative', 'positive']) }),
 })
 
+// Step 5 (design §6.2 "Step 19"): a question has one or more reasons (guide §1); one baseline
+// field holds a value, a plan for one, "ab jetzt" or "entfällt, weil …". Candidates (critical,
+// weakly supported step 4 links) are derived, only their deferrals are stored.
+export const FOCUS_REASONS = ['geldgeberin', 'eigenes_lernen', 'kritische_annahme'] as const
+
 const step5 = z.strictObject({
   focusQuestions: many({
     text,
-    reason: z.enum(['geldgeberin', 'eigenes_lernen', 'kritische_annahme']),
+    reasons: z.array(z.enum(FOCUS_REASONS)),
     audience: text,
     linkIds: refs,
     goalIds: refs,
@@ -109,9 +114,7 @@ const step5 = z.strictObject({
     level: z.literal([1, 2, 3, 4, 5, 6, 7]),
     focusQuestionId: ref,
     baseline: text,
-    baselinePlan: text.optional(),
     target: text,
-    rubricNote: text.optional(),
   }),
   mandatoryFigures: many({ name: text, target: text, unit: text.optional(), sourceNote: text.optional() }),
 })

@@ -32,6 +32,8 @@ Run: 2026-11-09 20:46 UTC · model claude-opus-5-5 · effort medium
 | ✓ | Step 3: gap in step 2 → "[Zu Schritt 2](#schritt-2)" in the text | link: Anders wäre es, wenn das Gefühl von Sicherheit etwas ist, das den Jugendlichen auch **außerhalb** der Werkstatt fehlt. E; proposal: no |
 | ✓ | Step 4: chain proposal valid (own group, upwards, ends at goals), text + question first, no ids | 17 changes; 5 outputs; links ac1→ou1 ac3→ou2 ou1→ou3 ou2→ou3 ou3→ou4 ou3→ou5 ou4→go1 go1→go2! ou5→go2 go2→go3!; text 1724 chars; question: Im Projektprofil stehen auch „kleine Touren in die Umgebung“: Finden die noch statt? Sie k |
 | ✓ | Step 4: factors (groupId "" or tg1) and side effects with direction, text first | 3 factors (alle, alle, tg1; bus named: true); 3 side effects (negative, negative, positive); no text; question: Wer könnte nicht profitieren oder sogar Nachteile haben, zum Beispiel weil er nachmittags  |
+| ✓ | Step 5 opening: li1 decided, figures with targets, no figure as an indicator, no ids | 3 changes; li1 deferred ("Ob die Ehrenamtlichen bleiben, merkt das Team sofort ohne Me"); 0 questions, 0 indicators; figures Teilnehmende nach Geschlecht (Pflichtangabe Geldgeberin)=im Schnitt 15 pro Nachmittag (Schätzung aus der Projektskizze); Anzahl offener Werkstatttage (Pflichtangabe Geldgeberin)=rund 40 pro Halbjahr (2 pro Woche, ohne Schulferien; Schätzung); text 1275 chars; question: Zählen die 15 pro Nachmittag Besuche oder verschiedene Jugendliche, und weißt du schon, we |
+| ✓ | Step 5 follow-up: 1–2 indicators per question, baseline + target, question field filled | 2 indicators (2 per question; levels 4,5); no text; question: Was würdet ihr anders machen, wenn sich zeigt, dass kaum jemand das Rad zu Hause selbst re |
 
 - Shape A `system-between` ([user: tool_results] → [system: events] → [user: text]): refused ({"type":"error","error":{"type":"invalid_request_error","message":"messages.3: role 'system' must precede an 'assistant' message or end the array; the directive-only form (content: [] with output_conf)
 - Shape B `system-after` ([user: tool_results + text] → [system: events]): accepted
@@ -41,3 +43,5 @@ Run: 2026-11-09 20:46 UTC · model claude-opus-5-5 · effort medium
 - Cache reads per turn: 0 → 23481 → 26072 → 26129 tokens
 
 Usage: 31 calls · input 3525 · output 45131 · cache read 339571 · cache write 1 h 166586 / 5 min 5469 · **≈ $2.34**
+
+Added 2026-11-10 (step 19, run alone with `-t "9 · step 5"`): the two step 5 rows above · 2 calls · **≈ $0.19** (a first run, ≈ $0.27, failed on a fixture whose step 0 snapshot didn't carry the figures).

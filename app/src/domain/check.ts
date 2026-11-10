@@ -5,6 +5,7 @@ import type { Project, QualityCheck } from './schemas/project'
 import type { StepId } from './types'
 import { CRITICAL_MAX, chainOf, criticalLinks, endOf, linkState, type ChainItems } from './chain'
 import { GOAL_LEVELS, treeOf } from './tree'
+import { INDICATOR_MAX, PER_QUESTION_MAX, QUESTION_MAX, candidates, decisionOf, indicatorsOf, orphanIndicators, questionsOf, refsOf } from './focus'
 
 // Hard blocks (⛔) as code (tech design §7.2, PRD F4): exactly the PRD's three kinds — a
 // missing Why, a step's number limits, mandatory links. Everything else is ⚠ and comes from
@@ -27,12 +28,16 @@ export type HardIssue = {
 
 /** Which rubric criterion each kind of hard rule checks, per step (ids from the guide's rubric). */
 export const HARD_CRITERIA: Partial<
-  Record<StepId, { why: string; focus?: string; levels?: string; link?: string; level7?: string; nonFocus?: string; because?: string; assumption?: string }>
+  Record<
+    StepId,
+    { why: string; focus?: string; levels?: string; link?: string; level7?: string; nonFocus?: string; because?: string; assumption?: string; indicators?: string; orphan?: string }
+  >
 > = {
   1: { why: '8', focus: '5' },
   2: { why: '9' },
   3: { why: '10', levels: '4', link: '5', level7: '8', nonFocus: '9' },
   4: { why: '11', because: '4', assumption: '5', focus: '1' },
+  5: { why: '13', focus: '1', link: '2', indicators: '5', orphan: '6' },
 }
 
 /**
@@ -56,6 +61,7 @@ export type AppJudged = { criterion: string; result: 'ok' | 'warn'; note: string
 export function appJudged(step: StepId, block: LooseBlock, project?: Project): AppJudged[] {
   if (step === 3) return project ? step3Judged(block, project) : []
   if (step === 4) return project ? step4Judged(block, project) : []
+  if (step === 5) return project ? step5Judged(block, project) : []
   if (step !== 0) return []
   const leer = leerFields(block)
   if (!leer.length) return [{ criterion: '1', result: 'ok', note: 'Jedes Feld ist ausgefüllt oder offen.' }]
@@ -95,7 +101,7 @@ function step3Judged(block: LooseBlock, project: Project): AppJudged[] {
 
 /** Criteria Claude may leave out because the app owns them (hard rules and app-judged ones). */
 export function appOwned(step: StepId): string[] {
-  const appIds: Partial<Record<StepId, string[]>> = { 0: ['1'], 3: ['5', '6'], 4: ['6'] }
+  const appIds: Partial<Record<StepId, string[]>> = { 0: ['1'], 3: ['5', '6'], 4: ['6'], 5: ['2', '3', '11', '12'] }
   const shared = SHARED[step] ?? []
   return [...new Set([...Object.values(HARD_CRITERIA[step] ?? {}), ...(appIds[step] ?? [])])].filter((id) => !shared.includes(id))
 }
@@ -146,6 +152,47 @@ function step4Judged(block: LooseBlock, project: Project): AppJudged[] {
   ]
 }
 
+/**
+ * Step 5 (design §6.2 "Step 19"), one row per criterion with "(und n weitere)": 2 = a deleted
+ * reference, 3 = Grund or Für wen missing, 11/12 = baseline / target missing; 4 is judged by
+ * both: the app finds undecided candidates and deferrals without a reason, Claude the
+ * learning wishes from step 0.
+ */
+function step5Judged(block: LooseBlock, project: Project): AppJudged[] {
+  const questions = questionsOf(block)
+  const qName = (q: Item) => `Frage ${questions.indexOf(q) + 1} ${(q.text as string) ? `„${cut(q.text as string, 50)}“` : 'ohne Text'}`
+  const inPanel = [...questions.flatMap((q) => indicatorsOf(block, q.id)), ...orphanIndicators(block)]
+  const iName = (i: Item) => `Indikator ${(i.text as string) ? `„${cut(i.text as string, 50)}“` : 'ohne Text'}`
+  const more = (n: number) => (n > 1 ? ` (und ${n - 1} weitere)` : '')
+  type Finding = { note: string; target: FieldTarget }
+  const row = (criterion: string, found: Finding[], ok: string): AppJudged =>
+    found.length ? { criterion, result: 'warn', note: `${found[0].note}${more(found.length)}`, target: found[0].target } : { criterion, result: 'ok', note: ok }
+  const q = (item: Item, field: string): FieldTarget => ({ collection: 'focusQuestions', id: item.id, field })
+  const ind = (item: Item, field: string): FieldTarget => ({ collection: 'indicators', id: item.id, field })
+
+  const broken = questions.filter((x) => refsOf(project, x).some((r) => !r.item)).map((x) => ({ note: `Verweis fehlt: ${qName(x)}`, target: q(x, 'refs') }))
+  const incomplete = questions.flatMap((x) => [
+    ...(!(x.reasons as string[]).length ? [{ note: `Grund fehlt: ${qName(x)}`, target: q(x, 'reasons') }] : []),
+    ...(empty(x.audience as string) ? [{ note: `Für wen fehlt: ${qName(x)}`, target: q(x, 'audience') }] : []),
+  ])
+  const label = (link: Item) => ((link.assumption as string) ? `„${cut(link.assumption as string, 50)}“` : linkLabel({ ...chainItemsOf(project.steps[4].block as unknown as LooseBlock, project.steps[3].block.goals as Item[]), marks: [] }, link))
+  const undecided = candidates(project).flatMap(({ link }) => {
+    const d = decisionOf(block, link.id)
+    if (d.kind === 'open') return [{ open: true, note: `Kandidat noch offen: ${label(link)}`, target: { collection: 'candidates', id: link.id, field: 'decide' } }]
+    if (d.kind === 'deferred' && empty(d.deferral.reason as string)) return [{ open: false, note: `Zurückgestellt ohne Grund: ${label(link)}`, target: { collection: 'deferredCandidates', id: d.deferral.id, field: 'reason' } }]
+    return []
+  })
+  // Open candidates first: deciding comes before writing the reason.
+  undecided.sort((a, b) => Number(b.open) - Number(a.open))
+  return [
+    row('2', broken, 'Jede Lernfrage prüft eine Verbindung oder ein Ziel, das es gibt.'),
+    row('3', incomplete, 'Jede Lernfrage hat Grund und Empfänger.'),
+    { ...row('4', undecided, ''), merge: true },
+    row('11', inPanel.filter((i) => empty(i.baseline as string)).map((i) => ({ note: `Ausgangswert fehlt: ${iName(i)}`, target: ind(i, 'baseline') })), 'Jeder Indikator hat einen Ausgangswert oder einen Plan dafür.'),
+    row('12', inPanel.filter((i) => empty(i.target as string)).map((i) => ({ note: `Zielwert fehlt: ${iName(i)}`, target: ind(i, 'target') })), 'Jeder Indikator hat einen Zielwert oder eine Schwelle.'),
+  ]
+}
+
 const chainItemsOf = (block: LooseBlock, goals: Item[]): Omit<ChainItems, 'marks'> => ({
   activities: (block.activities as Item[]) ?? [],
   outputs: (block.outputs as Item[]) ?? [],
@@ -181,6 +228,7 @@ export function hardIssues(step: StepId, block: LooseBlock, groups: Item[] = [],
   if (step === 2) return step2Issues(block, groups)
   if (step === 4) return step4Issues(block, groups, goals)
   if (step === 3) return step3Issues(block, groups, problems)
+  if (step === 5) return step5Issues(block)
   if (step !== 1) return []
   const ids = HARD_CRITERIA[1]!
   const issues: HardIssue[] = []
@@ -316,6 +364,36 @@ function step4Issues(block: LooseBlock, groups: Item[], goals: Item[]): HardIssu
       if (empty(l.because as string)) issues.push({ criterion: ids.because!, text: `„weil“ fehlt: ${linkLabel(items, l)} · ${name}`, target: target('because') })
       if (empty(l.assumption as string)) issues.push({ criterion: ids.assumption!, text: `Annahme fehlt: ${linkLabel(items, l)} · ${name}`, target: target('assumption') })
     }
+  }
+  return issues
+}
+
+/** Step 5 (design §6.2 "Step 19"): criteria 1, 2, 5, 6 and 13 as code, in panel order. */
+function step5Issues(block: LooseBlock): HardIssue[] {
+  const ids = HARD_CRITERIA[5]!
+  const questions = questionsOf(block)
+  const issues: HardIssue[] = []
+  const text = (i: Item) => ((i.text as string) ? `„${cut(i.text as string, 50)}“` : 'ohne Text')
+  const target = (collection: string, i: Item, field: string): FieldTarget => ({ collection, id: i.id, field })
+  if (!questions.length) issues.push({ criterion: ids.focus!, text: 'Noch keine Lernfrage', target: { collection: 'focusQuestions', field: 'add' } })
+  if (questions.length > QUESTION_MAX)
+    issues.push({ criterion: ids.focus!, text: `${questions.length} Lernfragen – höchstens ${QUESTION_MAX}`, target: target('focusQuestions', questions[QUESTION_MAX], 'text') })
+  questions.forEach((q, n) => {
+    const name = `Frage ${n + 1} ${text(q)}`
+    const own = indicatorsOf(block, q.id)
+    if (!(q.linkIds as string[]).length && !(q.goalIds as string[]).length) issues.push({ criterion: ids.link!, text: `Lernfrage ohne Bezug: ${name}`, target: target('focusQuestions', q, 'refs') })
+    if (empty(q.why)) issues.push({ criterion: ids.why, text: `Warum fehlt: ${name}`, target: target('focusQuestions', q, 'why') })
+    if (!own.length) issues.push({ criterion: ids.indicators!, text: `${name} hat keinen Indikator`, target: { collection: 'indicators', id: q.id, field: 'add' } })
+    if (own.length > PER_QUESTION_MAX)
+      issues.push({ criterion: ids.indicators!, text: `${own.length} Indikatoren bei ${name} – höchstens ${PER_QUESTION_MAX}`, target: target('indicators', own[PER_QUESTION_MAX], 'text') })
+    for (const i of own) if (empty(i.why)) issues.push({ criterion: ids.why, text: `Warum fehlt: Indikator ${text(i)}`, target: target('indicators', i, 'why') })
+  })
+  const orphans = orphanIndicators(block)
+  const all = [...questions.flatMap((q) => indicatorsOf(block, q.id)), ...orphans]
+  if (all.length > INDICATOR_MAX) issues.push({ criterion: ids.indicators!, text: `${all.length} Indikatoren – höchstens ${INDICATOR_MAX}`, target: target('indicators', all[INDICATOR_MAX], 'text') })
+  for (const i of orphans) {
+    issues.push({ criterion: ids.orphan!, text: `Indikator ohne Lernfrage: ${text(i)}`, target: target('indicators', i, 'text') })
+    if (empty(i.why)) issues.push({ criterion: ids.why, text: `Warum fehlt: Indikator ${text(i)}`, target: target('indicators', i, 'why') })
   }
   return issues
 }

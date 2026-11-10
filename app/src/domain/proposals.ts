@@ -1,5 +1,6 @@
 import { existedBefore, findItem, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
 import { collectionMeta, type Item } from './schemas/blocks'
+import { fullFor, removeDependents, restoreDependents, type Dependent, type Full } from './focus'
 import { detachChildren, isHidden, isTree, reattachChildren, targetGroups } from './tree'
 import { TEMP_ID, type Project, type Proposal, type ProposalChange } from './schemas/project'
 import type { StepId } from './types'
@@ -19,6 +20,7 @@ export type StaleReason =
 export type ChangeView =
   | { kind: 'open' }
   | { kind: 'blocked'; needs: string } // id of the change that must be applied first (creates an item, or removes one in the way)
+  | { kind: 'blocked'; full: Full } // step 5: one more question or indicator doesn't fit now (Lukas added some by hand since)
   | { kind: 'stale'; reason: StaleReason }
   | { kind: 'applied' }
   | { kind: 'rejected' }
@@ -108,8 +110,10 @@ function view(project: Project, step: StepId, proposal: Proposal, change: Propos
 
   if (change.op === 'add') {
     if (isHidden(targetGroups(project), step, change.collection, fields)) return { kind: 'stale', reason: 'hidden' }
-    const clash = levelClash(project, step, proposal, change, fields)
+    const clash = levelClash(project, step, proposal, change, fields) ?? deferralClash(project, step, proposal, change, fields)
     if (clash) return clash
+    const full = step === 5 ? fullFor(block, change.collection, fields.focusQuestionId as string | undefined) : undefined
+    if (full) return { kind: 'blocked', full }
     // Validate with a placeholder id; the real one is handed out on apply.
     return newItem(step, change.collection, `${meta.prefix}0`, fields, false) ? { kind: 'open' } : { kind: 'stale', reason: 'invalid' }
   }
@@ -121,8 +125,13 @@ function view(project: Project, step: StepId, proposal: Proposal, change: Propos
   }
   if (isHidden(targetGroups(project), step, change.collection, { ...found.item, ...fields })) return { kind: 'stale', reason: 'hidden' }
   if (found.item.rev !== expectedRev(proposal, change, target, map)) return { kind: 'stale', reason: 'edited' }
-  const clash = change.op === 'update' ? levelClash(project, step, proposal, change, { ...found.item, ...fields }) : undefined
+  const clash =
+    change.op === 'update' ? (levelClash(project, step, proposal, change, { ...found.item, ...fields }) ?? deferralClash(project, step, proposal, change, { ...found.item, ...fields })) : undefined
   if (clash) return clash
+  // Moving an indicator to another question must fit there too.
+  const moved = step === 5 && change.op === 'update' && change.collection === 'indicators' && fields.focusQuestionId !== undefined && fields.focusQuestionId !== found.item.focusQuestionId
+  const full = moved ? fullFor(block, 'indicators', fields.focusQuestionId as string, found.item.id) : undefined
+  if (full === 'perQuestion') return { kind: 'blocked', full }
   if (change.op === 'update' && !validItem(step, change.collection, { ...found.item, ...fields })) {
     return { kind: 'stale', reason: 'invalid' }
   }
@@ -147,6 +156,21 @@ function levelClash(project: Project, step: StepId, proposal: Proposal, change: 
   for (const blocker of inWay) {
     const removal = proposal.changes.find((c) => c.op === 'remove' && c.collection === other && c.targetId === blocker.id && c.state !== 'applied')
     // A removal never runs levelClash itself, so this can't loop.
+    if (!removal || changeView(project, step, proposal.id, removal.id).kind !== 'open') return { kind: 'stale', reason: 'invalid' }
+    return { kind: 'blocked', needs: removal.id }
+  }
+  return undefined
+}
+
+/**
+ * Step 5: a candidate is tested by a question or deferred, never both (design "Step 19"). A
+ * question that tests a deferred link waits for the deferral's removal in the same proposal.
+ */
+function deferralClash(project: Project, step: StepId, proposal: Proposal, change: ProposalChange, item: Record<string, unknown>): ChangeView | undefined {
+  if (step !== 5 || change.collection !== 'focusQuestions' || !Array.isArray(item.linkIds)) return undefined
+  const inWay = project.steps[5].block.deferredCandidates.filter((d) => (item.linkIds as string[]).includes(d.linkId))
+  for (const blocker of inWay) {
+    const removal = proposal.changes.find((c) => c.op === 'remove' && c.collection === 'deferredCandidates' && c.targetId === blocker.id && c.state !== 'applied')
     if (!removal || changeView(project, step, proposal.id, removal.id).kind !== 'open') return { kind: 'stale', reason: 'invalid' }
     return { kind: 'blocked', needs: removal.id }
   }
@@ -190,7 +214,8 @@ export function applyChange(project: Project, step: StepId, proposalId: string, 
       const list = block[change.collection] as Item[]
       list.splice(index, 1)
       const children = isTree(step, change.collection) ? detachChildren(list, item) : []
-      change.undo = { before: item, index, afterRev: item.rev, ...(children.length ? { children } : {}) }
+      const dependents = removeDependents(step, block, change.collection, item)
+      change.undo = { before: item, index, afterRev: item.rev, ...(children.length ? { children } : {}), ...(dependents.length ? { dependents } : {}) }
     }
   }
   change.state = 'applied'
@@ -264,6 +289,7 @@ export function undoChange(project: Project, step: StepId, proposalId: string, c
       const list = block[change.collection] as Item[]
       list.splice(Math.min(index, list.length), 0, before as Item)
       if (change.undo!.children) reattachChildren(list, before as Item, change.undo!.children)
+      if (change.undo!.dependents) restoreDependents(block, change.undo!.dependents as Dependent[])
     }
     delete change.undo
   }

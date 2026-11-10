@@ -29,7 +29,7 @@ import { formFields, isOffen } from '../../src/domain/profile'
 import { reducer } from '../../src/domain/reducer'
 import { changeView } from '../../src/domain/proposals'
 import { projectSchema, type Project, type Proposal, type StoredMessage } from '../../src/domain/schemas/project'
-import { stepIds } from '../../src/domain/types'
+import { stepIds, type Evidence } from '../../src/domain/types'
 import type { Settings } from '../../src/storage/settings'
 import { withoutQuestion } from '../../src/ui/chat/question'
 import { messageTexts } from '../../src/ui/chat/stream'
@@ -763,60 +763,60 @@ describe('7 · step 3: goals per focus group (made-up project)', () => {
     }))
 })
 
-describe('8 · step 4: the chain of one focus group (made-up project)', () => {
-  /** demo.ts with steps 1–3 confirmed: one focus group with goals at 4–6, its causes, one other group; step 4 has the activities. */
-  function step4Start(): Project {
-    const p = demoProject()
-    p.steps[1].block = {
-      challenge: makeItem(1, 'challenge', { text: 'Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus.', why: 'Aus Schritt 0.' }),
-      targetGroups: [
-        makeItem(1, 'targetGroups', { name: 'Jugendliche 12–17', description: 'Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.', isFocus: true, why: 'Hauptwirkung.' }, { id: 'tg1' }),
-        makeItem(1, 'targetGroups', { name: 'Eltern', description: 'Erlauben das Kommen.', reach: 'indirect', why: 'Ohne sie kommen die Jüngeren nicht.' }, { id: 'tg2' }),
-      ],
-      stakeholders: [],
-    } as never
-    p.steps[2].block = {
-      problems: [
-        makeItem(2, 'problems', { groupId: 'tg1', coreProblem: 'Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen.', why: 'Erzählen sie selbst.' }, { id: 'pb1' }),
-        makeItem(2, 'problems', { groupId: 'tg2', coreProblem: 'Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen.', why: 'Fragen beim Sommerfest.' }, { id: 'pb2' }),
-      ],
-      causes: [
-        makeItem(2, 'causes', { groupId: 'tg1', parentId: '', text: 'Viele haben kein funktionierendes Rad.', evidence: 'eigene_erfahrung', why: 'Beobachtung.' }, { id: 'ca1' }),
-        makeItem(2, 'causes', { groupId: 'tg1', parentId: 'ca1', text: 'Der Bus fährt nachmittags nur stündlich.', evidence: 'eigene_daten', notInfluenceable: true, why: 'Fahrplan.' }, { id: 'ca2' }),
-        makeItem(2, 'causes', { groupId: 'tg1', parentId: '', text: 'Kaum Erwachsene zeigen ihnen handwerkliche Dinge.', evidence: 'unsicher', why: 'Vermutung.' }, { id: 'ca3' }),
-      ],
-      consequences: [],
-    } as never
-    const goal = (id: string, level: 4 | 5 | 6, text: string, causeIds: string[]) => makeItem(3, 'goals', { groupId: 'tg1', level, text, causeIds, timeFrame: 'bis Ende 2027', why: 'Aus dem Problembaum.' }, { id })
-    p.steps[3].block = {
-      goals: [
-        goal('go1', 4, 'Die Jugendlichen können einen Platten flicken und die Bremsen einstellen.', ['ca3']),
-        goal('go2', 5, 'Die Jugendlichen reparieren ihr Rad selbst, statt es stehen zu lassen.', ['ca1', 'ca3']),
-        goal('go3', 6, 'Die Jugendlichen sind nachmittags mit dem eigenen Rad unterwegs.', ['ca1']),
-        makeItem(3, 'goals', { groupId: 'tg2', level: 4, text: 'Eltern wissen, was ihre Kinder in der Werkstatt lernen.', causeIds: [], timeFrame: 'bis Ende 2026', why: 'Dann lassen sie die Jüngeren kommen.' }, { id: 'go4' }),
-      ],
-      levelNotApplicable: [],
-      level7: makeItem(3, 'level7', { text: 'Das Projekt trägt dazu bei, dass Jugendliche in der Siedlung eigene Wege gehen.', why: 'Aus der Herausforderung.' }, { id: 'level7' }),
-    } as never
-    p.steps[4].block = {
-      resources: [makeItem(4, 'resources', { text: 'Zwei Ehrenamtliche aus dem Fahrradclub' }, { id: 'rs1' }), makeItem(4, 'resources', { text: 'Kellerraum mit Werkbank' }, { id: 'rs2' })],
-      activities: [
-        makeItem(4, 'activities', { text: 'Offene Werkstatt dienstags und donnerstags, 15–18 Uhr', why: 'Damit die Jugendlichen einen festen Ort zum Schrauben haben.' }, { id: 'ac1' }),
-        makeItem(4, 'activities', { text: 'Elternbrief zu Beginn des Halbjahrs', why: 'Damit die Eltern wissen, was ihre Kinder lernen.' }, { id: 'ac2' }),
-      ],
-      outputs: [],
-      links: [],
-      externalFactors: [],
-      sideEffects: [],
-    } as never
-    for (const step of [1, 2, 3] as const) {
-      p.steps[step].status = 'confirmed'
-      p.steps[step].confirmed = { at: AT, block: structuredClone(p.steps[step].block) as never, basis: { 0: AT } }
-    }
-    p.idCounters = { ...p.idCounters, tg: 2, pb: 2, ca: 3, go: 4, rs: 2, ac: 2 }
-    return projectSchema.parse(p)
+/** demo.ts with steps 1–3 confirmed: one focus group with goals at 4–6, its causes, one other group; step 4 has the activities. */
+function step4Start(): Project {
+  const p = demoProject()
+  p.steps[1].block = {
+    challenge: makeItem(1, 'challenge', { text: 'Jugendliche aus der Weidengrund-Siedlung kommen selten aus ihrer Siedlung heraus.', why: 'Aus Schritt 0.' }),
+    targetGroups: [
+      makeItem(1, 'targetGroups', { name: 'Jugendliche 12–17', description: 'Kommen nach der Schule in die offene Werkstatt, viele ohne eigenes Rad.', isFocus: true, why: 'Hauptwirkung.' }, { id: 'tg1' }),
+      makeItem(1, 'targetGroups', { name: 'Eltern', description: 'Erlauben das Kommen.', reach: 'indirect', why: 'Ohne sie kommen die Jüngeren nicht.' }, { id: 'tg2' }),
+    ],
+    stakeholders: [],
+  } as never
+  p.steps[2].block = {
+    problems: [
+      makeItem(2, 'problems', { groupId: 'tg1', coreProblem: 'Jugendliche aus der Siedlung verbringen die Nachmittage drinnen und erleben selten, dass sie etwas selbst schaffen.', why: 'Erzählen sie selbst.' }, { id: 'pb1' }),
+      makeItem(2, 'problems', { groupId: 'tg2', coreProblem: 'Eltern wissen wenig darüber, was ihre Kinder nachmittags lernen.', why: 'Fragen beim Sommerfest.' }, { id: 'pb2' }),
+    ],
+    causes: [
+      makeItem(2, 'causes', { groupId: 'tg1', parentId: '', text: 'Viele haben kein funktionierendes Rad.', evidence: 'eigene_erfahrung', why: 'Beobachtung.' }, { id: 'ca1' }),
+      makeItem(2, 'causes', { groupId: 'tg1', parentId: 'ca1', text: 'Der Bus fährt nachmittags nur stündlich.', evidence: 'eigene_daten', notInfluenceable: true, why: 'Fahrplan.' }, { id: 'ca2' }),
+      makeItem(2, 'causes', { groupId: 'tg1', parentId: '', text: 'Kaum Erwachsene zeigen ihnen handwerkliche Dinge.', evidence: 'unsicher', why: 'Vermutung.' }, { id: 'ca3' }),
+    ],
+    consequences: [],
+  } as never
+  const goal = (id: string, level: 4 | 5 | 6, text: string, causeIds: string[]) => makeItem(3, 'goals', { groupId: 'tg1', level, text, causeIds, timeFrame: 'bis Ende 2027', why: 'Aus dem Problembaum.' }, { id })
+  p.steps[3].block = {
+    goals: [
+      goal('go1', 4, 'Die Jugendlichen können einen Platten flicken und die Bremsen einstellen.', ['ca3']),
+      goal('go2', 5, 'Die Jugendlichen reparieren ihr Rad selbst, statt es stehen zu lassen.', ['ca1', 'ca3']),
+      goal('go3', 6, 'Die Jugendlichen sind nachmittags mit dem eigenen Rad unterwegs.', ['ca1']),
+      makeItem(3, 'goals', { groupId: 'tg2', level: 4, text: 'Eltern wissen, was ihre Kinder in der Werkstatt lernen.', causeIds: [], timeFrame: 'bis Ende 2026', why: 'Dann lassen sie die Jüngeren kommen.' }, { id: 'go4' }),
+    ],
+    levelNotApplicable: [],
+    level7: makeItem(3, 'level7', { text: 'Das Projekt trägt dazu bei, dass Jugendliche in der Siedlung eigene Wege gehen.', why: 'Aus der Herausforderung.' }, { id: 'level7' }),
+  } as never
+  p.steps[4].block = {
+    resources: [makeItem(4, 'resources', { text: 'Zwei Ehrenamtliche aus dem Fahrradclub' }, { id: 'rs1' }), makeItem(4, 'resources', { text: 'Kellerraum mit Werkbank' }, { id: 'rs2' })],
+    activities: [
+      makeItem(4, 'activities', { text: 'Offene Werkstatt dienstags und donnerstags, 15–18 Uhr', why: 'Damit die Jugendlichen einen festen Ort zum Schrauben haben.' }, { id: 'ac1' }),
+      makeItem(4, 'activities', { text: 'Elternbrief zu Beginn des Halbjahrs', why: 'Damit die Eltern wissen, was ihre Kinder lernen.' }, { id: 'ac2' }),
+    ],
+    outputs: [],
+    links: [],
+    externalFactors: [],
+    sideEffects: [],
+  } as never
+  for (const step of [1, 2, 3] as const) {
+    p.steps[step].status = 'confirmed'
+    p.steps[step].confirmed = { at: AT, block: structuredClone(p.steps[step].block) as never, basis: { 0: AT } }
   }
+  p.idCounters = { ...p.idCounters, tg: 2, pb: 2, ca: 3, go: 4, rs: 2, ac: 2 }
+  return projectSchema.parse(p)
+}
 
+describe('8 · step 4: the chain of one focus group (made-up project)', () => {
   let after: Project | undefined
   it('the chain for the focus group: outputs 1–3, links upwards to its goals, "weil" and assumption, ≤ 2 critical, text first', () =>
     check('Step 4: chain proposal valid (own group, upwards, ends at goals), text + question first, no ids', async () => {
@@ -871,3 +871,88 @@ describe('8 · step 4: the chain of one focus group (made-up project)', () => {
 })
 
 const SHOWN_ID_4 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|new:)\d+\b/g
+
+describe('9 · step 5: measurement focus (made-up project)', () => {
+  /** Step 4 confirmed with a chain: li1 critical on own experience (a candidate), li4 critical on own data (none); two mandatory figures in step 0. */
+  function step5Start(): Project {
+    const p = step4Start()
+    p.steps[0].block.frame = { ...p.steps[0].block.frame, purpose: 'beides', requiredFigures: ['Teilnehmende nach Geschlecht', 'Anzahl offener Werkstatttage'] }
+    // Claude reads the confirmed snapshot of other steps, so it must say the same.
+    p.steps[0].confirmed = { ...p.steps[0].confirmed!, block: structuredClone(p.steps[0].block) as never }
+    const output = (id: string, level: 1 | 2 | 3, text: string) => makeItem(4, 'outputs', { groupId: 'tg1', level, text }, { id })
+    const link = (id: string, fromId: string, toId: string, assumption: string, evidence: Evidence, critical = false) =>
+      makeItem(4, 'links', { groupId: 'tg1', fromId, toId, because: 'Mechanismus aus der Werkstatt.', assumption, evidence, critical }, { id })
+    p.steps[4].block = {
+      ...p.steps[4].block,
+      outputs: [output('ou1', 1, 'Die Werkstatt hat zweimal pro Woche offen.'), output('ou2', 2, 'Etwa 15 Jugendliche kommen regelmäßig.'), output('ou3', 3, 'Sie arbeiten an ihrem eigenen Rad.')],
+      links: [
+        link('li1', 'ac1', 'ou1', 'Die zwei Ehrenamtlichen bleiben das ganze Jahr dabei.', 'eigene_erfahrung', true),
+        link('li2', 'ou1', 'ou2', 'Die Zeiten sprechen sich herum.', 'eigene_daten'),
+        link('li3', 'ou2', 'ou3', 'Es gibt genug Ersatzteile.', 'eigene_daten'),
+        link('li4', 'ou3', 'go1', 'Die Ehrenamtlichen lassen sie selbst machen.', 'eigene_daten', true),
+        link('li5', 'go1', 'go2', 'Zu Hause gibt es etwas Werkzeug.', 'unsicher'),
+        link('li6', 'go2', 'go3', 'Die Wege sind mit dem Rad sicher genug.', 'forschung'),
+      ],
+    } as never
+    p.steps[4].status = 'confirmed'
+    p.steps[4].confirmed = { at: AT, block: structuredClone(p.steps[4].block) as never, basis: { 0: AT } }
+    p.idCounters = { ...p.idCounters, ou: 3, li: 6 }
+    return projectSchema.parse(p)
+  }
+
+  let after: Project | undefined
+  it('opening: each candidate decided (question or deferral with a reason), mandatory figures with targets, text first', () =>
+    check('Step 5 opening: li1 decided, figures with targets, no figure as an indicator, no ids', async () => {
+      const text = 'Lass uns mit dem Messfokus anfangen.'
+      const prepared = prepareTurn(step5Start(), 5, text, { at: AT })
+      rec.recordNext('step5-opening')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      writeFileSync(`${FIXTURES}step5-opening.json`, JSON.stringify({ step: 5, project: prepared.project }, null, 2))
+      expect(toolUses(message).some((u) => u.name === PROPOSE), 'no proposal').toBe(true)
+      expect(messageTexts(message).join('\n').match(SHOWN_ID_5) ?? [], 'ids in the visible text').toEqual([])
+      let project = commitAnswer(prepared.project, 5, { status: 'done', message }, prepared.shown, { at: AT })
+      const [proposal] = project.steps[5].proposals
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[5].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      project = reducer(project, { type: 'change/applyAll', step: 5, proposalId: proposal.id })
+      const { focusQuestions, deferredCandidates, indicators, mandatoryFigures } = project.steps[5].block
+      const included = focusQuestions.some((q) => q.linkIds.includes('li1'))
+      const deferred = deferredCandidates.find((d) => d.linkId === 'li1')
+      expect(included || !!deferred?.reason.trim(), 'the candidate li1 is undecided').toBe(true)
+      expect(deferredCandidates.every((d) => d.linkId === 'li1'), 'a deferral of a non-candidate').toBe(true)
+      expect(focusQuestions.length, 'more than 3 questions').toBeLessThanOrEqual(3)
+      expect(indicators.length, 'more than 6 indicators').toBeLessThanOrEqual(6)
+      expect(mandatoryFigures.length, 'the step 0 figures are missing').toBeGreaterThanOrEqual(2)
+      expect(mandatoryFigures.every((f) => f.target.trim()), 'a figure without a target').toBe(true)
+      expect(indicators.some((i) => /geschlecht|werkstatttage/i.test(i.text)), 'a mandatory figure as an indicator').toBe(false)
+      projectSchema.parse(project)
+      after = project
+      return `${proposal.changes.length} changes; li1 ${included ? 'in a question' : `deferred ("${deferred!.reason.slice(0, 60)}")`}; ${focusQuestions.length} questions, ${indicators.length} indicators; figures ${mandatoryFigures.map((f) => `${f.name}=${f.target}`).join('; ')}; ${asked(proposal.question, message)}`
+    }))
+
+  it('follow-up: indicators for a question, with baseline and target, the card carries its question', () =>
+    check('Step 5 follow-up: 1–2 indicators per question, baseline + target, question field filled', async () => {
+      expect(after, 'needs the first step 5 case').toBeDefined()
+      const text = 'Passt so. Jetzt bitte die Indikatoren für die Lernfragen.'
+      const prepared = prepareTurn(after!, 5, text, { at: AT })
+      rec.recordNext('step5-indicators')
+      const message = done(await ai.send(settings, prepared.call))
+      await rec.flushed()
+      expect(messageTexts(message).join('\n').match(SHOWN_ID_5) ?? [], 'ids in the visible text').toEqual([])
+      let project = commitAnswer(prepared.project, 5, { status: 'done', message }, prepared.shown, { at: AT })
+      const proposal = project.steps[5].proposals.at(-1)!
+      expect(project.steps[5].proposals.length, `no valid propose_changes call ${JSON.stringify(project.steps[5].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBe(2)
+      project = reducer(project, { type: 'change/applyAll', step: 5, proposalId: proposal.id })
+      const { focusQuestions, indicators } = project.steps[5].block
+      expect(indicators.length, 'no indicators').toBeGreaterThan(0)
+      expect(indicators.length, 'more than 6').toBeLessThanOrEqual(6)
+      for (const q of focusQuestions) expect(indicators.filter((i) => i.focusQuestionId === q.id).length, 'more than 2 for a question').toBeLessThanOrEqual(2)
+      expect(indicators.every((i) => i.baseline.trim() && i.target.trim()), 'an indicator without baseline or target').toBe(true)
+      expect(indicators.some((i) => i.level === 7), 'an indicator at Stufe 7').toBe(false)
+      projectSchema.parse(project)
+      const per = focusQuestions.map((q) => indicators.filter((i) => i.focusQuestionId === q.id).length).join('/')
+      return `${indicators.length} indicators (${per} per question; levels ${indicators.map((i) => i.level).join(',')}); ${asked(proposal.question, message)}`
+    }))
+})
+
+const SHOWN_ID_5 = /\b(?:tg|sh|pb|ca|co|go|na|rs|ac|ou|li|ef|se|fq|dc|in|mf|new:)\d+\b/g

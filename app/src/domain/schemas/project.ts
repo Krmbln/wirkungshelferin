@@ -84,6 +84,8 @@ export const proposalChange = z
         afterRev: z.number().int().min(1),
         /** remove from a tree list: children that moved one level up (domain/tree.ts). */
         children: z.array(z.string()).optional(),
+        /** remove of a step 5 question: its indicators went with it (domain/focus.ts). */
+        dependents: z.array(z.strictObject({ collection: z.string(), index: z.number().int().min(0), item: z.record(z.string(), z.unknown()) })).optional(),
       })
       .optional(),
   })

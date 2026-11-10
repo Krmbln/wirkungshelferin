@@ -2,6 +2,7 @@ import { findItem, stepOf, type LooseBlock } from '../../domain/block'
 import { endOf } from '../../domain/chain'
 import { cut } from '../../domain/check'
 import { canUndo, changeView, type ChangeView, type StaleReason } from '../../domain/proposals'
+import { INDICATOR_MAX, PER_QUESTION_MAX, QUESTION_MAX, indicatorsOf, type Full } from '../../domain/focus'
 import { collectionMeta, type Item } from '../../domain/schemas/blocks'
 import type { Project, Proposal, ProposalChange } from '../../domain/schemas/project'
 import type { StepId } from '../../domain/types'
@@ -39,6 +40,19 @@ const parent: FieldInfo = { label: 'Einordnung', ref: true }
 const OUTPUT_LEVELS: Record<string, string> = { 1: 'Stufe 1', 2: 'Stufe 2', 3: 'Stufe 3' }
 /** Side effect direction in words, shared with the block's radios. */
 export const DIRECTION: Record<string, string> = { negative: 'negativ', positive: 'positiv' }
+
+/** A question's reasons in words (design §6.2 "Step 19"), shared with the block's checkboxes. */
+export const REASONS: Record<string, string> = { geldgeberin: 'Vorgabe der Geldgeberin', eigenes_lernen: 'eigenes Lernen', kritische_annahme: 'kritische Annahme' }
+/** An indicator's level in words, shared with the block's select. */
+export const STUFE: Record<string, string> = {
+  1: 'Stufe 1 · Angebot findet statt',
+  2: 'Stufe 2 · Gruppe wird erreicht',
+  3: 'Stufe 3 · Gruppe nimmt das Angebot an',
+  4: 'Stufe 4 · Wissen, Einstellung, Fähigkeiten',
+  5: 'Stufe 5 · Handeln',
+  6: 'Stufe 6 · Lebenslage',
+  7: 'Stufe 7 · Beitrag zur Gesellschaft',
+}
 
 /** "Wofür?" in words (design §6.2, step 14). */
 export const PURPOSE: Record<string, string> = { geldgeberin: 'Bericht an die Geldgeberin', lernen: 'eigenes Lernen', beides: 'beides', offen: 'offen' }
@@ -128,11 +142,39 @@ const info: { [S in StepId]: Record<string, CollectionInfo> } = {
       fields: { text: { label: 'Wirkung' }, direction: { label: 'Richtung', values: DIRECTION, short: true }, affectedGroup: { label: 'Betrifft', ref: true } },
     },
   },
+  // Step 5 (design "Step 19"): never a question number (it shifts when a question goes); an
+  // indicator names its question by text, a deferral by its assumption.
   5: {
-    focusQuestions: { noun: 'Lernfrage', main: 'text' },
-    deferredCandidates: { noun: 'Zurückgestellt', main: 'reason' },
-    indicators: { noun: 'Indikator', main: 'text' },
-    mandatoryFigures: { noun: 'Pflichtangabe', main: 'name' },
+    focusQuestions: {
+      noun: 'Lernfrage',
+      main: 'text',
+      fields: {
+        text: { label: 'Lernfrage' },
+        reasons: { label: 'Grund', values: REASONS, ref: true },
+        audience: { label: 'Für wen', ref: true },
+        linkIds: { label: 'Prüft', ref: true },
+        goalIds: { label: 'Prüft', ref: true },
+        why,
+      },
+    },
+    deferredCandidates: { noun: 'Zurückgestellt', main: '', fields: { linkId: { label: 'Annahme', ref: true }, reason: { label: 'weil', ref: true } } },
+    indicators: {
+      noun: 'Indikator',
+      main: 'text',
+      fields: {
+        text: { label: 'Indikator' },
+        level: { label: 'Stufe', values: STUFE, ref: true },
+        focusQuestionId: { label: 'Frage', ref: true },
+        baseline: { label: 'Ausgangswert', ref: true },
+        target: { label: 'Zielwert oder Schwelle', ref: true },
+        why,
+      },
+    },
+    mandatoryFigures: {
+      noun: 'Pflichtangabe',
+      main: 'name',
+      fields: { name: { label: 'Pflichtangabe' }, target: { label: 'Soll-Wert', ref: true }, unit: { label: 'Einheit', ref: true }, sourceNote: { label: 'Festlegung' } },
+    },
   },
   6: { planRows: { noun: 'Erhebung', main: 'method' } },
 }
@@ -148,9 +190,11 @@ function fieldInfo(step: StepId, collection: string, field: string): FieldInfo {
 export function formatValue(step: StepId, collection: string, field: string, value: unknown): string {
   if (value === undefined || value === '' || (Array.isArray(value) && !value.length)) return ''
   if (typeof value === 'boolean') return value ? 'ja' : 'nein'
-  if (Array.isArray(value)) return value.map(String).join('; ')
+  const values = fieldInfo(step, collection, field).values
+  // Enum lists in words ("eigenes Lernen, kritische Annahme"), other lists as entries.
+  if (Array.isArray(value)) return values ? value.map((v) => values[String(v)] ?? String(v)).join(', ') : value.map(String).join('; ')
   const text = String(value)
-  return fieldInfo(step, collection, field).values?.[text] ?? text
+  return values?.[text] ?? text
 }
 
 /**
@@ -216,7 +260,7 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     }
     const under = parentText(project, step, proposal, change.collection, fields.parentId)
     if (under) meta.push(`unter „${cut(under, 40)}“`)
-    const goal = { ...goalText(project, step, change.collection, fields), ...chainText(project, step, proposal, change.collection, fields) }
+    const goal = { ...goalText(project, step, change.collection, fields), ...chainText(project, step, proposal, change.collection, fields), ...focusText(project, step, proposal, change.collection, fields) }
     // A link's "weil … · Annahme" comes before its evidence and mark (design "Step 18").
     if (goal.meta) (change.collection === 'links' ? meta.unshift(goal.meta) : meta.push(goal.meta))
     return {
@@ -239,7 +283,11 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
   // Never an internal id on screen (an empty singleton is named by its noun alone).
   if (change.op === 'update' && isForm(step, change.collection)) return formRow(step, change, before, view)
   const unnamed = collectionMeta(step, change.collection)?.singleton ? '' : `${noun} ohne Namen`
-  const goal = { ...goalText(project, step, change.collection, before ?? {}), ...chainText(project, step, proposal, change.collection, before ?? {}) }
+  const goal = {
+    ...goalText(project, step, change.collection, before ?? {}),
+    ...chainText(project, step, proposal, change.collection, before ?? {}),
+    ...focusText(project, step, proposal, change.collection, before ?? {}),
+  }
   // A singleton named by its own text (Stufe 7): its ÄNDERN line already shows old and new, so
   // no name line repeating the old one (design check step 17).
   const ownText = change.op === 'update' && step === 3 && change.collection === 'level7' && mainField in fields
@@ -248,12 +296,19 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
     const text = parentText(project, step, proposal, change.collection, id)
     return text ? `unter „${cut(text, 40)}“` : change.collection === 'causes' ? 'direkte Ursache' : 'direkte Folge'
   }
+  // Step 5: links and goals a question tests are one "Prüft" line, whichever of the two changed.
+  const tests = (item: Record<string, unknown> | undefined, over: Record<string, unknown> = {}) =>
+    refsText(project, proposal, over.linkIds ?? item?.linkIds, over.goalIds ?? item?.goalIds)
   const lines =
     change.op === 'update'
       ? Object.entries(fields)
-          .filter(([field]) => field !== 'groupId')
+          .filter(([field]) => field !== 'groupId' && !(field === 'goalIds' && 'linkIds' in fields))
           .map(([field, value]) =>
-            field === 'parentId'
+            field === 'linkIds' || field === 'goalIds'
+              ? { label: 'Prüft', before: tests(before), after: tests(before, fields) || '(leer)' }
+              : field === 'focusQuestionId'
+                ? { label: 'Frage', before: questionText(project, proposal, before?.focusQuestionId), after: questionText(project, proposal, value) }
+                : field === 'parentId'
               ? { label: parent.label, before: placement(before?.parentId), after: placement(value) }
               : field === 'causeIds'
                 ? { label: 'Löst auf', before: causesText(project, before?.causeIds), after: causesText(project, value) || '(leer)' }
@@ -265,7 +320,7 @@ export function rowText(project: Project, step: StepId, proposal: Proposal, chan
           )
           .filter((line) => line.before !== line.after)
       : []
-  const meta = change.op === 'remove' && change.state !== 'applied' ? movedUp(project, step, change.collection, target) : []
+  const meta = change.op === 'remove' && change.state !== 'applied' ? [...movedUp(project, step, change.collection, target), ...withIndicators(project, step, change.collection, target)] : []
   return { kind, noun: groupNoun(project, goal.noun ?? noun, before?.groupId), main: name, meta, fields: lines }
 }
 
@@ -298,15 +353,95 @@ function chainText(project: Project, step: StepId, proposal: Proposal, collectio
   return { main, meta: meta || undefined }
 }
 
+/**
+ * Step 5 rows (design §6.2 "Step 19"): a question's meta "Grund: … · für: … · prüft: …"; an
+ * indicator's noun names its question by text ("zu neuer Frage" when this proposal creates it);
+ * a deferral is named by its assumption; a mandatory figure shows "Soll: …".
+ */
+function focusText(project: Project, step: StepId, proposal: Proposal, collection: string, fields: Record<string, unknown>): { noun?: string; main?: string; meta?: string } {
+  if (step !== 5) return {}
+  const join = (parts: unknown[]) => parts.filter(Boolean).join(' · ') || undefined
+  if (collection === 'focusQuestions') {
+    const reasons = formatValue(5, collection, 'reasons', fields.reasons)
+    const refs = refsText(project, proposal, fields.linkIds, fields.goalIds, 2)
+    return { meta: join([reasons && `Grund: ${reasons}`, fields.audience && `für: ${cut(fields.audience as string, 40)}`, refs && `prüft: ${refs}`]) }
+  }
+  if (collection === 'indicators') {
+    const level = typeof fields.level === 'number' ? `Stufe ${fields.level}` : ''
+    return {
+      noun: `Indikator · ${questionText(project, proposal, fields.focusQuestionId, true)}`,
+      meta: join([level, fields.baseline && `Ausgangswert: ${cut(fields.baseline as string, 40)}`, fields.target && `Ziel: ${cut(fields.target as string, 40)}`]),
+    }
+  }
+  if (collection === 'deferredCandidates') {
+    const link = (project.steps[4].block.links as Item[]).find((l) => l.id === fields.linkId)
+    const main = !link ? 'Verweis fehlt' : (link.assumption as string) ? cut(link.assumption as string, 60) : linkText(project, proposal, link, 40)
+    return { main, meta: join([fields.reason && `weil: ${cut(fields.reason as string, 60)}`]) }
+  }
+  if (collection === 'mandatoryFigures') return { meta: join([fields.target && `Soll: ${cut(fields.target as string, 40)}`, fields.unit && cut(fields.unit as string, 40)]) }
+  return {}
+}
+
+/** "zu „Wie oft …“" — a question by its text, never its number; one this proposal creates is "zu neuer Frage". */
+function questionText(project: Project, proposal: Proposal, id: unknown, prefix = false): string {
+  const zu = prefix ? 'zu ' : ''
+  if (typeof id !== 'string' || !id) return `${zu}keiner Frage`
+  const creator = proposal.changes.find((c) => c.op === 'add' && c.tempId === id)
+  const real = creator?.resultId ?? (creator ? undefined : id)
+  const item = real ? (project.steps[5].block.focusQuestions as Item[]).find((q) => q.id === real) : undefined
+  const text = (item?.text ?? creator?.fields?.text) as string | undefined
+  if (!item && !creator) return `${zu}einer Frage, die es nicht mehr gibt`
+  const quoted = text ? `„${cut(text, 40)}“` : 'ohne Text'
+  return creator && !item ? `${zu}neuer Frage ${quoted}` : `${zu}${quoted}`
+}
+
+/** A link as „A“ → „B“ (each end cut at `n`). */
+function linkText(project: Project, proposal: Proposal, link: Item, n: number): string {
+  return `${endText(project, proposal, link.groupId, link.fromId, n)} → ${endText(project, proposal, link.groupId, link.toId, n)}`
+}
+
+/** What a question tests in words: links „A“ → „B“ and goals Ziel „…“; a deleted one is "Verweis fehlt". */
+function refsText(project: Project, proposal: Proposal, linkIds: unknown, goalIds: unknown, max = Infinity): string {
+  const links = project.steps[4].block.links as Item[]
+  const goals = project.steps[3].block.goals as Item[]
+  const names = [
+    ...((Array.isArray(linkIds) ? linkIds : []) as string[]).map((id) => {
+      const link = links.find((l) => l.id === id)
+      return link ? linkText(project, proposal, link, 25) : 'Verweis fehlt'
+    }),
+    ...((Array.isArray(goalIds) ? goalIds : []) as string[]).map((id) => {
+      const goal = goals.find((g) => g.id === id)
+      return goal ? `Ziel „${cut((goal.text as string) || 'ohne Text', 40)}“` : 'Verweis fehlt'
+    }),
+  ]
+  const shown = names.slice(0, max).join(', ')
+  return names.length > max ? `${shown} + ${names.length - max} weitere` : shown
+}
+
+/** ENTFERNEN of a step 5 question: its indicators go with it (design "Step 19"). */
+function withIndicators(project: Project, step: StepId, collection: string, id: string | undefined): string[] {
+  if (step !== 5 || collection !== 'focusQuestions' || !id) return []
+  const n = indicatorsOf(project.steps[5].block as unknown as LooseBlock, id).length
+  return n ? [`mit ${n === 1 ? '1 Indikator' : `${n} Indikatoren`}`] : []
+}
+
+/** Why Übernehmen waits in step 5: one more question or indicator doesn't fit now. */
+export function limitText(project: Project, proposal: Proposal, change: ProposalChange, full: Full): string {
+  if (full === 'questions') return `Schon ${QUESTION_MAX} Lernfragen – entferne zuerst eine.`
+  if (full === 'total') return `Schon ${INDICATOR_MAX} Indikatoren – entferne zuerst einen.`
+  const target = change.fields?.focusQuestionId
+  return `Frage ${questionText(project, proposal, target)} hat schon ${PER_QUESTION_MAX} Indikatoren.`
+}
+
 /** A link's end in words: an activity, output (also one this proposal creates) or step 3 goal; „?“ when unknown. */
-function endText(project: Project, proposal: Proposal, groupId: unknown, id: unknown): string {
+function endText(project: Project, proposal: Proposal, groupId: unknown, id: unknown, n = 40): string {
   if (typeof id !== 'string' || !id) return '„?“'
   const creator = proposal.changes.find((c) => c.op === 'add' && c.tempId === id)
   const real = creator?.resultId ?? (creator ? undefined : id)
   const block = project.steps[4].block
   const known = real ? endOf({ activities: block.activities as Item[], outputs: block.outputs as Item[], goals: project.steps[3].block.goals as Item[], marks: [] }, groupId as string, real) : undefined
   const text = (known?.item.text ?? creator?.fields?.text) as string | undefined
-  if (text) return `„${cut(text, 40)}“`
+  if (text) return `„${cut(text, n)}“`
   return known || creator ? '„ohne Text“' : 'Verweis fehlt'
 }
 

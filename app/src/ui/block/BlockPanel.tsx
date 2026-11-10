@@ -15,6 +15,7 @@ import { Step1Block } from './Step1Block'
 import { Step2Block } from './Step2Block'
 import { Step3Block } from './Step3Block'
 import { Step4Block } from './Step4Block'
+import { Step5Block } from './Step5Block'
 import { panelGroupOf } from '../../domain/tree'
 import { FORMS, formEmpty, type FormName } from '../../domain/profile'
 import type { Item } from '../../domain/schemas/blocks'
@@ -178,6 +179,8 @@ export function BlockPanel({
           onToggle={(key) => onCollapsedChange?.(collapsed.includes(key) ? collapsed.filter((k) => k !== key) : [...collapsed, key])}
           onOpenStep={(s) => onOpenStep?.(s)}
         />
+      ) : step === 5 ? (
+        <Step5Block project={project} onAction={onAction} applied={applied} issues={stillOpen(project, 5, liveIssues)} onOpenStep={(s) => onOpenStep?.(s)} />
       ) : (
         <p className="placeholder">Noch leer – hier entsteht der Baustein für diesen Schritt.</p>
       )}

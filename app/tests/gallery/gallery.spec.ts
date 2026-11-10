@@ -1361,3 +1361,129 @@ test('step 18b: the one question under the card, shown once, the scroll when a t
   await expect(jump).toBeHidden()
   expect(errors).toEqual([])
 })
+
+test('step 5 (step 19): candidates, question records with indicators, limits, picker, figures, check, card', async ({ page }) => {
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+  const column = page.locator('.workspace__block .workspace__scroll')
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  const noSideScroll = async () => expect(await column.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+    for (const screen of ['step5', 'step5-full']) {
+      await openScreen(page, screen)
+      await noPageScroll()
+      await noSideScroll()
+      await shotScreen(`${screen}${suffix}`)
+      const height = await column.evaluate((el) => el.scrollHeight)
+      const step = (await column.evaluate((el) => el.clientHeight)) - 60
+      for (let top = step, i = 1; top < height; top += step, i++) {
+        await column.evaluate((el, y) => (el.scrollTop = y), top)
+        await page.waitForTimeout(50)
+        await noSideScroll()
+        await shotScreen(`${screen}-${i}${suffix}`)
+      }
+    }
+  }
+  await page.setViewportSize({ width: 1390, height: 880 })
+
+  // Candidates: derived rows with the decision in words, no ✕.
+  await openScreen(page, 'step5')
+  await expect(page.locator('[data-candidate="li1"]')).toContainText('Aufgenommen in Frage 1')
+  await expect(page.locator('[data-candidate="li4"]').getByText('Zurückgestellt, weil')).toBeVisible()
+  await expect(page.locator('[data-candidate="li8"]').getByText('noch offen')).toBeVisible()
+  await expect(page.locator('[data-candidate] .bitem__remove')).toHaveCount(0)
+  await expect(page.getByText('Noch keine Lernfrage zu „Mädchen 11–14 aus der Siedlung“', { exact: false })).toBeVisible()
+
+  // The picker: in place, focus on the first box, the deferred link selectable and labelled; Esc back to the toggle.
+  const toggle = page.locator('[data-picker-toggle="fq2"]')
+  await toggle.click()
+  const picker = page.locator('[data-picker="fq2"]')
+  await expect(picker.getByRole('checkbox').first()).toBeFocused()
+  await expect(picker.getByText('· zurückgestellt')).toBeVisible()
+  await picker.evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await noSideScroll()
+  await shotScreen('step5-picker')
+  await page.keyboard.press('Escape')
+  await expect(picker).toHaveCount(0)
+  await expect(toggle).toBeFocused()
+
+  // Removing a question: its record becomes one undo line that counts the indicators.
+  await page.getByRole('button', { name: 'Lernfrage „Reparieren die Stammgäste ihr Rad …“ entfernen' }).click()
+  await expect(page.getByText('„Reparieren die Stammgäste ihr Rad wirklich selbst?“ und 2 Indikatoren entfernt.')).toBeVisible()
+  await page.getByRole('button', { name: 'Rückgängig' }).scrollIntoViewIfNeeded()
+  await shotScreen('step5-undo')
+
+  // Full: every "+" says why; the candidates' cue says it once.
+  await openScreen(page, 'step5-full')
+  await expect(page.getByText('Höchstens 3 Lernfragen.')).toBeVisible()
+  await expect(page.getByText('Höchstens 2 je Frage.')).toHaveCount(3)
+  await expect(page.getByText(/^Schon 3 Lernfragen – ergänze eine Annahme/)).toHaveCount(1)
+  // On the row the reason is only read out (1 px, clipped), never shown again.
+  expect((await page.locator('[data-candidate="li8"] [data-field="decide"] .btn-reason').boundingBox())!.width).toBeLessThanOrEqual(1)
+
+  // Old deferral and orphan indicator.
+  await openScreen(page, 'step5-old')
+  await expect(page.getByText(/kein Kandidat mehr: „Die Ehrenamtlichen lassen sie selbst …“ \(nicht mehr kritisch\)/)).toBeVisible()
+  await page.locator('.bcand__old').scrollIntoViewIfNeeded()
+  await shotScreen('step5-old-deferral')
+  await expect(page.getByRole('heading', { name: 'Indikatoren ohne Lernfrage' })).toBeVisible()
+  await page.getByRole('heading', { name: 'Indikatoren ohne Lernfrage' }).scrollIntoViewIfNeeded()
+  await noSideScroll()
+  await shotScreen('step5-old')
+
+  // Check: ⛔ rows, then Zum Feld to "Bezug wählen" and the app's ⚠ to the open candidate.
+  await openScreen(page, 'step5-blocked')
+  await expect(gate.getByText('Lernfrage ohne Bezug: Frage 1 „Bleiben die Ehrenamtlichen das ganze Jahr dabei …“')).toBeVisible()
+  await shotScreen('step5-blocked')
+  // The app's own ⚠ rows follow the ⛔ rows, one per criterion.
+  await expect(gate.getByText(/^Kandidat noch offen: „Die zwei Ehrenamtlichen bleiben das ganze Jahr …“ \(und 1 weitere\)$/)).toBeAttached()
+  await expect(gate.getByText(/^Ausgangswert fehlt: Indikator /)).toBeAttached()
+  await gate.locator('.gate__rows').evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await shotScreen('step5-blocked-warn')
+  await gate.getByRole('button', { name: /^Zum Feld: Lernfrage ohne Bezug/ }).click()
+  await expect(page.getByRole('button', { name: 'Bezug wählen: Frage 1' })).toBeFocused()
+  await gate.getByRole('button', { name: /^Zum Feld: Kandidat noch offen/ }).click()
+  await expect(page.locator('[data-candidate="li1"]').getByRole('button', { name: /^Als Lernfrage aufnehmen/ })).toBeFocused()
+  await noPageScroll()
+
+  // The card: questions by text, the waiting indicator's reason, the figure's target.
+  await openScreen(page, 'step5-proposal')
+  const card = page.getByRole('article', { name: 'Vorschlag' })
+  await expect(card.getByText('Indikator · zu neuer Frage „Trauen sich die Mädchen ohne Jungen an …“')).toBeVisible()
+  await expect(card.getByText('Frage „Bleiben die Ehrenamtlichen das ganze …“ hat schon 2 Indikatoren.')).toBeVisible()
+  await expect(card.getByText('Soll: 120 · Räder')).toBeVisible()
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = 0))
+  await shotScreen('step5-proposal')
+  await page.locator('.chat__log').evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await shotScreen('step5-proposal-end')
+
+  await expect(card.getByText('Das sehen wir jede Woche; die Ehrenamtlichen erzählen es uns.')).toBeAttached()
+  await expect(card.getByText('Die Ehrenamtlichen lassen sie selbst machen, statt es …')).toBeAttached()
+
+  await openScreen(page, 'step5-empty')
+  await noPageScroll()
+  await shotScreen('step5-empty')
+
+  // The other states at the narrow width too.
+  await page.setViewportSize({ width: 960, height: 760 })
+  for (const screen of ['step5-old', 'step5-blocked', 'step5-proposal', 'step5-empty']) {
+    await openScreen(page, screen)
+    await noPageScroll()
+    await noSideScroll()
+    await shotScreen(`${screen}-960`)
+  }
+  await openScreen(page, 'step5')
+  await page.locator('[data-picker-toggle="fq2"]').click()
+  await page.locator('[data-picker="fq2"]').evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await noSideScroll()
+  await shotScreen('step5-picker-960')
+  expect(errors).toEqual([])
+})

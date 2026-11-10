@@ -1,6 +1,7 @@
 import { confirmStep, withAppJudged } from './check'
 import { findItem, isEmptyItem, type LooseBlock, newItem, nextId, putItem, stepOf, touched, validItem } from './block'
 import { deleteTargetGroup } from './groups'
+import { removeDependents, restoreDependents, type Dependent } from './focus'
 import { detachChildren, isTree, reattachChildren } from './tree'
 import { applyAll, applyChange, rejectChange, undoChange } from './proposals'
 import { collectionMeta, type Item } from './schemas/blocks'
@@ -21,8 +22,11 @@ export type Action =
   | ({ type: 'item/remove'; id: string } & Target)
   /** A row Lukas just added and left empty goes again; one with any content stays. */
   | ({ type: 'item/discard'; id: string } & Target)
-  /** The 10-second "Rückgängig" after a removal (design §7.6); `children` moved up by it go back under it. */
-  | ({ type: 'item/restore'; item: Item; index: number; children?: string[] } & Target)
+  /**
+   * The 10-second "Rückgängig" after a removal (design §7.6); `children` moved up by it go back
+   * under it, `dependents` removed with it (a step 5 question's indicators) come back.
+   */
+  | ({ type: 'item/restore'; item: Item; index: number; children?: string[]; dependents?: Dependent[] } & Target)
   | { type: 'proposal/add'; step: StepId; proposal: Proposal }
   | ({ type: 'change/apply' } & ChangeRef)
   | ({ type: 'change/reject' } & ChangeRef)
@@ -108,6 +112,7 @@ function editBlock(project: Project, action: ItemAction): Project {
       const list = block[action.collection] as Item[]
       list.splice(found.index, 1)
       if (isTree(action.step, action.collection)) detachChildren(list, found.item)
+      if (action.type === 'item/remove') removeDependents(action.step, block, action.collection, found.item)
       break
     }
     case 'item/restore': {
@@ -115,6 +120,7 @@ function editBlock(project: Project, action: ItemAction): Project {
       if (list.some((i) => i.id === action.item.id) || !validItem(action.step, action.collection, action.item)) return project
       list.splice(Math.min(action.index, list.length), 0, action.item)
       if (action.children) reattachChildren(list, action.item, action.children)
+      if (action.dependents) restoreDependents(block, action.dependents)
       break
     }
   }

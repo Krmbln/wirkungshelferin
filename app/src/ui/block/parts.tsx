@@ -23,8 +23,8 @@ type SectionProps = {
   empty?: boolean
   /** More buttons before the add button, e.g. "+ PDF hochladen" in Quellen (step 15). */
   actions?: ReactNode
-  /** 4 inside a group of steps 2–4 (the group header is the h3). */
-  level?: 3 | 4
+  /** 4 inside a group of steps 2–4 (the group header is the h3); 5 inside a step 5 question (its head is the h4). */
+  level?: 3 | 4 | 5
   /** Under the heading, before the rows (step 2: the challenge line above Folgen). */
   lead?: ReactNode
   /** The add button can't be used now, and why (step 3: a level marked "trifft nicht zu"). */
@@ -34,7 +34,7 @@ type SectionProps = {
 
 export function BlockSection({ title, addText = 'hinzufügen', meta, onAdd, addLabel, addKey, emptyHint, empty = false, actions, level = 3, lead, addDisabled, children }: SectionProps) {
   const headingId = useId()
-  const Heading = level === 4 ? 'h4' : 'h3'
+  const Heading = level === 5 ? 'h5' : level === 4 ? 'h4' : 'h3'
   return (
     <section className="bsection" aria-labelledby={headingId}>
       <div className="bsection__head">
@@ -171,8 +171,11 @@ export function ReferenceChip({ text, full = false }: { text?: string; full?: bo
   )
 }
 
-/** Takes the removed row's place for 10 seconds (design §7.6). */
-export function UndoLine({ label, note, onUndo, focus = true }: { label: string; note?: string; onUndo: () => void; focus?: boolean }) {
+/**
+ * Takes the removed row's place for 10 seconds (design §7.6). `suffix` follows the quoted label
+ * ("„…“ und 2 Indikatoren entfernt."); `quoted={false}` for a label that names no item ("Zurückstellung entfernt.").
+ */
+export function UndoLine({ label, note, suffix = '', quoted = true, onUndo, focus = true }: { label: string; note?: string; suffix?: string; quoted?: boolean; onUndo: () => void; focus?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (focus) ref.current?.querySelector('button')?.focus()
@@ -180,7 +183,8 @@ export function UndoLine({ label, note, onUndo, focus = true }: { label: string;
   return (
     <p className="undo" role="status">
       <span>
-        „{label}“ entfernt.{note && ` ${note}`}
+        {quoted ? `„${label}“` : label}
+        {suffix} entfernt.{note && ` ${note}`}
       </span>
       <span ref={ref}>
         <Button variant="text" onClick={onUndo}>

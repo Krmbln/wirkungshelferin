@@ -3,8 +3,9 @@ import { findItem, type LooseBlock } from '../domain/block'
 import { changeView } from '../domain/proposals'
 import { TEMP_ID, proposal as proposalSchema, type Project, type Proposal, type ProposalChange } from '../domain/schemas/project'
 import type { StepId } from '../domain/types'
-import type { Item } from '../domain/schemas/blocks'
+import { FOCUS_REASONS, type Item } from '../domain/schemas/blocks'
 import { endOf } from '../domain/chain'
+import { INDICATOR_MAX, PER_QUESTION_MAX, QUESTION_MAX, isCandidate } from '../domain/focus'
 import { MAX_DEPTH, NON_FOCUS_KEEPS, TREES, depthOf, heightOf } from '../domain/tree'
 import { proposeInput, type ProposeInput } from './tools'
 
@@ -22,13 +23,15 @@ export type ToProposal = {
   groups?: Item[]
   /** Step 2's block now: step 3's goals point to its causes and core problems. */
   step2?: LooseBlock
-  /** Step 3's block now: step 4's links end at its goals. */
+  /** Step 3's block now: step 4's links end at its goals; step 5's questions test them. */
   step3?: LooseBlock
+  /** Step 4's block now: step 5's questions test its links, deferrals name its candidates. */
+  step4?: LooseBlock
 }
 
 export type ProposalResult = { ok: true; proposal: Proposal } | { ok: false; errors: string[] }
 
-export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [], step2, step3 }: ToProposal): ProposalResult {
+export function toProposal(step: StepId, input: unknown, { seen, toolUseId, proposalId, at, groups = [], step2, step3, step4 }: ToProposal): ProposalResult {
   const parsed = proposeInput(step).safeParse(input)
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`) }
@@ -42,6 +45,8 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
 
   changes.forEach((change, index) => {
     const n = index + 1
+    // Step 5: reasons in the checkboxes' order, so a mere reordering is no change.
+    if (Array.isArray(change.fields?.reasons)) change.fields.reasons = FOCUS_REASONS.filter((r) => (change.fields!.reasons as string[]).includes(r))
     const base = { id: `${proposalId}c${result.length + 1}`, collection: change.collection, state: 'open' as const }
     if (change.op === 'add') {
       if (!TEMP_ID.test(change.id)) return void errors.push(`Änderung ${n}: add braucht eine vorläufige ID wie new:1, nicht "${change.id}".`)
@@ -66,6 +71,9 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
     const found = findItem(seen, change.collection, change.id)
     if (!found) return void errors.push(`Änderung ${n}: ${change.id} gibt es in „${change.collection}“ nicht.`)
     if (change.op === 'remove') {
+      // Step 5: removing a question takes its indicators with it, so their own removals would only show "veraltet".
+      const withQuestion = step === 5 && change.collection === 'indicators' && changes.some((c) => c.op === 'remove' && c.collection === 'focusQuestions' && c.id === found.item.focusQuestionId)
+      if (withQuestion) return
       result.push({ ...base, op: 'remove', targetId: change.id, baseRev: found.item.rev })
       return
     }
@@ -83,6 +91,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
   })
 
   if (!errors.length) errors.push(...groupErrors(step, seen, result, groups, step2, step3))
+  if (!errors.length && step === 5) errors.push(...focusErrors(seen, result, groups, step3, step4))
   if (errors.length) return { ok: false, errors }
   if (!result.length) return { ok: false, errors: ['Der Vorschlag ändert nichts am Baustein.'] }
   // An empty question is no reason to lose the card (design §6.2 "Step 18b"): it just shows no line.
@@ -101,18 +110,7 @@ export function toProposal(step: StepId, input: unknown, { seen, toolUseId, prop
 function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], groups: Item[], step2?: LooseBlock, step3?: LooseBlock): string[] {
   const keeps = NON_FOCUS_KEEPS[step]
   if (!keeps) return []
-  const after: Record<string, Item[]> = {}
-  for (const [name, slot] of Object.entries(seen)) if (Array.isArray(slot)) after[name] = slot.map((i) => ({ ...i }))
-  const touched: { n: number; collection: string; id: string }[] = []
-  changes.forEach((c, i) => {
-    const list = after[c.collection]
-    if (!list) return
-    const id = c.op === 'add' ? c.tempId! : c.targetId!
-    if (c.op === 'remove') return void list.splice(list.findIndex((x) => x.id === id), 1)
-    if (c.op === 'add') list.push({ id, rev: 1, editedByUser: false, ...c.fields } as Item)
-    else Object.assign(list.find((x) => x.id === id) ?? {}, c.fields)
-    touched.push({ n: i + 1, collection: c.collection, id })
-  })
+  const { after, touched } = applied(seen, changes)
   const errors: string[] = []
   for (const { n, collection, id } of touched) {
     const list = after[collection]
@@ -141,6 +139,74 @@ function groupErrors(step: StepId, seen: LooseBlock, changes: ProposalChange[], 
     if (depthOf(list, item) + heightOf(list, item) > MAX_DEPTH) errors.push(`Änderung ${n}: höchstens ${MAX_DEPTH} Ebenen (direkt, darunter, darunter).`)
   }
   return errors
+}
+
+/** The lists as they would look with every change applied, and the items the changes add or update. */
+function applied(seen: LooseBlock, changes: ProposalChange[]) {
+  const after: Record<string, Item[]> = {}
+  for (const [name, slot] of Object.entries(seen)) if (Array.isArray(slot)) after[name] = slot.map((i) => ({ ...i }))
+  const touched: { n: number; collection: string; id: string }[] = []
+  changes.forEach((c, i) => {
+    const list = after[c.collection]
+    if (!list) return
+    const id = c.op === 'add' ? c.tempId! : c.targetId!
+    if (c.op === 'remove') {
+      list.splice(list.findIndex((x) => x.id === id), 1)
+      // Step 5: a question's indicators go with it (domain/focus.ts).
+      if (c.collection === 'focusQuestions' && after.indicators) after.indicators = after.indicators.filter((x) => x.focusQuestionId !== id)
+      return
+    }
+    if (c.op === 'add') list.push({ id, rev: 1, editedByUser: false, ...c.fields } as Item)
+    else Object.assign(list.find((x) => x.id === id) ?? {}, c.fields)
+    touched.push({ n: i + 1, collection: c.collection, id })
+  })
+  return { after, touched }
+}
+
+/**
+ * Step 5 (design §6.2 "Step 19"): a question tests step 4 links and step 3 goals of focus
+ * groups; at most 3 questions, 2 indicators each, 6 in total; an indicator's question exists; a
+ * deferral names a current candidate, once, and never a link a question tests. Counted on the
+ * block as it would look with every change applied.
+ */
+function focusErrors(seen: LooseBlock, changes: ProposalChange[], groups: Item[], step3?: LooseBlock, step4?: LooseBlock): string[] {
+  const { after, touched } = applied(seen, changes)
+  const focus = new Set(groups.filter((g) => g.isFocus).map((g) => g.id))
+  const links = ((step4?.links as Item[]) ?? []).filter((l) => focus.has(l.groupId as string))
+  const goals = ((step3?.goals as Item[]) ?? []).filter((g) => focus.has(g.groupId as string))
+  const questions = after.focusQuestions ?? []
+  const indicators = after.indicators ?? []
+  const deferrals = after.deferredCandidates ?? []
+  const errors: string[] = []
+  const counts = touched.some((t) => t.collection === 'focusQuestions' || t.collection === 'indicators')
+  if (counts && questions.length > QUESTION_MAX)
+    errors.push(`Höchstens ${QUESTION_MAX} Lernfragen; der Vorschlag ergäbe ${questions.length}. Ergänze eine vorhandene Frage (update) oder entferne eine im selben Vorschlag.`)
+  if (counts && indicators.length > INDICATOR_MAX) errors.push(`Höchstens ${INDICATOR_MAX} Indikatoren insgesamt; der Vorschlag ergäbe ${indicators.length}. Pflichtangaben gehören in mandatoryFigures, nicht unter die Indikatoren.`)
+  for (const { n, collection, id } of touched) {
+    const item = after[collection]?.find((x) => x.id === id)
+    if (!item) continue
+    if (collection === 'focusQuestions') {
+      for (const ref of item.linkIds as string[]) {
+        if (!links.some((l) => l.id === ref)) errors.push(`Änderung ${n}: linkIds "${ref}" ist keine Verbindung einer Fokusgruppe aus Schritt 4.`)
+        const deferral = deferrals.find((d) => d.linkId === ref)
+        if (deferral) errors.push(`Änderung ${n}: Die Annahme von ${ref} ist zurückgestellt (${deferral.id}). Nimmst du sie auf, entferne die Zurückstellung im selben Vorschlag (remove).`)
+      }
+      for (const ref of item.goalIds as string[]) if (!goals.some((g) => g.id === ref)) errors.push(`Änderung ${n}: goalIds "${ref}" ist kein Ziel einer Fokusgruppe aus Schritt 3.`)
+    }
+    if (collection === 'indicators') {
+      const question = item.focusQuestionId as string
+      if (!questions.some((q) => q.id === question)) errors.push(`Änderung ${n}: focusQuestionId "${question}" ist keine Lernfrage (auch keine, die dieser Vorschlag anlegt).`)
+      else if (indicators.filter((i) => i.focusQuestionId === question).length > PER_QUESTION_MAX) errors.push(`Änderung ${n}: Höchstens ${PER_QUESTION_MAX} Indikatoren je Lernfrage (${question}).`)
+    }
+    if (collection === 'deferredCandidates') {
+      const link = links.find((l) => l.id === item.linkId)
+      if (!link || !isCandidate(link)) errors.push(`Änderung ${n}: linkId "${item.linkId}" ist kein Kandidat (eine kritische Verbindung einer Fokusgruppe mit Evidenz unsicher oder eigene Erfahrung).`)
+      if (deferrals.filter((d) => d.linkId === item.linkId).length > 1) errors.push(`Änderung ${n}: ${item.linkId} ist schon zurückgestellt. Ändere die vorhandene Zurückstellung (update).`)
+      if (questions.some((q) => (q.linkIds as string[]).includes(item.linkId as string)))
+        errors.push(`Änderung ${n}: Eine Lernfrage prüft ${item.linkId} schon; eine Annahme ist aufgenommen oder zurückgestellt, nicht beides.`)
+    }
+  }
+  return [...new Set(errors)]
 }
 
 /**

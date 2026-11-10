@@ -965,3 +965,228 @@
 .bwide > .bsection + .bsection {
   margin-top: var(--space-6);
 }
+
+/* Step 5 (design §6.2 "Step 19"): candidates, question records with their indicators, mandatory figures. */
+.bcand {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) 0;
+}
+
+.bcand__text--empty,
+.bcand__meta,
+.bnoted,
+.bnoted__done {
+  color: var(--text-muted);
+}
+
+.bcand__meta {
+  font: var(--text-small);
+}
+
+/* The decision line: the only editable part of a derived row. Positioned, so its visually
+   hidden button reason stays inside the scroll box (step 12 lesson). */
+.bdecide {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-3);
+  min-height: var(--target-min);
+  margin-top: var(--space-1);
+  font: var(--text-small);
+}
+
+.bitem.bdecide {
+  display: block;
+  padding: 0;
+}
+
+.bdecide .undo {
+  min-height: var(--target-min);
+}
+
+.bdecide__open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+.bdecide__btn,
+.bnoted__add {
+  font: 600 13px/18px var(--font);
+}
+
+/* With 3 questions the reason stands once in the section's cue; on each row it is only read out. */
+.bdecide .btn-reason {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.bdecide__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--space-2);
+}
+
+.bcand__old {
+  margin-top: var(--space-2);
+}
+
+.bcand__oldtext {
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.bcount {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.bcount--over {
+  color: var(--text);
+}
+
+/* Questions: an ol of framed records, so each question's indicators visibly belong to it. */
+.bquestions {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-1);
+}
+
+.blist.bquestions > li + li {
+  border-top: 0;
+}
+
+.bquestion {
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+}
+
+.bquestion__num {
+  font: 600 13px/18px var(--font);
+  color: var(--text-muted);
+}
+
+.bquestion__reasons {
+  min-inline-size: 0;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.bquestion__reasons legend {
+  padding: 0;
+}
+
+.bquestion__who {
+  padding-bottom: 0;
+}
+
+.bquestion__refs {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.bquestion__refline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+}
+
+.bquestion__chips {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bquestion__chips .refchip--level {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.bquestion__indicators {
+  padding-bottom: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.bsection__head h5 {
+  font: var(--text-label);
+}
+
+.bindicator__fields {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.bindicator__level {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.bindicator__level .bselect {
+  max-width: 100%;
+}
+
+/* "Pflichtangabe" chip inline before the name: required, not chosen (guide §4.1a). */
+.bfigure__name {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.bfigure__name .offen-chip {
+  flex: none;
+  margin-top: 6px;
+}
+
+.bfigure__name .inline {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bnoted {
+  padding-bottom: var(--space-2);
+  font: var(--text-small);
+}
+
+.bnoted ul {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-6);
+  color: var(--text);
+}
+
+.bpicker__groupname {
+  font: 600 13px/18px var(--font);
+  color: var(--text-muted);
+}
+
+/* "Indikatoren" sits close to its rows (design check step 19). */
+.bquestion__indicators .blist,
+.bquestion__indicators .bsection__empty {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+/* A bad-data fallback: muted, like a question's head (design check step 19). */
+.borphans .bsection__head h4 {
+  font: 600 13px/18px var(--font);
+  color: var(--text-muted);
+}
