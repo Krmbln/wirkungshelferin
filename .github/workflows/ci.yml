@@ -43,7 +43,11 @@ jobs:
         run: npm run test:dist
 
       - name: Install Google Chrome for Playwright
-        run: npx playwright install --with-deps chrome
+        # GitHub's Ubuntu image ships Google Chrome; only install when it's missing (an apt mirror
+        # outage on 2026-11-11 broke the install for hours while the preinstalled Chrome was there).
+        run: |
+          if command -v google-chrome >/dev/null; then google-chrome --version
+          else npx playwright install --with-deps chrome; fi
 
       - name: E2E tests in Chrome
         run: npm run e2e
