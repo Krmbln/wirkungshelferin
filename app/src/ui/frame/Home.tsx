@@ -6,6 +6,8 @@ import { Banner } from '../components/Banner'
 import { Button } from '../components/Button'
 import { StatusIcon } from '../components/StatusIcon'
 import { ThinkingIndicator } from '../components/ThinkingIndicator'
+import { CopyButton } from '../copy/CopyButton'
+import { copyAll, projectHasContent, unconfirmedLine } from '../copy/model'
 import { confirmedLine, homeCard, rowStatus, type CardBody } from '../home'
 import { recommendedStep, statusesOf, steps, stepsByPart } from '../steps'
 import './Home.css'
@@ -64,7 +66,16 @@ export function Home({ project, now, writing, backup, onOpenStep, onSaveBackup }
       <section className="home__resume" aria-labelledby="resume-heading">
         {card.kind === 'done' ? (
           // No eyebrow: "Als Nächstes" over "all confirmed" would contradict it (design check).
-          <h2 id="resume-heading">Alle Schritte sind bestätigt.</h2>
+          // "Alles kopieren" is the card's primary here: F has no Weiter (design §6.5).
+          <>
+            <h2 id="resume-heading">Alle Schritte sind bestätigt.</h2>
+            <div className="home__body">
+              <p>Dein Wirkungsmodell ist fertig. Kopier es und füg es in Google Docs oder Word ein.</p>
+            </div>
+            <CopyButton variant="primary" build={() => copyAll(project, now)} data-copy="all">
+              Alles kopieren
+            </CopyButton>
+          </>
         ) : (
           <>
             <p className="home__eyebrow" id="resume-heading">
@@ -143,6 +154,30 @@ export function Home({ project, now, writing, backup, onOpenStep, onSaveBackup }
           </ul>
         </section>
       ))}
+
+      {/* The whole model, as long as the card doesn't offer it itself (design §6.5). */}
+      {card.kind !== 'done' && <Result project={project} now={now} />}
     </div>
+  )
+}
+
+function Result({ project, now }: { project: Project; now: Date }) {
+  const line = unconfirmedLine(project)
+  return (
+    <section className="home__part home__result" aria-labelledby="home-result">
+      <h2 id="home-result">Ergebnis</h2>
+      <div className="home__result-body">
+        <p className="home__muted">Alle Bausteine mit ihren Begründungen als Text – zum Einfügen in Google Docs oder Word.</p>
+        <CopyButton
+          variant="secondary"
+          build={() => copyAll(project, now)}
+          disabledReason={projectHasContent(project) ? undefined : 'Noch nichts zu kopieren – fang mit Schritt 0 an.'}
+          data-copy="all"
+        >
+          Alles kopieren
+        </CopyButton>
+        {line && projectHasContent(project) && <p className="home__result-line">{line}</p>}
+      </div>
+    </section>
   )
 }

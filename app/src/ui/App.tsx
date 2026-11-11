@@ -24,6 +24,8 @@ import type { CheckControls } from './check/useCheckRunner'
 import { scrollIntoView } from './proposals/highlight'
 import { Banner } from './components/Banner'
 import { Button } from './components/Button'
+import { CopyButton } from './copy/CopyButton'
+import { copyStep, stepHasContent } from './copy/model'
 import { Home } from './frame/Home'
 import { ProposalCard, type TargetHint } from './proposals/ProposalCard'
 import { PageHeader } from './frame/PageHeader'
@@ -342,6 +344,13 @@ function StepView({
   return (
     <StepWorkspace
       step={steps[step]}
+      copy={
+        stepHasContent(project, step) && (
+          <CopyButton build={() => copyStep(project, step)} label={`Baustein kopieren: Schritt ${step} · ${steps[step].title}`} data-copy="step">
+            Kopieren
+          </CopyButton>
+        )
+      }
       notice={
         changes.length > 0 && (
           <OutdatedBanner

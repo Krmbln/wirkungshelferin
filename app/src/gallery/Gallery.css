@@ -115,3 +115,18 @@
   padding: var(--space-3) var(--space-6);
   background: var(--surface);
 }
+
+/* The copied document as a paste target starts from it: the browser's own styles, a white page (step 23). */
+.copy-preview {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 48px 64px;
+  background: #fff;
+  color: #000;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+}
+
+.copy-preview * {
+  all: revert;
+}

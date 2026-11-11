@@ -37,6 +37,32 @@
   margin-bottom: var(--space-3);
 }
 
+/* "Baustein" with "Kopieren" on its line (design §6.5); the fallback / failure line gets its own
+   full-width row under both, left-aligned (design check: ragged-left text read badly). */
+.workspace__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+  align-items: start;
+  /* The copy's hidden status line sits in here once its wrapper is dissolved. */
+  position: relative;
+  margin-bottom: var(--space-3);
+}
+
+.workspace__head h2 {
+  margin-bottom: 0;
+}
+
+.workspace__head .copy {
+  display: contents;
+}
+
+.workspace__head .copy__line {
+  grid-column: 1 / -1;
+  max-width: none;
+}
+
 /* Sticky at the bottom of the block panel, at most half its height (design §6.2). */
 /* Only the gate's result list scrolls (QualityGate.css), so its buttons stay in view. */
 .workspace__check {

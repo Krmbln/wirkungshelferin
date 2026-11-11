@@ -227,7 +227,7 @@ const setupScreens = [
   'setup-backup-done',
   'setup-key-only',
 ]
-const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'load-invalid', 'load-newer', 'load-storage', ...setupScreens]
+const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'load-invalid', 'load-newer', 'load-storage', ...setupScreens, 'copy-preview', 'copy-preview-mixed']
 
 async function openScreen(page: Page, name: string) {
   await page.goto(`./?gallery&screen=${name}`)
@@ -1717,7 +1717,8 @@ test('home complete (step 22): card states, long texts, Weiter stays put during 
       await openScreen(page, screen)
       await noPageScroll()
       await noSideScroll()
-      await expect(page.locator('.btn--primary')).toHaveCount(screen === 'home-done' ? 0 : 1)
+      // F: "Alles kopieren" is the card's primary (step 23).
+      await expect(page.locator('.btn--primary')).toHaveCount(1)
       await shotScreen(`${screen}${suffix}`)
     }
     // C → D → B: the reserved body height keeps Weiter where it was (UI/UX H2); it may only move down.
@@ -1743,6 +1744,106 @@ test('home complete (step 22): card states, long texts, Weiter stays put during 
     await openScreen(page, 'home-ahead')
     await expect(card.getByRole('heading', { level: 2 })).toHaveText(/^Schritt 3 · /)
     await expect(page.locator('.home__row', { has: page.locator('.home__recommended') })).toContainText('1 · ')
+  }
+  expect(errors).toEqual([])
+})
+
+test('copy output (step 23): Kopieren on the heading, its states, Home "Ergebnis", the last banner, the document', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  const shotScreen = (name: string) => page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
+  const errors = watchErrors(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const noPageScroll = async () => expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true)
+  const column = page.locator('.workspace__block .workspace__scroll')
+  const inside = async (el: ReturnType<typeof page.locator>, box: ReturnType<typeof page.locator>) => {
+    const a = (await el.boundingBox())!
+    const b = (await box.boundingBox())!
+    expect(a.x).toBeGreaterThanOrEqual(b.x)
+    expect(a.x + a.width).toBeLessThanOrEqual(b.x + b.width + 0.5)
+  }
+  /** The next clipboard writes fail: 'rich' only the formatted one, 'all' both. */
+  const refuse = (what: 'rich' | 'all') =>
+    page.evaluate((w) => {
+      navigator.clipboard.write = () => Promise.reject(new DOMException('denied', 'NotAllowedError'))
+      if (w === 'all') navigator.clipboard.writeText = () => Promise.reject(new DOMException('denied', 'NotAllowedError'))
+    }, what)
+
+  for (const size of [
+    { width: 1390, height: 880 },
+    { width: 960, height: 760 },
+  ]) {
+    await page.setViewportSize(size)
+    const suffix = size.width === 1390 ? '' : '-960'
+
+    // Per block: on the heading's line, right end, inside the column.
+    await openScreen(page, 'copy-step')
+    const head = page.locator('.workspace__head')
+    const button = head.getByRole('button', { name: 'Baustein kopieren: Schritt 4 · Wirkungslogik' })
+    const h2 = (await head.locator('h2').boundingBox())!
+    const b = (await button.boundingBox())!
+    expect(b.y).toBeLessThan(h2.y + h2.height)
+    expect(b.height).toBeGreaterThanOrEqual(32)
+    await inside(button, column)
+    await noPageScroll()
+    await shotScreen(`copy-step${suffix}`)
+    await button.click()
+    await expect(button).toHaveAttribute('data-copied', 'true')
+    const width = b.width
+    expect((await button.boundingBox())!.width).toBe(width)
+    await shotScreen(`copy-step-copied${suffix}`)
+    await refuse('rich')
+    await button.click()
+    const line = head.locator('.copy__line')
+    await expect(line).toHaveText('Ohne Formatierung kopiert – Überschriften musst du beim Einfügen vielleicht selbst setzen.')
+    await inside(line, column)
+    expect(await line.evaluate((el) => getComputedStyle(el).fontSize)).toBe('13px')
+    await shotScreen(`copy-step-plain${suffix}`)
+    await refuse('all')
+    await button.click()
+    await expect(line).toHaveText('Kopieren hat nicht geklappt. Versuch es gleich noch einmal.')
+    await inside(line, column)
+    await noPageScroll()
+    expect(await column.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await shotScreen(`copy-step-failed${suffix}`)
+    await openScreen(page, 'copy-step-empty')
+    await expect(page.locator('[data-copy="step"]')).toHaveCount(0)
+
+    // Home: the "Ergebnis" section at the end, one primary on the page (Weiter).
+    for (const screen of ['copy-home', 'copy-home-many', 'copy-home-empty']) {
+      await openScreen(page, screen)
+      const result = page.getByRole('region', { name: 'Ergebnis' })
+      await result.scrollIntoViewIfNeeded()
+      await noPageScroll()
+      await expect(page.locator('.btn--primary')).toHaveCount(1)
+      if (screen === 'copy-home-empty') await expect(result.getByRole('button', { name: 'Alles kopieren' })).toHaveAttribute('aria-disabled', 'true')
+      else expect(await result.locator('.home__result-line').evaluate((el) => getComputedStyle(el).fontSize)).toBe('13px')
+      await shotScreen(`${screen}${suffix}`)
+    }
+
+    // After confirming step 6: the reminder with both buttons, inside the gate; after the backup the copy stays.
+    await openScreen(page, 'copy-final')
+    const gate = page.getByRole('region', { name: 'Qualitätscheck' })
+    await gate.getByRole('button', { name: 'Bestätigen' }).click()
+    const ask = gate.getByRole('group', { name: 'Trotzdem bestätigen?' })
+    if (await ask.isVisible()) await ask.getByRole('button', { name: 'Bestätigen' }).click()
+    await expect(gate.getByText('Schritt bestätigt. Speichere jetzt ein Backup und kopier dein Ergebnis.')).toBeVisible()
+    for (const name of ['Backup speichern', 'Alles kopieren', 'Später']) await inside(gate.getByRole('button', { name }), gate)
+    await noPageScroll()
+    await shotScreen(`copy-final${suffix}`)
+    await gate.getByRole('button', { name: 'Backup speichern' }).click()
+    await expect(gate.getByText('Backup ist in deinen Downloads.')).toBeVisible()
+    // While it says "Kopiert" the button is named so: hold it by its marker.
+    const copyAll = gate.locator('[data-copy="all"]')
+    await copyAll.click()
+    await expect(copyAll).toHaveAttribute('data-copied', 'true')
+    await shotScreen(`copy-final-saved${suffix}`)
+  }
+
+  // The document itself, as the browser shows the clipboard HTML.
+  await page.setViewportSize({ width: 1390, height: 880 })
+  for (const screen of ['copy-preview', 'copy-preview-mixed']) {
+    await openScreen(page, screen)
+    await page.screenshot({ path: `screenshots/gallery/screen-${screen}.png`, fullPage: true, animations: 'disabled' })
   }
   expect(errors).toEqual([])
 })

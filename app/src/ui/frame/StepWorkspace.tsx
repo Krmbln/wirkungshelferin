@@ -5,7 +5,8 @@ import './StepWorkspace.css'
 // Chat left (~45 %), block right (~55 %), sticky check area under the block (design §5.2, §6.2).
 // The check area holds the quality gate (step 13); steps without a block yet keep a placeholder.
 // `notice`: a standing banner above the block that stays in view while it scrolls ("vielleicht veraltet", step 21).
-export function StepWorkspace({ step, chat, block, check, notice }: { step: Step; chat: ReactNode; block: ReactNode; check?: ReactNode; notice?: ReactNode }) {
+// `copy`: the block's "Kopieren" at the end of the heading line (design §6.5).
+export function StepWorkspace({ step, chat, block, check, notice, copy }: { step: Step; chat: ReactNode; block: ReactNode; check?: ReactNode; notice?: ReactNode; copy?: ReactNode }) {
   return (
     <div className="workspace" data-step={step.id}>
       <section className="workspace__chat" aria-label="Chat">
@@ -15,7 +16,10 @@ export function StepWorkspace({ step, chat, block, check, notice }: { step: Step
       <section className="workspace__block" aria-labelledby="block-heading">
         {notice && <div className="workspace__notice">{notice}</div>}
         <div className="workspace__scroll">
-          <h2 id="block-heading">Baustein</h2>
+          <div className="workspace__head">
+            <h2 id="block-heading">Baustein</h2>
+            {copy}
+          </div>
           {block}
         </div>
         <div className="workspace__check" aria-labelledby="check-heading" role="region">

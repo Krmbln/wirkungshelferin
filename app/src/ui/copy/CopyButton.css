@@ -1,0 +1,27 @@
+/* The button with its fallback / failure line under it (design §6.5). */
+.copy {
+  display: inline-grid;
+  gap: var(--space-1);
+  /* The hidden status line needs a positioned ancestor inside every scroll box (lessons, step 12). */
+  position: relative;
+  justify-items: start;
+  max-width: 100%;
+}
+
+.copy__line {
+  max-width: 300px;
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.copy__line--failed {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: flex-start;
+  color: var(--text);
+}
+
+.copy__line--failed .status-icon {
+  flex: none;
+  margin-top: 2px;
+}

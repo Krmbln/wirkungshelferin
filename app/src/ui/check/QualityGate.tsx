@@ -12,6 +12,8 @@ import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { StatusIcon } from '../components/StatusIcon'
 import { ThinkingIndicator } from '../components/ThinkingIndicator'
+import { CopyButton } from '../copy/CopyButton'
+import { copyAll } from '../copy/model'
 import { changedSubject } from './OutdatedBanner'
 import { blockingText, gateView, okText, warnConfirmText, type JudgedRow } from './gate'
 import type { CheckProblem, CheckRun } from './useCheckRunner'
@@ -62,7 +64,7 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
   // While a check runs or after it failed, the ⛔ rows come from the block now (instantly, offline too).
   const view = gateView(project, step, !!run)
   const [asking, setAsking] = useState(false)
-  const [prompt, setPrompt] = useState<'open' | 'saved' | 'handoff' | 'handoff-saved' | null>(null)
+  const [prompt, setPrompt] = useState<'open' | 'saved' | 'handoff' | 'handoff-saved' | 'final' | 'final-saved' | null>(null)
   const [okOpen, setOkOpen] = useState(false)
   const [announce, setAnnounce] = useState('')
   // Set by a confirm that changed content: then the cascade is announced once it shows.
@@ -134,7 +136,8 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
     // Only a re-confirm that changed something marks anything: an unchanged one must not announce old marks.
     setConfirming(!!before && reachedBy(step, before.block as Record<string, unknown>, project.steps[step].block as unknown as Record<string, unknown>).length > 0)
     setAsking(false)
-    setPrompt(handing ? 'handoff' : 'open')
+    // The last step also reminds of "Alles kopieren" (method guide step 6, design §6.5).
+    setPrompt(handing ? 'handoff' : step === 6 ? 'final' : 'open')
     focusNext.current = handing ? '[data-gate="next"]' : '[data-gate="backup"]'
   }
 
@@ -264,6 +267,49 @@ export function QualityGate({ project, step, now, model, run, chatBusy = false, 
         >
           Schritt bestätigt. Jetzt Backup speichern?
         </Banner>
+      )}
+      {(prompt === 'final' || prompt === 'final-saved') && (
+        <div className="gate__handoff">
+          <Banner
+            tone="neutral"
+            actions={
+              <>
+                {prompt === 'final' && (
+                  <Button
+                    variant="secondary"
+                    data-gate="backup"
+                    onClick={() => {
+                      onSaveBackup()
+                      setPrompt('final-saved')
+                      focusNext.current = '[data-gate="saved"]'
+                    }}
+                  >
+                    Backup speichern
+                  </Button>
+                )}
+                <CopyButton variant="secondary" build={() => copyAll(project, now)} data-copy="all">
+                  Alles kopieren
+                </CopyButton>
+                <Button
+                  variant="text"
+                  onClick={() => {
+                    setPrompt(null)
+                    focusNext.current = '[data-gate="confirmed"]'
+                  }}
+                >
+                  Später
+                </Button>
+              </>
+            }
+          >
+            Schritt bestätigt. Speichere jetzt ein Backup und kopier dein Ergebnis.
+            {prompt === 'final-saved' && (
+              <span className="banner__note" data-gate="saved" tabIndex={-1}>
+                Backup ist in deinen Downloads.
+              </span>
+            )}
+          </Banner>
+        </div>
       )}
       {(prompt === 'handoff' || prompt === 'handoff-saved') && handoff && (
         <div className="gate__handoff">
