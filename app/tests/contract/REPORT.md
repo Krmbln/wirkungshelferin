@@ -54,3 +54,5 @@ Added 2026-11-10 (step 20, run alone with `-t "10 · step 6"`): the step 6 row a
 Added 2026-11-10 (step 21, run alone with `-t "11 · change"`): the review row above · 1 call · **≈ $0.27**.
 
 Added 2026-11-10 (step 22, run alone with `-t "12 · home"`): the home summary row above · 1 call · **≈ $0.01**.
+
+Added 2026-11-11 (step 24 cost check, run alone with `-t "2 · step 1"`): all eight step 1 rows above ✓ again · cache reads per turn 0 → 23491 → 25777 → 25834 tokens · longest silence on the wire 14.2 s between bytes (= between events; 7 pings), against the new 90 s stall timeout · 8 calls · **≈ $0.42**. Recorded step 1 fixtures restored from git (the tests depend on their content).

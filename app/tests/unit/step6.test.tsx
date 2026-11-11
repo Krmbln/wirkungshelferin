@@ -63,7 +63,7 @@ describe('what needs a plan row', () => {
   it('lists indicators by question, then mandatory figures, each with its coverage line', () => {
     open(project([planRow('pr1', { indicatorIds: ['in1', 'in2'] })]))
     expect([...document.querySelectorAll('[data-coverage]')].map((el) => el.getAttribute('data-coverage'))).toEqual(['in1', 'in2', 'in3', 'mf1', 'mf2'])
-    expect(within(coverageRow('in1')).getByText('In Zeile 1')).toBeTruthy()
+    expect(within(coverageRow('in1')).getByText('In Planzeile 1')).toBeTruthy()
     expect(within(coverageRow('in2')).getByText(/Ausgangswert: nachträglich im März/)).toBeTruthy()
     expect(within(coverageRow('in3')).getByText('noch ohne Planzeile')).toBeTruthy()
     expect(within(coverageRow('mf1')).getByText('Pflichtangabe')).toBeTruthy()
@@ -87,10 +87,10 @@ describe('what needs a plan row', () => {
     expect(rows.every((r) => toggle(r.id).getAttribute('aria-expanded') === 'true')).toBe(true)
   })
 
-  it('"Zur Zeile" opens a closed row and focuses its head', async () => {
+  it('"Zur Planzeile" opens a closed row and focuses its head', async () => {
     const { user } = open(project([planRow('pr1', { indicatorIds: ['in1'] }), planRow('pr2', { indicatorIds: ['in2'] }), planRow('pr3', { indicatorIds: ['in3'] })]))
     expect(toggle('pr2').getAttribute('aria-expanded')).toBe('false')
-    await user.click(within(coverageRow('in2')).getByRole('button', { name: /^Zur Zeile 2/ }))
+    await user.click(within(coverageRow('in2')).getByRole('button', { name: /^Zur Planzeile 2/ }))
     expect(toggle('pr2').getAttribute('aria-expanded')).toBe('true')
     expect(document.activeElement).toBe(toggle('pr2'))
   })
@@ -145,31 +145,31 @@ describe('plan rows as disclosures', () => {
     const { user } = open(three())
     await user.click(screen.getByRole('button', { name: 'Planzeile hinzufügen' }))
     expect(toggle('pr4').getAttribute('aria-expanded')).toBe('true')
-    expect(document.activeElement).toBe(within(record('pr4')).getByRole('button', { name: 'Bezug wählen: Zeile 4' }))
+    expect(document.activeElement).toBe(within(record('pr4')).getByRole('button', { name: 'Bezug wählen: Planzeile 4' }))
   })
 })
 
 describe('the Bezug picker', () => {
   it('each tick saves at once; another row’s cover shows; Esc closes and focus goes back', async () => {
     const { user } = open(project([planRow('pr1', { indicatorIds: ['in1'] }), planRow('pr2', { mandatoryFigureIds: ['mf1'] })]))
-    await user.click(within(record('pr2')).getByRole('button', { name: 'Bezug ändern: Zeile 2' }))
+    await user.click(within(record('pr2')).getByRole('button', { name: 'Bezug ändern: Planzeile 2' }))
     const picker = document.querySelector<HTMLElement>('[data-picker="pr2"]')!
     expect(within(picker).getByRole('group', { name: /^Frage 1: Bleiben die Ehrenamtlichen dabei\?/ })).toBeTruthy()
-    expect(within(picker).getByText(/· in Zeile 1/)).toBeTruthy()
+    expect(within(picker).getByText(/· in Planzeile 1/)).toBeTruthy()
     // The row's own references don't count as another row's cover.
-    expect(within(picker).queryByText(/· in Zeile 2/)).toBeNull()
+    expect(within(picker).queryByText(/· in Planzeile 2/)).toBeNull()
     await user.click(within(picker).getByRole('checkbox', { name: /Zahl der Ehrenamtlichen im Winter/ }))
     expect(latest.steps[6].block.planRows[1].indicatorIds).toEqual(['in2'])
     await user.keyboard('{Escape}')
     expect(document.querySelector('[data-picker="pr2"]')).toBeNull()
-    expect(document.activeElement).toBe(within(record('pr2')).getByRole('button', { name: 'Bezug ändern: Zeile 2' }))
+    expect(document.activeElement).toBe(within(record('pr2')).getByRole('button', { name: 'Bezug ändern: Planzeile 2' }))
   })
 
   it('a deleted reference: chip "Verweis fehlt", unticking it in the picker removes it', async () => {
     const p = project([planRow('pr1', { indicatorIds: ['in1', 'gone'] })])
     const { user } = open(p)
     expect(within(record('pr1')).getByText('Verweis fehlt')).toBeTruthy()
-    await user.click(within(record('pr1')).getByRole('button', { name: 'Bezug ändern: Zeile 1' }))
+    await user.click(within(record('pr1')).getByRole('button', { name: 'Bezug ändern: Planzeile 1' }))
     await user.click(screen.getByRole('checkbox', { name: /Verweis fehlt \(gelöscht\)/ }))
     expect(latest.steps[6].block.planRows[0].indicatorIds).toEqual(['in1'])
   })

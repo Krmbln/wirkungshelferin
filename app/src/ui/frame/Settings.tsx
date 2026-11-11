@@ -118,10 +118,10 @@ function ApiKey({ settings, onSettingsChange }: SettingsProps) {
               requestAnimationFrame(() => input.current?.focus())
             }}
           >
-            ändern
+            Ändern
           </Button>
           <Button variant="text" onClick={() => setConfirmRemove(true)}>
-            entfernen
+            Entfernen
           </Button>
         </div>
         {error && <FieldError>{error}</FieldError>}

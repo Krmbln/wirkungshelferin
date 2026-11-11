@@ -3,7 +3,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import type { BetaMessage, BetaToolResultBlockParam, BetaToolUseBlock } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { sdkAiClient, type SendOptions, type SendResult } from '../../src/ai/client'
+import { sdkAiClient, STALL_TIMEOUT, type SendOptions, type SendResult } from '../../src/ai/client'
 import { commitAnswer, prepareAct, prepareTurn, reviewed } from '../../src/ai/chat'
 import { extractPdf } from '../../src/ai/pdf'
 import {
@@ -99,6 +99,8 @@ async function check(name: string, run: () => Promise<string | void>) {
 }
 
 afterAll(() => {
+  const g = rec.gaps()
+  facts.push(`Longest silence on the wire: ${(g.bytes / 1000).toFixed(1)} s between bytes, ${(g.events / 1000).toFixed(1)} s between events the SDK shows · ${g.pings} pings (stall timeout ${STALL_TIMEOUT / 1000} s)`)
   const lines = [
     '# Live API contract — last run',
     '',

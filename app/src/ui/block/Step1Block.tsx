@@ -215,6 +215,7 @@ export function Step1Block({ project, onAction, applied, blocked = new Set() }: 
 
       <BlockSection
         title="Zielgruppen"
+        addText="Zielgruppe"
         onAdd={() => add('targetGroups')}
         addLabel="Zielgruppe hinzufügen"
         addKey="targetGroups"
@@ -226,6 +227,7 @@ export function Step1Block({ project, onAction, applied, blocked = new Set() }: 
 
       <BlockSection
         title="Beteiligte"
+        addText="Beteiligte"
         onAdd={() => add('stakeholders')}
         addLabel="Beteiligte hinzufügen"
         addKey="stakeholders"

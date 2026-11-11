@@ -209,7 +209,7 @@ function step6Judged(block: LooseBlock, project: Project): AppJudged[] {
   const row = (criterion: string, found: Finding[], ok: string): AppJudged =>
     found.length ? { criterion, result: 'warn', note: `${found[0].note}${more(found.length)}`, target: found[0].target } : { criterion, result: 'ok', note: ok }
   const all = needsOf(project.steps[5].block as unknown as LooseBlock)
-  const name = (r: Item) => `Zeile ${rows.indexOf(r) + 1} ${rowName(all, r)}`
+  const name = (r: Item) => `Planzeile ${rows.indexOf(r) + 1} ${rowName(all, r)}`
   const at = (r: Item, field: string): FieldTarget => ({ collection: 'planRows', id: r.id, field })
   const missing = (criterion: string, fields: PlanField[], text: string, ok: string) =>
     row(
@@ -462,7 +462,7 @@ function step6Issues(block: LooseBlock, needs: Need[]): HardIssue[] {
   const rows = (block.planRows as Item[]) ?? []
   const issues: HardIssue[] = []
   rows.forEach((r, n) => {
-    const name = `Zeile ${n + 1} ${rowName(needs, r)}`
+    const name = `Planzeile ${n + 1} ${rowName(needs, r)}`
     if (!hasRefs(r)) issues.push({ criterion: ids.link!, text: `Planzeile ohne Bezug: ${name}`, target: { collection: 'planRows', id: r.id, field: 'refs' } })
     if (empty(r.why)) issues.push({ criterion: ids.why, text: `Warum fehlt: ${name}`, target: { collection: 'planRows', id: r.id, field: 'why' } })
   })

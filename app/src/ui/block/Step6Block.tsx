@@ -34,7 +34,7 @@ import { useRemovals, type Removal } from './useRemovals'
 // screen state: the closed keys live in App's collapsed list (row ids + COVERAGE_KEY).
 
 const quoted = (text: string, n = 40) => `„${cut(text, n)}“`
-const rowList = (nums: number[]) => (nums.length === 1 ? `Zeile ${nums[0]}` : `Zeile ${nums.slice(0, -1).join(', ')} und ${nums[nums.length - 1]}`)
+const rowList = (nums: number[]) => (nums.length === 1 ? `Planzeile ${nums[0]}` : `Planzeile ${nums.slice(0, -1).join(', ')} und ${nums[nums.length - 1]}`)
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 /** The form's fields in the guide's order with their placeholders (design "Step 20"). */
@@ -190,8 +190,8 @@ export function Step6Block({ project, onAction, applied, issues = [], collapsed,
           {nums.length ? (
             <>
               <span>In {rowList(nums)}</span>
-              <Button variant="text" className="bdecide__btn" aria-label={`Zur Zeile ${nums[0]}: ${label}`} onClick={() => goToRow(rows[nums[0] - 1].id)}>
-                Zur Zeile
+              <Button variant="text" className="bdecide__btn" aria-label={`Zur Planzeile ${nums[0]}: ${label}`} onClick={() => goToRow(rows[nums[0] - 1].id)}>
+                Zur Planzeile
               </Button>
             </>
           ) : (
@@ -312,7 +312,7 @@ export function Step6Block({ project, onAction, applied, issues = [], collapsed,
   }
 
   function planRow(row: Item, n: number): ReactNode {
-    const name = `Zeile ${n + 1}`
+    const name = `Planzeile ${n + 1}`
     const refs = planRefsOf(all, row)
     const open = !collapsed.includes(row.id)
     const choosing = picking === row.id
@@ -501,7 +501,7 @@ function PlanPicker({ row, rows, project, onChange, onClose, onOpenStep }: Picke
     if (kind === 'indicator') onChange({ indicatorIds: on ? [...indicatorIds, id] : indicatorIds.filter((x) => x !== id) })
     else onChange({ mandatoryFigureIds: on ? [...figureIds, id] : figureIds.filter((x) => x !== id) })
   }
-  /** " · in Zeile 3" when another row covers it already (still tickable: rows can share). */
+  /** " · in Planzeile 3" when another row covers it already (still tickable: rows can share). */
   const elsewhere = (kind: Need['kind'], id: string) => {
     const nums = rowsCovering(rows, kind, id).filter((n) => rows[n - 1].id !== row.id)
     return nums.length ? <span className="bpicker__meta"> · in {rowList(nums)}</span> : null

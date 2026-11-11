@@ -8,15 +8,19 @@ const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 // Production only: the dev server needs inline scripts (tech design §12).
 // frame-ancestors is not honoured in a <meta> CSP, so it is left out.
 export const CSP_DIRECTIVES: Record<string, string> = {
-  'default-src': "'self'",
+  // Deny by default: frames, workers, media and manifests fall back to 'none'.
+  'default-src': "'none'",
   'script-src': "'self'",
   'style-src': "'self'",
   'font-src': "'self'",
   'img-src': "'self'",
   'connect-src': 'https://api.anthropic.com',
   'object-src': "'none'",
-  'base-uri': "'self'",
+  'base-uri': "'none'",
   'form-action': "'none'",
+  // No script may write HTML into the page (innerHTML and friends); model output can't become markup.
+  'require-trusted-types-for': "'script'",
+  'trusted-types': "'none'",
 }
 
 function cspMeta(): Plugin {
@@ -35,6 +39,15 @@ function cspMeta(): Plugin {
 export default defineConfig({
   base: '/wirkungshelferin/',
   plugins: [react(), cspMeta()],
+  resolve: {
+    alias: {
+      // Its browser build decodes "&amp;" via element.innerHTML, which Trusted Types refuses (the
+      // Markdown renderer would crash on any entity). The table build does the same without the DOM.
+      'decode-named-character-reference': fileURLToPath(
+        new URL('./node_modules/decode-named-character-reference/index.js', import.meta.url),
+      ),
+    },
+  },
   server: {
     // The method guide lives outside app/ and is imported with ?raw.
     fs: { allow: [repoRoot] },

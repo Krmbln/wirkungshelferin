@@ -113,9 +113,9 @@ describe('⛔ rules', () => {
     p.steps[6].block.planRows.push(row('pr3', { why: '', dataSource: 'Gespräch' }))
     p.steps[6].block.planRows[0].why = ''
     expect(hardIssues(6, block6(p), ...issueContext(p)).map((i) => [i.criterion, i.text, i.target.field])).toEqual([
-      ['10', 'Warum fehlt: Zeile 1 „Öffnungstage mit beiden“', 'why'],
-      ['1', 'Planzeile ohne Bezug: Zeile 3 „Gespräch“', 'refs'],
-      ['10', 'Warum fehlt: Zeile 3 „Gespräch“', 'why'],
+      ['10', 'Warum fehlt: Planzeile 1 „Öffnungstage mit beiden“', 'why'],
+      ['1', 'Planzeile ohne Bezug: Planzeile 3 „Gespräch“', 'refs'],
+      ['10', 'Warum fehlt: Planzeile 3 „Gespräch“', 'why'],
     ])
   })
 
@@ -124,7 +124,7 @@ describe('⛔ rules', () => {
     p = reducer(p, { type: 'item/remove', step: 5, collection: 'mandatoryFigures', id: 'mf1' })
     expect(hardIssues(6, block6(p), ...issueContext(p))).toEqual([])
     const broken = appJudged(6, block6(p), p).find((j) => j.criterion === '1')!
-    expect(broken).toMatchObject({ result: 'warn', note: 'Verweis fehlt: Zeile 2 „Teilnahmeliste“', target: { collection: 'planRows', id: 'pr2', field: 'refs' } })
+    expect(broken).toMatchObject({ result: 'warn', note: 'Verweis fehlt: Planzeile 2 „Teilnahmeliste“', target: { collection: 'planRows', id: 'pr2', field: 'refs' } })
   })
 
   it('confirming waits for the ⛔ and then goes through with the ⚠ stored', () => {
@@ -155,9 +155,9 @@ describe('the app’s own ⚠', () => {
     p = edit6(p, 'pr1', { collector: '', firstCollection: '' })
     p = edit6(p, 'pr2', { method: '', analysis: '' })
     const by = Object.fromEntries(appJudged(6, block6(p), p).map((j) => [j.criterion, j]))
-    expect(by['3']).toMatchObject({ result: 'warn', note: 'Datenquelle oder Methode fehlt: Zeile 2 „Teilnehmende nach Geschlecht“', target: { id: 'pr2', field: 'method' } })
-    expect(by['6']).toMatchObject({ result: 'warn', note: 'Wer, wann oder erster Termin fehlt: Zeile 1 „Öffnungstage mit beiden“', target: { id: 'pr1', field: 'collector' } })
-    expect(by['9']).toMatchObject({ result: 'warn', note: 'Auswertung fehlt: Zeile 2 „Teilnehmende nach Geschlecht“', target: { id: 'pr2', field: 'analysis' } })
+    expect(by['3']).toMatchObject({ result: 'warn', note: 'Datenquelle oder Methode fehlt: Planzeile 2 „Teilnehmende nach Geschlecht“', target: { id: 'pr2', field: 'method' } })
+    expect(by['6']).toMatchObject({ result: 'warn', note: 'Wer, wann oder erster Termin fehlt: Planzeile 1 „Öffnungstage mit beiden“', target: { id: 'pr1', field: 'collector' } })
+    expect(by['9']).toMatchObject({ result: 'warn', note: 'Auswertung fehlt: Planzeile 2 „Teilnehmende nach Geschlecht“', target: { id: 'pr2', field: 'analysis' } })
     expect(by['1'].result).toBe('ok')
   })
 

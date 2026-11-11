@@ -48,4 +48,16 @@ describe('Root', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Übersicht' })).toBeTruthy()
     expect(screen.queryByText(/Bitte öffne/)).toBeNull()
   })
+
+  it('refuses to load inside a frame, without reading storage', () => {
+    const store = readyStore({ [keys.project]: makeProject() })
+    const get = vi.spyOn(store, 'get')
+    render(<Root nav={browsers.chrome} appUrl={APP_URL} store={store} framed />)
+    expect(get).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Bitte öffne die Wirkungshelferin direkt' })).toBeTruthy()
+    const link = screen.getByRole('link', { name: 'In einem eigenen Tab öffnen' })
+    expect(link.getAttribute('href')).toBe(APP_URL)
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(screen.queryByRole('navigation')).toBeNull()
+  })
 })

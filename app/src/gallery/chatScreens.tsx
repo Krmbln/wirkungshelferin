@@ -51,8 +51,11 @@ const proposals = [
 ].map((p) => ({ ...p, toolUseId: 'toolu_g1' }))
 
 function project(messages: StoredMessage[], segments?: ChatSegment[]): Project {
-  const p = makeProject({ steps: { 0: { status: 'confirmed' }, 1: { status: 'in_progress', proposals } } })
-  p.steps[1].segments = segments ?? (messages.length ? [{ id: 'seg1', startedAt: at, messages }] : [])
+  // A proposal only exists with the message that made it: an empty chat has none (the app can't
+  // show "1 offene Änderung" beside an empty chat).
+  const talk = segments ?? (messages.length ? [{ id: 'seg1', startedAt: at, messages }] : [])
+  const p = makeProject({ steps: { 0: { status: 'confirmed' }, 1: { status: 'in_progress', proposals: talk.length ? proposals : [] } } })
+  p.steps[1].segments = talk
   return p
 }
 

@@ -11,6 +11,8 @@
   border-radius: var(--radius);
   font: var(--text-label);
   white-space: nowrap;
+  /* A link styled as a button (FrameGate) drops the link underline. */
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color var(--motion-fast),

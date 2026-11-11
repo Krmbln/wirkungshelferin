@@ -39,14 +39,25 @@ function cspDirectives(): Map<string, string> {
 
 describe('CSP in the built index.html', () => {
   it('has the expected directives', () => {
+    expect(Object.fromEntries(cspDirectives())).toEqual({
+      'default-src': "'none'",
+      'script-src': "'self'",
+      'style-src': "'self'",
+      'font-src': "'self'",
+      'img-src': "'self'",
+      'connect-src': 'https://api.anthropic.com',
+      'object-src': "'none'",
+      'base-uri': "'none'",
+      'form-action': "'none'",
+      'require-trusted-types-for': "'script'",
+      'trusted-types': "'none'",
+    })
+  })
+
+  it('names no directive a <meta> CSP ignores', () => {
+    // frame-ancestors, sandbox and report-uri only work as HTTP headers, which Pages can't send.
     const csp = cspDirectives()
-    expect(csp.get('default-src')).toBe("'self'")
-    expect(csp.get('script-src')).toBe("'self'")
-    expect(csp.get('style-src')).toBe("'self'")
-    expect(csp.get('font-src')).toBe("'self'")
-    expect(csp.get('img-src')).toBe("'self'")
-    expect(csp.get('connect-src')).toBe('https://api.anthropic.com')
-    expect(csp.get('object-src')).toBe("'none'")
+    for (const name of ['frame-ancestors', 'sandbox', 'report-uri', 'report-to']) expect(csp.has(name)).toBe(false)
   })
 
   it('never allows inline or eval scripts', () => {
@@ -55,6 +66,15 @@ describe('CSP in the built index.html', () => {
 
   it('comes before the first script', () => {
     expect(html.indexOf('Content-Security-Policy')).toBeLessThan(html.indexOf('<script'))
+  })
+
+  it('writes HTML into the page nowhere but in React itself (Trusted Types would refuse it at runtime)', () => {
+    // React's own two paths (dangerouslySetInnerHTML, a <script> element) never run in this app.
+    // Any other sink is a library that would crash under the CSP, like the entity decoder did.
+    const sinks = [...js.matchAll(/.{0,40}(?:innerHTML|outerHTML)\s*=.{0,25}/g)].map((m) => m[0])
+    const react = (s: string) => s.includes('__html') || s.includes('innerHTML=`<script>')
+    expect(sinks.filter((s) => !react(s))).toEqual([])
+    expect(js).not.toMatch(/insertAdjacentHTML|document\.write\(|createContextualFragment|\bsrcdoc\b|new DOMParser/)
   })
 
   it('leaves no inline script in the page', () => {

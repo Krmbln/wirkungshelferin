@@ -226,6 +226,7 @@ The SDK's typed errors are mapped to plain German messages with what to do:
 | Offline | connection error / `navigator.onLine` | "Keine Internetverbindung" |
 | Stream breaks | stream error event | Partial text kept, "Erneut versuchen" button; input preserved |
 | Refusal | `stop_reason: "refusal"` | Plain note + retry |
+| Stream stalls (step 24) | no byte for 90 s after the response started (`STALL_TIMEOUT`, raw bytes incl. pings; live max silence 14.2 s) | like "Stream breaks": `unreachable`, partial kept, "Erneut versuchen" |
 
 *As built in step 7:*
 - `src/ai/`: `AiClient` interface (`testConnection(settings)` for now; chat calls join in steps 8–9), `sdkAiClient()` on `@anthropic-ai/sdk` 1.1.0 (pinned; 1.x sends the key as a bearer token, not as `x-api-key`), `scriptedAiClient()` for tests and the gallery. A new SDK client per call, built from the current settings; SDK logging off, `maxRetries` 2.
@@ -366,6 +367,7 @@ Pure function `onConfirm(project, stepId)`:
 - **No participant data:** one-time privacy note (PRD F1). The app sends block content and documents to the Claude API only.
 - **Rendering:** assistant Markdown rendered without raw HTML, so model output can't inject scripts.
 - **Content Security Policy** via `<meta>`, production build only (the Vite dev server needs inline scripts): scripts from self only; `connect-src` limited to `https://api.anthropic.com`. Fonts chosen in Phase 4 are self-hosted, so `font-src`/`style-src` stay `self`.
+  - *Step 24:* `default-src 'none'` (frames, workers, media, manifests refused), `base-uri`/`form-action`/`object-src 'none'`, and Trusted Types (`require-trusted-types-for 'script'; trusted-types 'none'`): Chrome refuses any HTML a script writes into the page, so model output can never become markup even if a renderer slipped. `frame-ancestors` only works as an HTTP header, which Pages can't send, so the app refuses to load data inside a frame itself (`FrameGate`, "Bitte öffne die Wirkungshelferin direkt").
 
 ---
 

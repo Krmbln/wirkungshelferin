@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { sdkAiClient } from '../../../src/ai/client'
+import { sdkAiClient, STALL_TIMEOUT } from '../../../src/ai/client'
 import { FALLBACK_BETA, MAX_TOKENS } from '../../../src/ai/request'
 import { stepTools } from '../../../src/ai/tools'
 import { defaultSettings, type Settings } from '../../../src/storage/settings'
@@ -181,3 +181,112 @@ describe('send: one streamed call', () => {
     expect(result.status === 'aborted' && result.partial?.content).toEqual([{ type: 'text', text: '' }])
   })
 })
+
+describe('send: a stalled stream (step 24)', () => {
+  const call = { system: 'System', messages: [{ role: 'user' as const, content: 'Hallo' }], maxTokens: MAX_TOKENS.chat }
+  const encode = (text: string) => new TextEncoder().encode(text)
+  const [start, block, ...rest] = sseAnswer('end_turn', 'Hallo zurück.').split('\n\n')
+  const ping = 'event: ping\ndata: {"type": "ping"}\n\n'
+
+  /** A response that sends `first`, then (optionally) pings every `every` ms for `pings` times, then `last`. */
+  function scripted({ first = '', pings = 0, every = 0, last }: { first?: string; pings?: number; every?: number; last?: string }) {
+    return vi.fn(async (_: unknown, init?: RequestInit) => {
+      const body = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          init?.signal?.addEventListener('abort', () => controller.error(new DOMException('aborted', 'AbortError')))
+          if (first) controller.enqueue(encode(first))
+          for (let i = 0; i < pings; i++) {
+            await new Promise((r) => setTimeout(r, every))
+            if (init?.signal?.aborted) return
+            controller.enqueue(encode(ping))
+          }
+          if (last !== undefined) {
+            controller.enqueue(encode(last))
+            controller.close()
+          }
+        },
+      })
+      return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } })
+    }) as unknown as typeof fetch
+  }
+  const stalling = (fetch: typeof globalThis.fetch, stallMs = 60) => sdkAiClient({ fetch, online: () => true, maxRetries: 0, stallMs })
+
+  it('waits 90 s by default', () => {
+    expect(STALL_TIMEOUT).toBe(90_000)
+  })
+
+  it('no byte at all: fails as "not reachable" instead of waiting for the 10-minute timeout', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const result = await stalling(scripted({})).send(settings, call)
+    expect(result).toEqual({ status: 'failed', problem: 'unreachable' })
+  })
+
+  it('a slow upload is no stall: the watchdog starts with the response', async () => {
+    // The request takes 150 ms to be answered (a big PDF going up), against a 60 ms limit.
+    const slow = vi.fn(async () => {
+      await new Promise((r) => setTimeout(r, 150))
+      return sse(sseAnswer())
+    }) as unknown as typeof fetch
+    expect((await stalling(slow).send(settings, call)).status).toBe('done')
+  })
+
+  it('stalled after some text: fails with what had arrived, for display', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const result = await stalling(scripted({ first: `${start}\n\n${block}\n\n` })).send(settings, call)
+    expect(result.status).toBe('failed')
+    expect(result.status === 'failed' && result.problem).toBe('unreachable')
+    expect(result.status === 'failed' && result.partial?.content).toEqual([{ type: 'text', text: '' }])
+  })
+
+  it('a retried 529 is no stall: the watchdog starts with the successful response', async () => {
+    // 529 with a 120 ms retry wait, then 100 ms until the retry is answered, against a 60 ms limit.
+    let calls = 0
+    const retried = vi.fn(async () => {
+      if (calls++ === 0) return new Response(errorBody('overloaded_error'), { status: 529, headers: { 'content-type': 'application/json', 'retry-after-ms': '120' } })
+      await new Promise((r) => setTimeout(r, 100))
+      return sse(sseAnswer())
+    }) as unknown as typeof fetch
+    const result = await sdkAiClient({ fetch: retried, online: () => true, maxRetries: 1, stallMs: 60 }).send(settings, call)
+    expect(calls).toBe(2)
+    expect(result.status).toBe('done')
+  })
+
+  it('a stall while the network is gone says "offline"', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    let online = true
+    const fetch = scripted({ first: `${start}\n\n` })
+    const result = await sdkAiClient({ fetch, online: () => online, maxRetries: 0, stallMs: 60 }).send(settings, call, {
+      onEvent: () => void (online = false),
+    })
+    expect(result).toMatchObject({ status: 'failed', problem: 'offline' })
+  })
+
+  it('pings keep a quiet stream alive: no event for longer than the limit, still done', async () => {
+    // 6 pings 25 ms apart = 150 ms without an event the SDK shows, against a 60 ms limit.
+    const result = await stalling(scripted({ first: `${start}\n\n`, pings: 6, every: 25, last: `${[block, ...rest].join('\n\n')}` })).send(settings, call)
+    expect(result.status).toBe('done')
+    expect(result.status === 'done' && result.message.content).toEqual([{ type: 'text', text: 'Hallo zurück.' }])
+  })
+
+  it('a finished answer leaves no watchdog timer behind', async () => {
+    const set = vi.spyOn(globalThis, 'setTimeout')
+    const clear = vi.spyOn(globalThis, 'clearTimeout')
+    const result = await stalling(scripted({ last: sseAnswer() }), 61).send(settings, call)
+    expect(result.status).toBe('done')
+    const watchdog = set.mock.results.filter((_, i) => set.mock.calls[i][1] === 61).map((r) => r.value)
+    expect(watchdog.length).toBeGreaterThan(0)
+    expect(clear).toHaveBeenLastCalledWith(watchdog.at(-1))
+  })
+
+  it('Stopp still wins while the watchdog runs: aborted, not failed', async () => {
+    const controller = new AbortController()
+    const result = await stalling(scripted({ first: `${start}\n\n` }), 5_000).send(settings, call, {
+      signal: controller.signal,
+      onEvent: (e) => {
+        if (e.type === 'message_start') controller.abort()
+      },
+    })
+    expect(result.status).toBe('aborted')
+  })
+})
+

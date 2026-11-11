@@ -561,3 +561,8 @@ span.intro__label {
 .md__step:hover {
   color: var(--accent-hover);
 }
+
+/* Plain-text fallback when a message can't be rendered as Markdown (Markdown.tsx). */
+.md__plain {
+  white-space: pre-wrap;
+}

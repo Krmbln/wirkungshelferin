@@ -227,7 +227,7 @@ const setupScreens = [
   'setup-backup-done',
   'setup-key-only',
 ]
-const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'load-invalid', 'load-newer', 'load-storage', ...setupScreens, 'copy-preview', 'copy-preview-mixed']
+const bareScreens = ['skeleton', 'empty', 'empty-error', 'second-tab', 'frame-gate', 'load-invalid', 'load-newer', 'load-storage', ...setupScreens, 'copy-preview', 'copy-preview-mixed']
 
 async function openScreen(page: Page, name: string) {
   await page.goto(`./?gallery&screen=${name}`)
@@ -346,7 +346,7 @@ test('settings: key error at the field, remove and restore dialogs, load dialog,
   await page.screenshot({ path: 'screenshots/gallery/screen-settings-key-error.png', animations: 'disabled' })
 
   await openScreen(page, 'settings-filled')
-  await page.getByRole('button', { name: 'entfernen' }).click()
+  await page.getByRole('button', { name: 'Entfernen' }).click()
   await expect(page.getByRole('dialog', { name: 'API-Schlüssel entfernen?' })).toBeVisible()
   await page.screenshot({ path: 'screenshots/gallery/screen-settings-remove-key.png', animations: 'disabled' })
   await page.keyboard.press('Escape')
@@ -1536,7 +1536,7 @@ test('step 6 (step 20): coverage from step 5, plan rows as disclosures, picker, 
   // Coverage: one indicator still without a row; closed rows keep their references, summary and "Noch leer".
   await openScreen(page, 'step6')
   await expect(page.locator('[data-coverage="in2"]').getByText('noch ohne Planzeile')).toBeVisible()
-  await expect(page.locator('[data-coverage="in1"]')).toContainText('In Zeile 1 und 3')
+  await expect(page.locator('[data-coverage="in1"]')).toContainText('In Planzeile 1 und 3')
   await expect(page.locator('[data-coverage] .bitem__remove')).toHaveCount(0)
   const closed = page.locator('[data-item-id="pr3"]')
   await expect(closed.getByText('Noch leer: Erster Termin, Einwilligung und Datenschutz, Auswertung und Nutzung, Warum?')).toBeVisible()
@@ -1547,7 +1547,7 @@ test('step 6 (step 20): coverage from step 5, plan rows as disclosures, picker, 
   await page.locator('[data-picker-toggle="pr4"]').click()
   const picker = page.locator('[data-picker="pr4"]')
   await expect(picker.getByRole('checkbox').first()).toBeFocused()
-  await expect(picker.getByText('· in Zeile 1 und 3')).toBeVisible()
+  await expect(picker.getByText('· in Planzeile 1 und 3')).toBeVisible()
   await expect(picker.getByText('Verweis fehlt (gelöscht)')).toBeVisible()
   await picker.evaluate((el) => el.scrollIntoView({ block: 'start' }))
   await noSideScroll()
@@ -1573,13 +1573,13 @@ test('step 6 (step 20): coverage from step 5, plan rows as disclosures, picker, 
 
   // Check: ⛔ rows first, then the app's grouped ⚠; Zum Feld opens a closed row.
   await openScreen(page, 'step6-blocked')
-  await expect(gate.getByText(/^Warum fehlt: Zeile 1 „Anzahl der Öffnungstage, an denen …“$/)).toBeVisible()
+  await expect(gate.getByText(/^Warum fehlt: Planzeile 1 „Anzahl der Öffnungstage, an denen …“$/)).toBeVisible()
   await expect(page.locator('[data-item-id="pr2"] .refchip--missing')).toHaveCount(2)
-  await expect(gate.getByText('Verweis fehlt: Zeile 2 „Anwesenheitsliste und Anmeldebogen“')).toBeAttached()
+  await expect(gate.getByText('Verweis fehlt: Planzeile 2 „Anwesenheitsliste und Anmeldebogen“')).toBeAttached()
   await expect(gate.getByText('Indikator ohne Planzeile: „Anteil der Stammgäste, die ihr Rad nach einer …“')).toBeAttached()
   await gate.locator('.gate__rows').evaluate((el) => (el.scrollTop = el.scrollHeight))
   await shotScreen('step6-blocked-warn')
-  await gate.getByRole('button', { name: /^Zum Feld: Warum fehlt: Zeile 1/ }).click()
+  await gate.getByRole('button', { name: /^Zum Feld: Warum fehlt: Planzeile 1/ }).click()
   await expect(page.locator('[data-row-toggle="pr1"]')).toHaveAttribute('aria-expanded', 'true')
   await expect(page.locator('[data-item-id="pr1"] [data-field="why"] textarea')).toBeFocused()
   await gate.getByRole('button', { name: /^Zum Feld: Indikator ohne Planzeile/ }).click()

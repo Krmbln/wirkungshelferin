@@ -31,3 +31,33 @@ test('blocks a browser without userAgentData (Safari, Firefox)', async ({ page }
   await expect(page.getByText(/localhost:\d+\/wirkungshelferin\//)).toBeVisible()
   await expect(page.getByRole('navigation')).toHaveCount(0)
 })
+
+test('the CSP refuses HTML written by script (Trusted Types)', async ({ page }) => {
+  await startProject(page)
+  const result = await page.evaluate(() => {
+    try {
+      document.createElement('div').innerHTML = '<img src=x>'
+      return 'allowed'
+    } catch (e) {
+      return (e as Error).name
+    }
+  })
+  expect(result).toBe('TypeError')
+})
+
+test('embedded in another page, the app loads no data and points to its own tab', async ({ page, baseURL, context }) => {
+  const problems = await watchProblems(page)
+  // Another origin embeds the app. Chrome treats the routed page as public, so it may only frame
+  // localhost with the local network permission (the live site is public itself).
+  await context.grantPermissions(['local-network-access'])
+  const embed = 'http://localhost:4199/embed.html'
+  await page.route(embed, (route) =>
+    route.fulfill({ contentType: 'text/html', body: `<iframe src="${baseURL}" width="900" height="600"></iframe>` }),
+  )
+  await page.goto(embed)
+  const frame = page.frameLocator('iframe')
+  await expect(frame.getByRole('heading', { name: 'Bitte öffne die Wirkungshelferin direkt' })).toBeVisible()
+  await expect(frame.getByRole('link', { name: 'In einem eigenen Tab öffnen' })).toHaveAttribute('href', baseURL!)
+  await expect(frame.getByRole('navigation')).toHaveCount(0)
+  expect(problems).toEqual([])
+})

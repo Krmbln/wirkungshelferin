@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { dummyKey } from '../dummyKey'
-import { readStored, replayClaude, startProject, watchProblems, writeStored } from './helpers'
+import { sseAnswer } from '../fakeClaude'
+import { fakeClaude, readStored, replayClaude, startProject, watchProblems, writeStored } from './helpers'
 
 // Step 9 in real Chrome against the build (CSP on): the recorded streams from `npm run contract`
 // replayed through the app's real SDK client.
@@ -37,6 +38,41 @@ test('a recorded answer streams in and is stored; no CSP problems', async ({ pag
   expect(body.max_tokens).toBe(16_000)
   expect(body.stream).toBe(true)
   await expect.poll(() => storedRoles(page)).toEqual(['user', 'assistant'])
+  expect(problems).toEqual([])
+})
+
+test('offline: the chat says so at once, sends nothing, and "Erneut versuchen" works once back online', async ({ page, context }) => {
+  const problems = await watchProblems(page)
+  const requests = await replayClaude(page, ['step1-opening'])
+  await openStep1(page)
+  await context.setOffline(true)
+  await input(page).fill('Hallo, wir fangen an.')
+  await input(page).press('Enter')
+  await expect(page.getByRole('alert')).toContainText('Keine Internetverbindung. Prüf dein WLAN und versuch es dann noch einmal.')
+  expect(requests).toHaveLength(0)
+  // The message is kept (stored before the send), so nothing has to be typed again.
+  await expect(log(page).getByText('Hallo, wir fangen an.', { exact: true })).toBeVisible()
+  await expect.poll(() => storedRoles(page)).toEqual(['user'])
+
+  await context.setOffline(false)
+  await page.getByRole('button', { name: 'Erneut versuchen' }).click()
+  await expect(log(page).getByRole('article', { name: 'Vorschlag' })).toBeVisible()
+  expect(requests).toHaveLength(1)
+  await expect.poll(() => storedRoles(page)).toEqual(['user', 'assistant'])
+  expect(problems).toEqual([])
+})
+
+test('an answer with HTML entities renders under Trusted Types (no innerHTML in the Markdown renderer)', async ({ page }) => {
+  const problems = await watchProblems(page)
+  await fakeClaude(page, () => ({ status: 200, body: sseAnswer('end_turn', 'Werkstatt &amp; Touren, M&auml;dchen&nbsp;und Jungen. Passt das?'), contentType: 'text/event-stream' }))
+  await openStep1(page)
+  await input(page).fill('Hallo.')
+  await input(page).press('Enter')
+  await expect(log(page).getByText('Werkstatt & Touren, Mädchen\u00a0und Jungen. Passt das?', { exact: true })).toBeVisible()
+  // And after a reload, from the stored message.
+  await page.reload()
+  await page.getByRole('button', { name: /^1 Gruppen,/ }).click()
+  await expect(log(page).getByText('Werkstatt & Touren, Mädchen\u00a0und Jungen. Passt das?', { exact: true })).toBeVisible()
   expect(problems).toEqual([])
 })
 

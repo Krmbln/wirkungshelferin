@@ -10,6 +10,7 @@ import { Tooltip } from '../ui/components/Tooltip'
 import { App } from '../ui/App'
 import { Sidebar } from '../ui/frame/Sidebar'
 import { ChromeGate } from '../ui/gate/ChromeGate'
+import { FrameGate } from '../ui/gate/FrameGate'
 import { makeProject, makeProjectWithStatuses } from '../domain/fixtures'
 import { backupProblemText } from '../storage/backup'
 import { EmptyState } from '../ui/screens/EmptyState'
@@ -150,6 +151,7 @@ export const screens: Record<string, { caption: string; render: () => ReactNode 
     render: () => <EmptyState onNew={noop} onLoadBackup={async () => backupError} initialError={backupError} />,
   },
   'second-tab': { caption: 'Zweiter Tab', render: () => <SecondTab closeTab={async () => false} /> },
+  'frame-gate': { caption: 'In einer fremden Seite eingebettet', render: () => <FrameGate appUrl="https://krmbln.github.io/wirkungshelferin/" /> },
   'load-invalid': {
     caption: 'Daten lassen sich nicht öffnen',
     render: () => <LoadError problem="invalid" raw={{}} onUseBackup={async () => {}} />,

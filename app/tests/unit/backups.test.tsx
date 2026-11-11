@@ -270,11 +270,11 @@ describe('Settings page', () => {
   it('"ändern" replaces the key; "Abbrechen" keeps the old one', async () => {
     const { user, store } = await open(readyStore({ [keys.project]: makeProject(), [keys.settings]: { apiKey: dummyKey, model: 'claude-opus-5-5', effort: 'medium', setupDone: true } }))
     await toSettings(user)
-    await user.click(screen.getByRole('button', { name: 'ändern' }))
+    await user.click(screen.getByRole('button', { name: 'Ändern' }))
     await user.click(screen.getByRole('button', { name: 'Abbrechen' }))
     expect(screen.getByText('••••••••c3AA')).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'ändern' }))
+    await user.click(screen.getByRole('button', { name: 'Ändern' }))
     const next = `${dummyKey.slice(0, -4)}ZZ99`
     await enterKey(user, next)
     expect(await screen.findByText('••••••••ZZ99')).toBeTruthy()
@@ -284,12 +284,12 @@ describe('Settings page', () => {
   it('"entfernen" asks first, then removes the key', async () => {
     const { user, store } = await open(readyStore({ [keys.project]: makeProject(), [keys.settings]: { apiKey: dummyKey, model: 'claude-opus-5-5', effort: 'medium', setupDone: true } }))
     await toSettings(user)
-    await user.click(screen.getByRole('button', { name: 'entfernen' }))
+    await user.click(screen.getByRole('button', { name: 'Entfernen' }))
     const dialog = screen.getByRole('dialog', { name: 'API-Schlüssel entfernen?' })
     await user.click(within(dialog).getByRole('button', { name: 'Abbrechen' }))
     expect((store.data.get(keys.settings) as { apiKey?: string }).apiKey).toBe(dummyKey)
 
-    await user.click(screen.getByRole('button', { name: 'entfernen' }))
+    await user.click(screen.getByRole('button', { name: 'Entfernen' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Entfernen' }))
     expect(store.data.get(keys.settings)).toEqual({ model: 'claude-opus-5-5', effort: 'medium', setupDone: true })
     expect(screen.getByLabelText('API-Schlüssel')).toBeTruthy()

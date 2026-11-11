@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 // 1. It opts into the strict history check (thinking-binding beta, "error"), so an edited
 //    history fails here even on an account that isn't enforced yet.
 // 2. It records raw SSE response bodies (never headers, never the request) as fixtures.
+// 3. It measures silence on the wire (step 24): the longest gap between bytes, and between events
+//    the SDK shows (pings left out), to size the client's stall timeout from real streams.
 
 export const FIXTURES = fileURLToPath(new URL('../fixtures/sse/', import.meta.url))
 export const BINDING_BETA = 'thinking-binding-controls-2026-08-01'
@@ -19,6 +21,33 @@ export type Recorder = {
   lastError(): string | undefined
   /** Resolves when the recorded body is on disk (also after an abort). */
   flushed(): Promise<void>
+  /** Longest silences so far, in ms, and the pings seen. */
+  gaps(): Gaps
+}
+
+export type Gaps = { bytes: number; events: number; pings: number }
+
+/** Passes the body through and measures the gaps between its chunks and between its non-ping events. */
+function measured(body: ReadableStream<Uint8Array>, gaps: Gaps): ReadableStream<Uint8Array> {
+  const decoder = new TextDecoder()
+  let lastByte = Date.now()
+  let lastEvent = lastByte
+  return body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        const now = Date.now()
+        gaps.bytes = Math.max(gaps.bytes, now - lastByte)
+        lastByte = now
+        const events = [...decoder.decode(chunk, { stream: true }).matchAll(/^event: (\S+)/gm)].map((m) => m[1])
+        gaps.pings += events.filter((e) => e === 'ping').length
+        if (events.some((e) => e !== 'ping')) {
+          gaps.events = Math.max(gaps.events, now - lastEvent)
+          lastEvent = now
+        }
+        controller.enqueue(chunk)
+      },
+    }),
+  )
 }
 
 export function recorder(): Recorder {
@@ -26,6 +55,7 @@ export function recorder(): Recorder {
   let request: Record<string, unknown> | undefined
   let error: string | undefined
   let writing: Promise<void> = Promise.resolve()
+  const gaps: Gaps = { bytes: 0, events: 0, pings: 0 }
 
   const wrapped = async (input: string | URL | Request, init: RequestInit = {}) => {
     const body = JSON.parse(String(init.body)) as Record<string, unknown>
@@ -42,10 +72,13 @@ export function recorder(): Recorder {
       return response
     }
     error = undefined
-    if (!target || !response.body) return response
-    const [forApp, forFile] = response.body.tee()
+    if (!response.body) return response
+    const meta = { status: response.status, statusText: response.statusText, headers: response.headers }
+    const piped = measured(response.body, gaps)
+    if (!target) return new Response(piped, meta)
+    const [forApp, forFile] = piped.tee()
     writing = save(target, forFile)
-    return new Response(forApp, { status: response.status, statusText: response.statusText, headers: response.headers })
+    return new Response(forApp, meta)
   }
 
   return {
@@ -54,6 +87,7 @@ export function recorder(): Recorder {
     lastRequest: () => request,
     lastError: () => error,
     flushed: () => writing,
+    gaps: () => ({ ...gaps }),
   }
 }
 

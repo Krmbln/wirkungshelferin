@@ -44,7 +44,7 @@ test('one plan row per KPI and per mandatory figure; the coverage list folds awa
     await panel.locator(`[data-coverage="${id}"]`).getByRole('button', { name: /^Planzeile anlegen/ }).click()
     await expect(panel.locator(`[data-item-id="pr${n + 1}"] [data-field="dataSource"] textarea`)).toBeFocused()
     await type(page, source)
-    if (n < sources.length - 1) await expect(panel.locator(`[data-coverage="${id}"]`)).toContainText(`In Zeile ${n + 1}`)
+    if (n < sources.length - 1) await expect(panel.locator(`[data-coverage="${id}"]`)).toContainText(`In Planzeile ${n + 1}`)
   }
   await expect(panel.getByText('Alle 2 Indikatoren und 2 Pflichtangaben haben eine Planzeile.')).toBeVisible()
   await expect(panel.locator('[data-coverage]')).toHaveCount(0)

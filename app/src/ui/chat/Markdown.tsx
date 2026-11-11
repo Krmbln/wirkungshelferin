@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react'
+import { Component, createContext, useContext, type ReactNode } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import type { StepId } from '../../domain/types'
 import { Icon } from '../components/Icon'
@@ -48,9 +48,11 @@ const INLINE = ['a', 'strong', 'em', 'code']
 export function InlineMarkdown({ children, className }: { children: string; className?: string }) {
   return (
     <p className={className}>
-      <ReactMarkdown urlTransform={safeUrl} components={components} allowedElements={INLINE} unwrapDisallowed>
-        {children}
-      </ReactMarkdown>
+      <PlainOnError text={children}>
+        <ReactMarkdown urlTransform={safeUrl} components={components} allowedElements={INLINE} unwrapDisallowed>
+          {children}
+        </ReactMarkdown>
+      </PlainOnError>
     </p>
   )
 }
@@ -58,9 +60,27 @@ export function InlineMarkdown({ children, className }: { children: string; clas
 export function Markdown({ children }: { children: string }) {
   return (
     <div className="md">
-      <ReactMarkdown urlTransform={safeUrl} components={components}>
-        {children}
-      </ReactMarkdown>
+      <PlainOnError text={children}>
+        <ReactMarkdown urlTransform={safeUrl} components={components}>
+          {children}
+        </ReactMarkdown>
+      </PlainOnError>
     </div>
   )
+}
+
+/**
+ * A stored message that fails to render (a renderer bug, a CSP refusal) shows as plain text
+ * instead of taking the whole page down — on every reload, since the message stays stored.
+ */
+class PlainOnError extends Component<{ text: string; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  render() {
+    return this.state.failed ? <span className="md__plain">{this.props.text}</span> : this.props.children
+  }
 }
