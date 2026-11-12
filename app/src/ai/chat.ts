@@ -7,7 +7,7 @@ import { groupsOf, hardIssues, issueContext } from '../domain/check'
 import { scrubContacts } from '../domain/contacts'
 import { earlierChanges, stepList, type EarlierChange } from '../domain/outdated'
 import { CHECK_REQUEST, checkEvents, parseCheck } from './check'
-import { blockText, contextText, historyMessages, nextTurn, pendingToolUses, snapshotText, sourceText, sourcesText, systemPrompt, withCacheBreakpoint } from './prompt'
+import { blockText, contextCurrent, contextText, contextUpdateText, historyMessages, nextTurn, pendingToolUses, snapshotText, sourceText, sourcesText, systemPrompt, withCacheBreakpoint } from './prompt'
 import { checkErrorToolResult, checkToolResult, errorToolResult, proposalToolResult, toProposal } from './proposal'
 import { MAX_TOKENS, type Call } from './request'
 import { carriedText } from './summarise'
@@ -78,7 +78,7 @@ function carriedResults(project: Project, step: StepId): string[] {
   return toolResultsFor(project, step, pending).map((r) => `Zu deinem letzten Werkzeugaufruf im vorigen Abschnitt: ${typeof r.content === 'string' ? r.content : ''}`)
 }
 
-/** Stores Lukas's turn (pending tool results, context in a segment's first turn, snapshot) and builds the request. */
+/** Stores Lukas's turn (pending tool results, context in a segment's first turn or when the other steps changed, snapshot) and builds the request. */
 export function prepareTurn(project: Project, step: StepId, text: string, { at, newId = defaultId, model, newSegment, source, act }: TurnMeta): Prepared {
   const next = structuredClone(project)
   const state = stepOf(next, step)
@@ -96,7 +96,8 @@ export function prepareTurn(project: Project, step: StepId, text: string, { at, 
     pending,
     toolResults: rolled ? [] : toolResultsFor(project, step, pending),
     events,
-    context: first ? context : undefined,
+    // Later turns carry the other steps again only when they changed since the segment last showed them.
+    context: first ? context : contextCurrent(segment.messages, project, step) ? undefined : contextUpdateText(project, step),
     source,
     text,
     // A new segment always gets the full block.

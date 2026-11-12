@@ -96,6 +96,35 @@ export function sourcesText(block: LooseBlock): string {
 
 /** The other steps: latest confirmed version, otherwise the draft marked "nicht bestätigt". */
 export function contextText(project: Project, step: StepId): string {
+  return `[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n${contextBody(project, step)}`
+}
+
+/**
+ * The other steps again, mid-segment, when they changed since the segment last showed them
+ * (step 25a: a step confirmed while this chat ran stayed "noch nicht begonnen" for Claude).
+ */
+export function contextUpdateText(project: Project, step: StepId): string {
+  return `[Projektstand aktualisiert]\nDie anderen Schritte, wie sie jetzt sind. Dieser Stand ersetzt jeden früheren.\n\n${contextBody(project, step)}`
+}
+
+/**
+ * Whether the newest [Projektstand…] block in these stored messages still shows the other steps as
+ * they are. The body is matched between blank lines: a segment's first context can carry more
+ * after it (sources, the summary of the previous segment).
+ */
+export function contextCurrent(stored: StoredMessage[], project: Project, step: StepId): boolean {
+  const body = contextBody(project, step)
+  for (const message of [...stored].reverse()) {
+    if (message.role !== 'user') continue
+    const block = message.content.find((b) => b.type === 'text' && String(b.text).startsWith('[Projektstand'))
+    if (!block) continue
+    const text = String(block.text)
+    return text.endsWith(`\n\n${body}`) || text.includes(`\n\n${body}\n\n`)
+  }
+  return false
+}
+
+function contextBody(project: Project, step: StepId): string {
   const parts = stepIds
     .filter((s) => s !== step)
     .map((s) => {
@@ -109,7 +138,7 @@ export function contextText(project: Project, step: StepId): string {
     })
   const step0 = stepOf(project, 0)
   const sources = step === 1 ? sourcesText((step0.confirmed?.block ?? step0.block) as LooseBlock) : ''
-  return `[Projektstand]\nDie anderen Schritte dieses Projekts. Du liest sie, änderst sie aber nie.\n\n${parts.join('\n\n')}${sources && `\n\n${sources}`}`
+  return `${parts.join('\n\n')}${sources && `\n\n${sources}`}`
 }
 
 // ---------------------------------------------------------------- messages

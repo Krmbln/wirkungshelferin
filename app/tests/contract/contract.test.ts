@@ -1088,3 +1088,33 @@ describe('12 · home summary: "Wo du aufgehört hast" (made-up project)', () => 
       return `summary ${summary.length} chars: ${summary} · next ${nextAction.length}: ${nextAction}`
     }))
 })
+
+describe('13 · the other steps change mid-segment (made-up project)', () => {
+  it('step 3 confirmed while the step 4 chat runs: the next turn carries the update, the chain links its goals', () =>
+    check('Projektstand aktualisiert: step 4 started before step 3, then links to the new goals', async () => {
+      // Step 4's chat starts while step 3 is still empty (the dry run's path: "Zu Schritt 3" and back).
+      const full = step4Start()
+      const early = structuredClone(full)
+      early.steps[3].status = 'not_started'
+      delete early.steps[3].confirmed
+      early.steps[3].block = { ...early.steps[3].block, goals: [], level7: { ...early.steps[3].block.level7, text: '', why: '' } } as never
+      const first = prepareTurn(projectSchema.parse(early), 4, 'Hallo, ich fange mit Schritt 4 an. Was brauchst du von mir?', { at: AT })
+      let project = commitAnswer(first.project, 4, { status: 'done', message: done(await ai.send(settings, first.call)) }, first.shown, { at: AT })
+
+      // Meanwhile step 3 gets its goals and is confirmed.
+      project.steps[3] = { ...project.steps[3], status: full.steps[3].status, block: full.steps[3].block, confirmed: full.steps[3].confirmed }
+      const text = 'Ich habe Schritt 3 gerade bestätigt. Die Aktivitäten stimmen so. Schlag mir jetzt die Kette für die Jugendlichen vor.'
+      const prepared = prepareTurn(projectSchema.parse(project), 4, text, { at: AT })
+      const sent = JSON.stringify(prepared.call.messages.at(-1))
+      expect(sent, 'no update in the turn').toContain('[Projektstand aktualisiert]')
+      const message = done(await ai.send(settings, prepared.call))
+      project = commitAnswer(prepared.project, 4, { status: 'done', message }, prepared.shown, { at: AT })
+      const proposal = project.steps[4].proposals.at(-1)
+      expect(proposal, `no valid propose_changes call ${JSON.stringify(project.steps[4].segments.at(-1)!.messages.at(-1)!.toolErrors ?? {})}`).toBeDefined()
+      const links = proposal!.changes.filter((c) => c.collection === 'links' && c.op === 'add').map((c) => (c.fields as { toId?: string }).toId)
+      expect(links.some((id) => ['go1', 'go2', 'go3'].includes(id ?? '')), `no link reaches a step 3 goal: ${links.join(',')}`).toBe(true)
+      const visible = messageTexts(message).join('\n')
+      expect(/neu laden|nicht angekommen|App-Fehler|noch nicht begonnen/i.test(visible), `still talks about a stale step 3: ${visible.slice(0, 200)}`).toBe(false)
+      return `${proposal!.changes.length} changes; links to ${links.filter(Boolean).join(',')}`
+    }))
+})

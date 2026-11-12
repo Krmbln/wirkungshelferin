@@ -37,6 +37,7 @@ Run: 2026-11-09 20:46 UTC · model claude-opus-5-5 · effort medium
 | ✓ | Step 6 opening: one proposal, all covered, refs on every row, no markdown table, no ids | 4 rows (fields filled of 5: 5/5/5/5); sources Anwesenheitsliste (vorhanden); Anwesenheitsliste (vorhanden); Reparaturbuch (vorhanden); Stammgäste (wer mindestens zwe; text 1363 chars; question: Steht auf eurer Anwesenheitsliste schon, welche Ehrenamtlichen an dem Tag da waren, oder m |
 | ✓ | Review turn: names the change, no ids, ends with a question or a card with its question | card with 1 change(s): Die Lernfrage zu den Ehrenamtlichen fällt weg, weil seit März eine Honorarkraft ; text 1341 chars; question: Soll an die Stelle der gestrichenen Frage eine neue treten, etwa ob die Honorarkraft die J |
 | ✓ | Home summary: valid JSON, both fields within the card limits, no ids or Markdown | summary 227 chars: Du hast zwei Fokusfragen bestätigt: ob die Ehrenamtlichen das ganze Jahr bleiben und ob die Jugendlichen ihr Rad selbst reparieren, dazu drei Indikatoren und zwei Pflichtzahlen. Beim Platten-Flicken fehlt noch der Ausgangswert. · next 92: Beantworte im Chat, wie viele Stammgäste heute ungefähr einen Platten selbst flicken können. |
+| ✓ | Projektstand aktualisiert: step 4 started before step 3, then links to the new goals | 11 changes; links to new:1,new:3,new:3,new:4,go1,go2,go3 |
 
 - Shape A `system-between` ([user: tool_results] → [system: events] → [user: text]): refused ({"type":"error","error":{"type":"invalid_request_error","message":"messages.3: role 'system' must precede an 'assistant' message or end the array; the directive-only form (content: [] with output_conf)
 - Shape B `system-after` ([user: tool_results + text] → [system: events]): accepted
@@ -56,3 +57,5 @@ Added 2026-11-10 (step 21, run alone with `-t "11 · change"`): the review row a
 Added 2026-11-10 (step 22, run alone with `-t "12 · home"`): the home summary row above · 1 call · **≈ $0.01**.
 
 Added 2026-11-11 (step 24 cost check, run alone with `-t "2 · step 1"`): all eight step 1 rows above ✓ again · cache reads per turn 0 → 23491 → 25777 → 25834 tokens · longest silence on the wire 14.2 s between bytes (= between events; 7 pings), against the new 90 s stall timeout · 8 calls · **≈ $0.42**. Recorded step 1 fixtures restored from git (the tests depend on their content).
+
+Added 2026-11-12 (step 25a-1, run alone with `-t "13 ·"`): the Projektstand row above · longest silence on the wire 30.0 s between bytes (3 pings) · 2 calls · **≈ $0.39**.

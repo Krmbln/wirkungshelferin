@@ -91,6 +91,84 @@ describe('prepareTurn', () => {
   })
 })
 
+/** Step 0 confirmed with this project name: another step changing while the step 1 chat runs. */
+function confirmStep0(p: Project, name: string, at = '2026-11-06T11:00:00.000Z'): Project {
+  const next = structuredClone(p)
+  const s0 = next.steps[0]
+  ;(s0.block as { profile: { name: string } }).profile.name = name
+  s0.status = 'confirmed'
+  s0.confirmed = { at, block: structuredClone(s0.block), basis: {} }
+  return next
+}
+
+const texts = (p: Project) => messagesOf(p).at(-1)!.content.map((b) => String(b.text ?? ''))
+const updates = (p: Project) => texts(p).filter((t) => t.startsWith('[Projektstand aktualisiert]'))
+
+// Step 25a: a step confirmed while this chat ran stayed "noch nicht begonnen" for Claude.
+describe('the other steps change mid-segment', () => {
+  it('the next turn carries "[Projektstand aktualisiert]" with the new state, before Lukas’s text', async () => {
+    const first = prepareTurn(start(), 1, 'Hallo.', meta)
+    const project = confirmStep0(commit(first, await answer(first)), 'Sprachcafé Nordstadt')
+    const next = prepareTurn(project, 1, 'Schritt 0 ist jetzt bestätigt.', meta)
+    const [update] = updates(next.project)
+    expect(update).toMatch(/^\[Projektstand aktualisiert\]\nDie anderen Schritte, wie sie jetzt sind\. Dieser Stand ersetzt jeden früheren\./)
+    expect(update).toContain('## Schritt 0 (bestätigt am 2026-11-06)')
+    expect(update).toContain('Sprachcafé Nordstadt')
+    expect(texts(next.project).slice(-2)).toEqual(['Schritt 0 ist jetzt bestätigt.', '[Baustein unverändert]'])
+    expect(lukasText(messagesOf(next.project).at(-1)!)).toBe('Schritt 0 ist jetzt bestätigt.')
+    // Stored inside the new turn and sent with it; the stored history before it is untouched (append-only).
+    expect(JSON.stringify(next.call.messages.at(-1))).toContain('[Projektstand aktualisiert]')
+    expect(messagesOf(next.project).slice(0, -1)).toEqual(messagesOf(project))
+  })
+
+  it('no change, no update — and after an update the same state isn’t sent again', async () => {
+    const first = prepareTurn(start(), 1, 'Hallo.', meta)
+    let project = commit(first, await answer(first))
+    const same = prepareTurn(project, 1, 'Weiter.', meta)
+    expect(updates(same.project)).toEqual([])
+
+    project = commit(same, await answer(same))
+    const changed = prepareTurn(confirmStep0(project, 'Sprachcafé Nordstadt'), 1, 'Bestätigt.', meta)
+    expect(updates(changed.project)).toHaveLength(1)
+    project = commit(changed, await answer(changed))
+    const after = prepareTurn(project, 1, 'Und jetzt?', meta)
+    expect(updates(after.project)).toEqual([])
+  })
+
+  it('a second change sends a second update; only the newest block is compared', async () => {
+    const first = prepareTurn(start(), 1, 'Hallo.', meta)
+    let project = commit(first, await answer(first))
+    const one = prepareTurn(confirmStep0(project, 'Name eins'), 1, 'Eins.', meta)
+    project = commit(one, await answer(one))
+    const two = prepareTurn(confirmStep0(project, 'Name zwei'), 1, 'Zwei.', meta)
+    expect(updates(two.project)).toHaveLength(1)
+    expect(updates(two.project)[0]).toContain('Name zwei')
+    expect(updates(two.project)[0]).not.toContain('Name eins')
+    // Back to the first state: it differs from the newest block, so it goes out again.
+    project = commit(two, await answer(two))
+    const back = prepareTurn(confirmStep0(project, 'Name eins'), 1, 'Doch eins.', meta)
+    expect(updates(back.project)[0]).toContain('Name eins')
+  })
+
+  it('a new segment’s first context (with the summary after it) counts as current: no update next turn', async () => {
+    const first = prepareTurn(start(), 1, 'Hallo.', meta)
+    let project = confirmStep0(commit(first, await answer(first)), 'Sprachcafé Nordstadt')
+    const rolled = prepareTurn(project, 1, 'Weiter.', { ...meta, newSegment: { summary: 'Kurz zusammengefasst.' } })
+    expect(updates(rolled.project)).toEqual([])
+    expect(texts(rolled.project).find((t) => t.startsWith('[Projektstand]'))).toContain('Sprachcafé Nordstadt')
+    project = commit(rolled, await answer(rolled))
+    const next = prepareTurn(project, 1, 'Und weiter.', meta)
+    expect(updates(next.project)).toEqual([])
+  })
+
+  it('app turns (the check request) carry the update too', async () => {
+    const first = prepareTurn(start(), 1, 'Hallo.', meta)
+    const project = confirmStep0(commit(first, await answer(first)), 'Sprachcafé Nordstadt')
+    const check = prepareTurn(project, 1, '[App] Bitte prüfe den Baustein.', meta)
+    expect(updates(check.project)).toHaveLength(1)
+  })
+})
+
 describe('commitAnswer', () => {
   it('stores the answer unchanged, thinking signature included, and its proposal', async () => {
     const prepared = prepareTurn(start(), 1, 'Hallo.', meta)
