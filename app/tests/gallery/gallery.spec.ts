@@ -236,8 +236,11 @@ async function openScreen(page: Page, name: string) {
 }
 
 test('full-window screens render without errors', async ({ page }) => {
+  // One test, every screen (18 s for ~66 locally): the default 30 s ran out on a slow CI runner (step 25a).
+  const names = [...screenNames, ...bareScreens]
+  test.setTimeout(names.length * 2_000)
   const errors = watchErrors(page)
-  for (const name of [...screenNames, ...bareScreens]) {
+  for (const name of names) {
     await openScreen(page, name)
     await page.screenshot({ path: `screenshots/gallery/screen-${name}.png`, animations: 'disabled' })
   }
